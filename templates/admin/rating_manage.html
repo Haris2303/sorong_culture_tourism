@@ -1,0 +1,46 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Moderasi Rating - Admin{% endblock %}
+{% block page_title %}Moderasi Rating & Ulasan{% endblock %}
+{% block admin_content %}
+<div class="admin-table-card">
+  <table class="admin-table">
+    <thead>
+      <tr><th>Destinasi</th><th>Skor</th><th>Komentar</th><th>Tanggal</th><th>Status</th><th>Aksi</th></tr>
+    </thead>
+    <tbody>
+      {% for r in items %}
+      <tr>
+        <td>{{ r.nama_wisata }}</td>
+        <td>{{ '⭐' * r.skor_bintang }}</td>
+        <td>{{ r.komentar or '-' }}</td>
+        <td>{{ r.created_at.strftime('%d %b %Y %H:%M') }}</td>
+        <td><span class="badge badge-{{ r.status_tampil }}">{{ r.status_tampil }}</span></td>
+        <td class="table-actions">
+          {% if r.status_tampil != 'approved' %}
+          <form method="post" action="{{ url_for('admin_rating_status', rating_id=r.id) }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="approved">
+            <button type="submit" class="btn btn-small btn-primary">Setujui</button>
+          </form>
+          {% endif %}
+          {% if r.status_tampil != 'rejected' %}
+          <form method="post" action="{{ url_for('admin_rating_status', rating_id=r.id) }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="rejected">
+            <button type="submit" class="btn btn-small btn-outline">Tolak</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('admin_rating_delete', rating_id=r.id) }}" class="inline-form"
+                onsubmit="return confirm('Hapus ulasan ini?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-small btn-danger">Hapus</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty-state">Belum ada ulasan masuk.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

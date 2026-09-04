@@ -1,0 +1,44 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Dashboard - Admin Sorong Raya{% endblock %}
+{% block page_title %}Dashboard Metrik{% endblock %}
+{% block admin_content %}
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="stat-label">Total Artikel Budaya</span>
+    <span class="stat-value">{{ stats.total_budaya }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Total Destinasi Wisata</span>
+    <span class="stat-value">{{ stats.total_wisata }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Rata-rata Rating</span>
+    <span class="stat-value">⭐ {{ stats.avg_score }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Total Ulasan Masuk</span>
+    <span class="stat-value">{{ stats.total_ratings }}</span>
+  </div>
+  <div class="stat-card {{ 'stat-alert' if stats.pending_ratings > 0 }}">
+    <span class="stat-label">Ulasan Menunggu Moderasi</span>
+    <span class="stat-value">{{ stats.pending_ratings }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Dokumen Pengetahuan RAG</span>
+    <span class="stat-value">{{ stats.total_docs }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Sinkronisasi RAG Terakhir</span>
+    <span class="stat-value stat-value-small">
+      {{ stats.last_sync.strftime('%d %b %Y %H:%M') if stats.last_sync else 'Belum pernah' }}
+    </span>
+  </div>
+</div>
+
+<div class="admin-quick-links">
+  <a href="{{ url_for('admin_budaya_manage') }}" class="btn btn-outline">Kelola Budaya</a>
+  <a href="{{ url_for('admin_wisata_manage') }}" class="btn btn-outline">Kelola Wisata</a>
+  <a href="{{ url_for('admin_rating_manage') }}" class="btn btn-outline">Moderasi Rating</a>
+  <a href="{{ url_for('admin_knowledge') }}" class="btn btn-primary">Sinkronkan & Latih Ulang RAG</a>
+</div>
+{% endblock %}

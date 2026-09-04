@@ -1,0 +1,33 @@
+<div id="chat-widget" class="chat-widget closed">
+  <button id="chat-toggle-btn" class="chat-toggle-btn" aria-label="Buka chatbot">
+    <span class="chat-toggle-icon">💬</span>
+  </button>
+
+  <div id="chat-panel" class="chat-panel">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <span class="chat-online-dot"></span>
+        <div>
+          <div class="chat-title">Asisten Sorong Raya</div>
+          <div class="chat-subtitle">Online - Siap membantu</div>
+        </div>
+      </div>
+      <button id="chat-close-btn" class="chat-close-btn" aria-label="Tutup chatbot">&times;</button>
+    </div>
+
+    <div id="chat-messages" class="chat-messages">
+      <div class="chat-message bot">
+        <div class="bubble">Halo! Saya asisten virtual Sorong Raya. Tanyakan apa saja seputar budaya Suku Moi atau wisata Kota/Kabupaten Sorong ya!</div>
+      </div>
+    </div>
+
+    <div id="chat-typing" class="chat-typing" hidden>
+      <span></span><span></span><span></span>
+    </div>
+
+    <form id="chat-form" class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Tulis pertanyaan..." autocomplete="off" maxlength="500" required>
+      <button type="submit" id="chat-send-btn" aria-label="Kirim">&#10148;</button>
+    </form>
+  </div>
+</div>

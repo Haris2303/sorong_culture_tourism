@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>{% block title %}Sorong Raya - Budaya & Wisata{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a href="{{ url_for('index') }}" class="brand">
+        <span class="brand-icon">SR</span>
+        <span class="brand-text">Sorong Raya</span>
+      </a>
+      <nav class="nav-links">
+        <a href="{{ url_for('index') }}#about">About</a>
+        <a href="{{ url_for('budaya_list') }}">Budaya</a>
+        <a href="{{ url_for('wisata_list') }}">Wisata</a>
+        <form class="nav-search" action="{{ url_for('search') }}" method="get">
+          <input type="text" name="q" placeholder="Cari..." value="{{ request.args.get('q','') }}">
+        </form>
+      </nav>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>&copy; {{ current_year }} Sorong Raya. Kota Sorong & Kabupaten Sorong, Papua Barat Daya.</p>
+    </div>
+  </footer>
+
+  {% include "public/_chat_widget.html" %}
+
+  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

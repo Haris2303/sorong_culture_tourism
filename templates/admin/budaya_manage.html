@@ -1,0 +1,80 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Kelola Budaya - Admin{% endblock %}
+{% block page_title %}Manajemen Data Budaya{% endblock %}
+{% block admin_content %}
+<div class="admin-form-card">
+  <h2>Tambah / Sunting Artikel Budaya</h2>
+  <form method="post" enctype="multipart/form-data" class="admin-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="id" id="edit-id">
+
+    <label>Judul</label>
+    <input type="text" name="judul" id="f-judul" required>
+
+    <label>Kategori</label>
+    <input type="text" name="kategori" id="f-kategori" placeholder="Tarian Tradisional / Seni Ukir / Upacara Adat" required>
+
+    <label>Ringkasan</label>
+    <textarea name="ringkasan" id="f-ringkasan" rows="2" required></textarea>
+
+    <label>Konten Lengkap</label>
+    <textarea name="konten_lengkap" id="f-konten" rows="6" required></textarea>
+
+    <label>Gambar (opsional)</label>
+    <input type="file" name="gambar" accept=".png,.jpg,.jpeg,.webp">
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Simpan</button>
+      <button type="button" id="reset-form-btn" class="btn btn-outline">Batal Edit</button>
+    </div>
+  </form>
+</div>
+
+<div class="admin-table-card">
+  <h2>Daftar Artikel Budaya</h2>
+  <table class="admin-table">
+    <thead>
+      <tr><th>Judul</th><th>Kategori</th><th>Diperbarui</th><th>Aksi</th></tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.judul }}</td>
+        <td>{{ item.kategori }}</td>
+        <td>{{ item.updated_at.strftime('%d %b %Y') }}</td>
+        <td class="table-actions">
+          <button type="button" class="btn btn-small btn-outline edit-budaya-btn"
+            data-id="{{ item.id }}" data-judul="{{ item.judul }}" data-kategori="{{ item.kategori }}"
+            data-ringkasan="{{ item.ringkasan }}" data-konten="{{ item.konten_lengkap }}">Edit</button>
+          <form method="post" action="{{ url_for('admin_budaya_delete', budaya_id=item.id) }}" class="inline-form"
+                onsubmit="return confirm('Hapus artikel ini?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-small btn-danger">Hapus</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="empty-state">Belum ada data.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelectorAll('.edit-budaya-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('edit-id').value = btn.dataset.id;
+    document.getElementById('f-judul').value = btn.dataset.judul;
+    document.getElementById('f-kategori').value = btn.dataset.kategori;
+    document.getElementById('f-ringkasan').value = btn.dataset.ringkasan;
+    document.getElementById('f-konten').value = btn.dataset.konten;
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  });
+});
+document.getElementById('reset-form-btn').addEventListener('click', () => {
+  document.querySelector('.admin-form').reset();
+  document.getElementById('edit-id').value = '';
+});
+</script>
+{% endblock %}

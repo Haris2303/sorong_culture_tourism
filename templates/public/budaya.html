@@ -1,0 +1,38 @@
+{% extends "public/base.html" %}
+{% block title %}Katalog Budaya - Sorong Raya{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="section-inner">
+    <h1 class="page-title">Budaya Suku Moi</h1>
+
+    <div class="filter-bar">
+      <a href="{{ url_for('budaya_list') }}" class="filter-chip {{ 'active' if not active_kategori }}">Semua</a>
+      {% for k in kategori_list %}
+      <a href="{{ url_for('budaya_list', kategori=k.kategori) }}"
+         class="filter-chip {{ 'active' if active_kategori == k.kategori }}">{{ k.kategori }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="grid-3">
+      {% for item in items %}
+      <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
+        <div class="card-image">
+          {% if item.gambar %}
+            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}">
+          {% else %}
+            <div class="card-image-placeholder">🎭</div>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <span class="card-tag">{{ item.kategori }}</span>
+          <h3>{{ item.judul }}</h3>
+          <p>{{ item.ringkasan[:100] }}{% if item.ringkasan|length > 100 %}...{% endif %}</p>
+        </div>
+      </a>
+      {% else %}
+        <p class="empty-state">Tidak ada data budaya untuk ditampilkan.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>{% block title %}Admin - Sorong Raya{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body class="admin-body">
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">SR Admin</div>
+      <nav class="admin-nav">
+        <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.endpoint == 'admin_dashboard' }}">Dashboard</a>
+        <a href="{{ url_for('admin_budaya_manage') }}" class="{{ 'active' if request.endpoint == 'admin_budaya_manage' }}">Budaya</a>
+        <a href="{{ url_for('admin_wisata_manage') }}" class="{{ 'active' if request.endpoint == 'admin_wisata_manage' }}">Wisata</a>
+        <a href="{{ url_for('admin_rating_manage') }}" class="{{ 'active' if request.endpoint == 'admin_rating_manage' }}">Moderasi Rating</a>
+        <a href="{{ url_for('admin_knowledge') }}" class="{{ 'active' if request.endpoint == 'admin_knowledge' }}">Knowledge Base</a>
+        <a href="{{ url_for('index') }}" target="_blank">Lihat Situs Publik</a>
+        <a href="{{ url_for('admin_logout') }}" class="logout-link">Logout</a>
+      </nav>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+        <span class="admin-user">{{ session.get('admin_name', '') }}</span>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="admin-content">
+        {% block admin_content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

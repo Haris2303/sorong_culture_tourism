@@ -1,0 +1,39 @@
+{% extends "public/base.html" %}
+{% block title %}Hasil Pencarian - Sorong Raya{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="section-inner">
+    <h1 class="page-title">Hasil Pencarian: "{{ q }}"</h1>
+
+    <h2 class="section-subheading">Budaya</h2>
+    <div class="grid-3">
+      {% for item in budaya_results %}
+      <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
+        <div class="card-body">
+          <span class="card-tag">{{ item.kategori }}</span>
+          <h3>{{ item.judul }}</h3>
+          <p>{{ item.ringkasan[:100] }}</p>
+        </div>
+      </a>
+      {% else %}
+        <p class="empty-state">Tidak ada hasil budaya.</p>
+      {% endfor %}
+    </div>
+
+    <h2 class="section-subheading">Wisata</h2>
+    <div class="grid-3">
+      {% for item in wisata_results %}
+      <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card">
+        <div class="card-body">
+          <span class="card-tag">{{ item.wilayah }}</span>
+          <h3>{{ item.nama_wisata }}</h3>
+          <p>{{ item.deskripsi[:100] }}</p>
+        </div>
+      </a>
+      {% else %}
+        <p class="empty-state">Tidak ada hasil wisata.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

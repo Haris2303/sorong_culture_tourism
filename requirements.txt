@@ -1,0 +1,14 @@
+Flask==3.0.3
+Flask-Limiter==3.8.0
+Flask-WTF==1.2.1
+PyMySQL==1.1.1
+cryptography==43.0.1
+python-dotenv==1.0.1
+Werkzeug==3.0.4
+langchain==0.3.7
+langchain-community==0.3.5
+langchain-google-genai==2.0.4
+langchain-text-splitters==0.3.2
+chromadb==0.5.20
+pypdf==5.1.0
+google-generativeai==0.8.3

@@ -1,0 +1,21 @@
+{% extends "public/base.html" %}
+{% block title %}{{ item.judul }} - Sorong Raya{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="section-inner narrow">
+    <a href="{{ url_for('budaya_list') }}" class="back-link">&larr; Kembali ke Budaya</a>
+    <span class="card-tag">{{ item.kategori }}</span>
+    <h1 class="page-title">{{ item.judul }}</h1>
+    <div class="detail-image">
+      {% if item.gambar %}
+        <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}">
+      {% else %}
+        <div class="card-image-placeholder large">🎭</div>
+      {% endif %}
+    </div>
+    <div class="detail-content">
+      <p>{{ item.konten_lengkap }}</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

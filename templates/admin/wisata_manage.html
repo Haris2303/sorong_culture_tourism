@@ -1,0 +1,96 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Kelola Wisata - Admin{% endblock %}
+{% block page_title %}Manajemen Data Wisata{% endblock %}
+{% block admin_content %}
+<div class="admin-form-card">
+  <h2>Tambah / Sunting Destinasi Wisata</h2>
+  <form method="post" enctype="multipart/form-data" class="admin-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="id" id="edit-id">
+
+    <label>Nama Wisata</label>
+    <input type="text" name="nama_wisata" id="f-nama" required>
+
+    <label>Wilayah</label>
+    <select name="wilayah" id="f-wilayah" required>
+      <option value="Kota Sorong">Kota Sorong</option>
+      <option value="Kabupaten Sorong">Kabupaten Sorong</option>
+    </select>
+
+    <label>Deskripsi</label>
+    <textarea name="deskripsi" id="f-deskripsi" rows="4" required></textarea>
+
+    <label>Fasilitas</label>
+    <textarea name="fasilitas" id="f-fasilitas" rows="2" required></textarea>
+
+    <label>Lokasi</label>
+    <input type="text" name="lokasi" id="f-lokasi" required>
+
+    <label>Tiket Masuk</label>
+    <input type="text" name="tiket_masuk" id="f-tiket" placeholder="Gratis / Menyesuaikan">
+
+    <label>Jam Operasional</label>
+    <input type="text" name="jam_operasional" id="f-jam" placeholder="Setiap Hari">
+
+    <label>Gambar (opsional)</label>
+    <input type="file" name="gambar" accept=".png,.jpg,.jpeg,.webp">
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Simpan</button>
+      <button type="button" id="reset-form-btn" class="btn btn-outline">Batal Edit</button>
+    </div>
+  </form>
+</div>
+
+<div class="admin-table-card">
+  <h2>Daftar Destinasi Wisata</h2>
+  <table class="admin-table">
+    <thead>
+      <tr><th>Nama</th><th>Wilayah</th><th>Diperbarui</th><th>Aksi</th></tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.nama_wisata }}</td>
+        <td>{{ item.wilayah }}</td>
+        <td>{{ item.updated_at.strftime('%d %b %Y') }}</td>
+        <td class="table-actions">
+          <button type="button" class="btn btn-small btn-outline edit-wisata-btn"
+            data-id="{{ item.id }}" data-nama="{{ item.nama_wisata }}" data-wilayah="{{ item.wilayah }}"
+            data-deskripsi="{{ item.deskripsi }}" data-fasilitas="{{ item.fasilitas }}"
+            data-lokasi="{{ item.lokasi }}" data-tiket="{{ item.tiket_masuk }}" data-jam="{{ item.jam_operasional }}">Edit</button>
+          <form method="post" action="{{ url_for('admin_wisata_delete', wisata_id=item.id) }}" class="inline-form"
+                onsubmit="return confirm('Hapus destinasi ini?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-small btn-danger">Hapus</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="empty-state">Belum ada data.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelectorAll('.edit-wisata-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('edit-id').value = btn.dataset.id;
+    document.getElementById('f-nama').value = btn.dataset.nama;
+    document.getElementById('f-wilayah').value = btn.dataset.wilayah;
+    document.getElementById('f-deskripsi').value = btn.dataset.deskripsi;
+    document.getElementById('f-fasilitas').value = btn.dataset.fasilitas;
+    document.getElementById('f-lokasi').value = btn.dataset.lokasi;
+    document.getElementById('f-tiket').value = btn.dataset.tiket;
+    document.getElementById('f-jam').value = btn.dataset.jam;
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  });
+});
+document.getElementById('reset-form-btn').addEventListener('click', () => {
+  document.querySelector('.admin-form').reset();
+  document.getElementById('edit-id').value = '';
+});
+</script>
+{% endblock %}

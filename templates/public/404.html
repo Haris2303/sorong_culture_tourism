@@ -1,0 +1,11 @@
+{% extends "public/base.html" %}
+{% block title %}Halaman Tidak Ditemukan - Sorong Raya{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="section-inner narrow" style="text-align:center;">
+    <h1 class="page-title">404</h1>
+    <p>Halaman yang Anda cari tidak ditemukan.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Kembali ke Beranda</a>
+  </div>
+</section>
+{% endblock %}

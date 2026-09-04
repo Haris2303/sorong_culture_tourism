@@ -1,0 +1,94 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Knowledge Base RAG - Admin{% endblock %}
+{% block page_title %}Repositori Pengetahuan & Sinkronisasi RAG{% endblock %}
+{% block admin_content %}
+
+<div class="admin-form-card">
+  <h2>Unggah Dokumen Pengetahuan</h2>
+  <form method="post" action="{{ url_for('admin_knowledge_upload') }}" enctype="multipart/form-data" class="admin-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Berkas (PDF / TXT / MD)</label>
+    <input type="file" name="dokumen" accept=".pdf,.txt,.md" required>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Unggah Dokumen</button>
+    </div>
+  </form>
+</div>
+
+<div class="admin-form-card sync-card">
+  <h2>Sinkronisasi & Latih Ulang Vector DB</h2>
+  <p>Proses ini akan membaca seluruh dokumen PDF/TXT yang diunggah beserta artikel budaya
+     dan wisata dari database, memecahnya menjadi potongan teks (<em>chunking</em>), menghitung
+     ulang vektor embedding, lalu memperbarui koleksi ChromaDB.</p>
+  <button type="button" id="sync-btn" class="btn btn-primary btn-lg">Sinkronkan &amp; Latih Ulang Vector DB</button>
+  <p id="sync-status" class="sync-status"></p>
+</div>
+
+<div class="admin-table-card">
+  <h2>Daftar Dokumen Pengetahuan</h2>
+  <table class="admin-table">
+    <thead>
+      <tr><th>Nama File</th><th>Tipe</th><th>Diunggah</th><th>Status</th><th>Aksi</th></tr>
+    </thead>
+    <tbody>
+      {% for doc in docs %}
+      <tr>
+        <td>{{ doc.nama_file }}</td>
+        <td>{{ doc.tipe_file|upper }}</td>
+        <td>{{ doc.uploaded_at.strftime('%d %b %Y %H:%M') }}</td>
+        <td>
+          <span class="badge {{ 'badge-approved' if doc.status_indexed else 'badge-pending' }}">
+            {{ 'Indexed' if doc.status_indexed else 'Pending' }}
+          </span>
+        </td>
+        <td class="table-actions">
+          <form method="post" action="{{ url_for('admin_knowledge_delete', doc_id=doc.id) }}" class="inline-form"
+                onsubmit="return confirm('Hapus dokumen ini?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-small btn-danger">Hapus</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="empty-state">Belum ada dokumen diunggah.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById('sync-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('sync-btn');
+  const status = document.getElementById('sync-status');
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+    || document.querySelector('input[name="csrf_token"]').value;
+
+  btn.disabled = true;
+  btn.textContent = 'Sedang memproses...';
+  status.textContent = '';
+  status.className = 'sync-status';
+
+  try {
+    const res = await fetch("{{ url_for('admin_sync_knowledge') }}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      status.textContent = `${data.message} (${data.documents} dokumen, ${data.chunks} chunk).`;
+      status.classList.add('sync-success');
+    } else {
+      status.textContent = data.message || 'Sinkronisasi gagal.';
+      status.classList.add('sync-error');
+    }
+  } catch (err) {
+    status.textContent = 'Gagal menghubungi server.';
+    status.classList.add('sync-error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sinkronkan & Latih Ulang Vector DB';
+  }
+});
+</script>
+{% endblock %}

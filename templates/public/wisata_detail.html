@@ -1,0 +1,61 @@
+{% extends "public/base.html" %}
+{% block title %}{{ item.nama_wisata }} - Sorong Raya{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="section-inner narrow">
+    <a href="{{ url_for('wisata_list') }}" class="back-link">&larr; Kembali ke Wisata</a>
+    <span class="card-tag">{{ item.wilayah }}</span>
+    <h1 class="page-title">{{ item.nama_wisata }}</h1>
+    <div class="rating-summary">⭐ {{ summary.average }} / 5 ({{ summary.count }} ulasan)</div>
+
+    <div class="detail-image">
+      {% if item.gambar %}
+        <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}">
+      {% else %}
+        <div class="card-image-placeholder large">🏖️</div>
+      {% endif %}
+    </div>
+
+    <div class="detail-content">
+      <p>{{ item.deskripsi }}</p>
+    </div>
+
+    <div class="detail-meta-grid">
+      <div class="meta-box"><strong>Fasilitas</strong><p>{{ item.fasilitas }}</p></div>
+      <div class="meta-box"><strong>Lokasi</strong><p>{{ item.lokasi }}</p></div>
+      <div class="meta-box"><strong>Tiket Masuk</strong><p>{{ item.tiket_masuk }}</p></div>
+      <div class="meta-box"><strong>Jam Operasional</strong><p>{{ item.jam_operasional }}</p></div>
+    </div>
+
+    <div class="rating-section" id="rating-section" data-wisata-id="{{ item.id }}">
+      <h2>Beri Penilaian</h2>
+      <form id="rating-form" class="rating-form">
+        <div class="star-input" id="star-input">
+          {% for i in range(1,6) %}
+          <span class="star" data-value="{{ i }}">&#9733;</span>
+          {% endfor %}
+        </div>
+        <textarea id="rating-komentar" placeholder="Bagikan pengalaman Anda (opsional)" maxlength="500"></textarea>
+        <button type="submit" id="rating-submit-btn" class="btn btn-primary">Kirim Ulasan</button>
+        <p id="rating-feedback" class="rating-feedback"></p>
+      </form>
+    </div>
+
+    <div class="review-list">
+      <h2>Ulasan Pengunjung</h2>
+      {% for r in ratings %}
+      <div class="review-item">
+        <div class="review-stars">{{ '⭐' * r.skor_bintang }}</div>
+        {% if r.komentar %}<p>{{ r.komentar }}</p>{% endif %}
+        <span class="review-date">{{ r.created_at.strftime('%d %B %Y') }}</span>
+      </div>
+      {% else %}
+      <p class="empty-state">Belum ada ulasan yang disetujui untuk destinasi ini.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/rating.js') }}"></script>
+{% endblock %}

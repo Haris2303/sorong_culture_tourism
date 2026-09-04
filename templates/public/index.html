@@ -1,0 +1,80 @@
+{% extends "public/base.html" %}
+{% block title %}Sorong Raya - Jelajahi Budaya & Wisata{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-card">
+      <h1>Jelajahi Budaya &amp; Wisata Sorong Raya</h1>
+      <p>Temukan kekayaan adat istiadat Suku Moi dan pesona destinasi wisata alam
+         Kota Sorong &amp; Kabupaten Sorong, lengkap dengan asisten virtual cerdas
+         yang siap menjawab pertanyaan Anda.</p>
+      <a href="{{ url_for('wisata_list') }}" class="btn btn-primary">Mulai Jelajah</a>
+    </div>
+    <div class="hero-image-wrap">
+      <div class="hero-image-placeholder">🌴🏝️</div>
+    </div>
+  </div>
+</section>
+
+<section id="budaya" class="section">
+  <div class="section-inner">
+    <h2 class="section-title">Budaya Sorong Raya</h2>
+    <p class="section-subtitle">Kekayaan adat istiadat Suku Moi yang terjaga turun-temurun.</p>
+    <div class="grid-3">
+      {% for item in highlight_budaya %}
+      <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
+        <div class="card-image">
+          {% if item.gambar %}
+            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}">
+          {% else %}
+            <div class="card-image-placeholder">🎭</div>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <span class="card-tag">{{ item.kategori }}</span>
+          <h3>{{ item.judul }}</h3>
+          <p>{{ item.ringkasan[:100] }}{% if item.ringkasan|length > 100 %}...{% endif %}</p>
+        </div>
+      </a>
+      {% else %}
+        <p class="empty-state">Belum ada data budaya. Silakan tambahkan melalui dashboard admin.</p>
+      {% endfor %}
+    </div>
+    <div class="section-cta">
+      <a href="{{ url_for('budaya_list') }}" class="btn btn-outline">Lihat Semua Budaya</a>
+    </div>
+  </div>
+</section>
+
+<section id="wisata" class="section section-alt">
+  <div class="section-inner">
+    <h2 class="section-title">Wisata Sorong Raya</h2>
+    <p class="section-subtitle">Destinasi alam dan bahari unggulan Kota &amp; Kabupaten Sorong.</p>
+    <div class="grid-3">
+      {% for item in highlight_wisata %}
+      <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card">
+        <div class="card-image">
+          {% if item.gambar %}
+            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}">
+          {% else %}
+            <div class="card-image-placeholder">🏖️</div>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <span class="card-tag">{{ item.wilayah }}</span>
+          <h3>{{ item.nama_wisata }}</h3>
+          <p>{{ item.deskripsi[:100] }}{% if item.deskripsi|length > 100 %}...{% endif %}</p>
+          <div class="card-rating">⭐ {{ item.rating.average }} ({{ item.rating.count }} ulasan)</div>
+        </div>
+      </a>
+      {% else %}
+        <p class="empty-state">Belum ada data wisata. Silakan tambahkan melalui dashboard admin.</p>
+      {% endfor %}
+    </div>
+    <div class="section-cta">
+      <a href="{{ url_for('wisata_list') }}" class="btn btn-outline">Lihat Semua Wisata</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
