@@ -29,13 +29,28 @@
     });
   });
 
-  function appendMessage(text, sender) {
+  function appendMessage(text, sender, sources) {
     const wrapper = document.createElement('div');
     wrapper.className = `chat-message ${sender}`;
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     bubble.textContent = text;
     wrapper.appendChild(bubble);
+
+    const links = (sources || []).filter((s) => s && s.url);
+    if (links.length) {
+      const linksEl = document.createElement('div');
+      linksEl.className = 'chat-sources';
+      links.forEach((s) => {
+        const a = document.createElement('a');
+        a.href = s.url;
+        a.textContent = `📍 ${s.title}`;
+        a.className = 'chat-source-link';
+        linksEl.appendChild(a);
+      });
+      wrapper.appendChild(linksEl);
+    }
+
     messagesEl.appendChild(wrapper);
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
@@ -79,7 +94,7 @@
       hideTypingBubble();
 
       if (res.ok) {
-        appendMessage(data.answer, 'bot');
+        appendMessage(data.answer, 'bot', data.sources);
       } else {
         appendMessage(data.error || 'Maaf, terjadi kesalahan. Silakan coba lagi.', 'bot');
       }

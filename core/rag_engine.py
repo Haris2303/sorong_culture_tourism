@@ -188,8 +188,47 @@ def answer_query(question: str) -> dict:
         logger.exception("RAG generation gagal untuk pertanyaan: %r", question)
         return {"answer": ERROR_ANSWER, "sources": [], "grounded": False}
 
-    sources = sorted({
-        doc.metadata.get("source", "Dokumen tidak diketahui") for doc, _ in relevant
-    })
+    sources = _build_sources(relevant)
 
     return {"answer": answer_text, "sources": sources, "grounded": True}
+
+
+def _build_sources(relevant: list) -> list[dict]:
+    """Bangun daftar sumber {title, url} dari metadata dokumen relevan.
+
+    Judul & link diambil langsung dari MySQL (bukan dari teks vector yang ter-cache)
+    supaya selalu mencerminkan data wisata/budaya terkini, dan otomatis hilang
+    kalau record-nya sudah dihapus sejak terakhir sinkronisasi.
+    """
+    from flask import url_for
+    from core import db as dbcore
+
+    sources = []
+    seen = set()
+    for doc, _ in relevant:
+        meta = doc.metadata
+        table = meta.get("table")
+        record_id = meta.get("record_id")
+        key = (table, record_id) if table and record_id else meta.get("source")
+        if key in seen:
+            continue
+        seen.add(key)
+
+        if table == "wisata" and record_id:
+            row = dbcore.query_one("SELECT nama_wisata FROM wisata WHERE id = %s", (record_id,))
+            if row:
+                sources.append({
+                    "title": row["nama_wisata"],
+                    "url": url_for("wisata_detail", wisata_id=record_id),
+                })
+        elif table == "budaya" and record_id:
+            row = dbcore.query_one("SELECT judul FROM budaya WHERE id = %s", (record_id,))
+            if row:
+                sources.append({
+                    "title": row["judul"],
+                    "url": url_for("budaya_detail", budaya_id=record_id),
+                })
+        else:
+            sources.append({"title": meta.get("source", "Dokumen tidak diketahui"), "url": None})
+
+    return sources
