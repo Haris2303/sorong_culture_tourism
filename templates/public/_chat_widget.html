@@ -1,6 +1,6 @@
 <div id="chat-widget" class="chat-widget closed">
   <button id="chat-toggle-btn" class="chat-toggle-btn" aria-label="Buka chatbot">
-    <span class="chat-toggle-icon">💬</span>
+    <i class="fa-solid fa-comment-dots"></i>
   </button>
 
   <div id="chat-panel" class="chat-panel">
@@ -8,26 +8,32 @@
       <div class="chat-header-info">
         <span class="chat-online-dot"></span>
         <div>
-          <div class="chat-title">Asisten Sorong Raya</div>
-          <div class="chat-subtitle">Online - Siap membantu</div>
+          <div class="chat-title">Pemandu Pintar Sorong</div>
+          <div class="chat-subtitle">Edukasi & Informasi Terverifikasi</div>
         </div>
       </div>
-      <button id="chat-close-btn" class="chat-close-btn" aria-label="Tutup chatbot">&times;</button>
+      <button id="chat-close-btn" class="chat-close-btn" aria-label="Tutup chatbot">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
 
     <div id="chat-messages" class="chat-messages">
       <div class="chat-message bot">
-        <div class="bubble">Halo! Saya asisten virtual Sorong Raya. Tanyakan apa saja seputar budaya Suku Moi atau wisata Kota/Kabupaten Sorong ya!</div>
+        <div class="bubble">Selamat datang. Saya pemandu pintar Sorong Raya — silakan tanyakan seputar budaya Suku Moi atau destinasi wisata Kota/Kabupaten Sorong.</div>
       </div>
     </div>
 
-    <div id="chat-typing" class="chat-typing" hidden>
-      <span></span><span></span><span></span>
+    <div class="chat-quick-replies" id="chat-quick-replies">
+      <button type="button" class="chip" data-prompt="Ceritakan tentang budaya Suku Moi">Budaya Suku Moi</button>
+      <button type="button" class="chip" data-prompt="Rekomendasi wisata pantai di Sorong">Wisata Pantai</button>
+      <button type="button" class="chip" data-prompt="Berapa harga tiket masuk dan jam operasionalnya?">Jam & Tiket</button>
     </div>
 
     <form id="chat-form" class="chat-input-row">
       <input type="text" id="chat-input" placeholder="Tulis pertanyaan..." autocomplete="off" maxlength="500" required>
-      <button type="submit" id="chat-send-btn" aria-label="Kirim">&#10148;</button>
+      <button type="submit" id="chat-send-btn" aria-label="Kirim">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
     </form>
   </div>
 </div>

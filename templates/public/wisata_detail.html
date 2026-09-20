@@ -1,42 +1,63 @@
 {% extends "public/base.html" %}
-{% block title %}{{ item.nama_wisata }} - Sorong Raya{% endblock %}
+{% block title %}{{ item.nama_wisata }} — Wisata Sorong Raya{% endblock %}
 {% block content %}
 <section class="section">
   <div class="section-inner narrow">
-    <a href="{{ url_for('wisata_list') }}" class="back-link">&larr; Kembali ke Wisata</a>
-    <span class="card-tag">{{ item.wilayah }}</span>
+    <a href="{{ url_for('wisata_list') }}" class="back-link">
+      <i class="fa-solid fa-arrow-left"></i>Kembali ke Wisata
+    </a>
+
+    <span class="badge-tag badge-tag--wisata">
+      <i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}
+    </span>
     <h1 class="page-title">{{ item.nama_wisata }}</h1>
-    <div class="rating-summary">⭐ {{ summary.average }} / 5 ({{ summary.count }} ulasan)</div>
+
+    <div class="rating-summary">
+      <i class="fa-solid fa-star"></i>{{ summary.average }} / 5
+      <small>· {{ summary.count }} ulasan</small>
+    </div>
 
     <div class="detail-image">
       {% if item.gambar %}
         <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}">
       {% else %}
-        <div class="card-image-placeholder large">🏖️</div>
+        <div class="card-image-placeholder large"><i class="fa-solid fa-water"></i></div>
       {% endif %}
     </div>
 
-    <div class="detail-content">
-      <p>{{ item.deskripsi }}</p>
-    </div>
+    <div class="detail-content">{{ item.deskripsi }}</div>
 
     <div class="detail-meta-grid">
-      <div class="meta-box"><strong>Fasilitas</strong><p>{{ item.fasilitas }}</p></div>
-      <div class="meta-box"><strong>Lokasi</strong><p>{{ item.lokasi }}</p></div>
-      <div class="meta-box"><strong>Tiket Masuk</strong><p>{{ item.tiket_masuk }}</p></div>
-      <div class="meta-box"><strong>Jam Operasional</strong><p>{{ item.jam_operasional }}</p></div>
+      <div class="meta-box">
+        <strong><i class="fa-solid fa-list-check"></i>Fasilitas</strong>
+        <p>{{ item.fasilitas }}</p>
+      </div>
+      <div class="meta-box">
+        <strong><i class="fa-solid fa-location-dot"></i>Lokasi</strong>
+        <p>{{ item.lokasi }}</p>
+      </div>
+      <div class="meta-box">
+        <strong><i class="fa-solid fa-ticket"></i>Tiket Masuk</strong>
+        <p>{{ item.tiket_masuk }}</p>
+      </div>
+      <div class="meta-box">
+        <strong><i class="fa-solid fa-clock"></i>Jam Operasional</strong>
+        <p>{{ item.jam_operasional }}</p>
+      </div>
     </div>
 
     <div class="rating-section" id="rating-section" data-wisata-id="{{ item.id }}">
       <h2>Beri Penilaian</h2>
       <form id="rating-form" class="rating-form">
         <div class="star-input" id="star-input">
-          {% for i in range(1,6) %}
-          <span class="star" data-value="{{ i }}">&#9733;</span>
+          {% for i in range(1, 6) %}
+          <span class="star" data-value="{{ i }}"><i class="fa-solid fa-star"></i></span>
           {% endfor %}
         </div>
-        <textarea id="rating-komentar" placeholder="Bagikan pengalaman Anda (opsional)" maxlength="500"></textarea>
-        <button type="submit" id="rating-submit-btn" class="btn btn-primary">Kirim Ulasan</button>
+        <textarea id="rating-komentar" placeholder="Bagikan pengalaman Anda di destinasi ini (opsional)" maxlength="500"></textarea>
+        <button type="submit" id="rating-submit-btn" class="btn btn-primary">
+          <i class="fa-solid fa-paper-plane"></i>Kirim Ulasan
+        </button>
         <p id="rating-feedback" class="rating-feedback"></p>
       </form>
     </div>
@@ -45,7 +66,9 @@
       <h2>Ulasan Pengunjung</h2>
       {% for r in ratings %}
       <div class="review-item">
-        <div class="review-stars">{{ '⭐' * r.skor_bintang }}</div>
+        <div class="review-stars">
+          {% for _ in range(r.skor_bintang) %}<i class="fa-solid fa-star"></i>{% endfor %}
+        </div>
         {% if r.komentar %}<p>{{ r.komentar }}</p>{% endif %}
         <span class="review-date">{{ r.created_at.strftime('%d %B %Y') }}</span>
       </div>

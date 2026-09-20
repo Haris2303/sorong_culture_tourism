@@ -1,10 +1,16 @@
 {% extends "public/base.html" %}
-{% block title %}Katalog Budaya - Sorong Raya{% endblock %}
+{% block title %}Katalog Budaya Suku Moi — Sorong Raya{% endblock %}
 {% block content %}
+<section class="page-header">
+  <div class="section-inner">
+    <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
+    <h1 class="page-title">Budaya Suku Moi</h1>
+    <p class="section-subtitle">Katalog adat istiadat, tarian, seni ukir, dan upacara adat masyarakat Sorong Raya.</p>
+  </div>
+</section>
+
 <section class="section">
   <div class="section-inner">
-    <h1 class="page-title">Budaya Suku Moi</h1>
-
     <div class="filter-bar">
       <a href="{{ url_for('budaya_list') }}" class="filter-chip {{ 'active' if not active_kategori }}">Semua</a>
       {% for k in kategori_list %}
@@ -18,19 +24,21 @@
       <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
         <div class="card-image">
           {% if item.gambar %}
-            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}">
+            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}" loading="lazy">
           {% else %}
-            <div class="card-image-placeholder">🎭</div>
+            <div class="card-image-placeholder"><i class="fa-solid fa-feather"></i></div>
           {% endif %}
+          <span class="badge-tag badge-tag--budaya badge-overlay">
+            <i class="fa-solid fa-tag"></i>{{ item.kategori }}
+          </span>
         </div>
         <div class="card-body">
-          <span class="card-tag">{{ item.kategori }}</span>
           <h3>{{ item.judul }}</h3>
-          <p>{{ item.ringkasan[:100] }}{% if item.ringkasan|length > 100 %}...{% endif %}</p>
+          <p>{{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{% endif %}</p>
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Tidak ada data budaya untuk ditampilkan.</p>
+        <p class="empty-state">Tidak ada artikel budaya untuk filter ini.</p>
       {% endfor %}
     </div>
   </div>

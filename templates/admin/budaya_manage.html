@@ -12,7 +12,14 @@
     <input type="text" name="judul" id="f-judul" required>
 
     <label>Kategori</label>
-    <input type="text" name="kategori" id="f-kategori" placeholder="Tarian Tradisional / Seni Ukir / Upacara Adat" required>
+    <div class="radio-group radio-group--budaya" id="f-kategori-group">
+      {% for opt in kategori_options %}
+      <label class="radio-option">
+        <input type="radio" name="kategori" value="{{ opt }}" {{ 'checked' if loop.first }} required>
+        <span>{{ opt }}</span>
+      </label>
+      {% endfor %}
+    </div>
 
     <label>Ringkasan</label>
     <textarea name="ringkasan" id="f-ringkasan" rows="2" required></textarea>
@@ -31,7 +38,19 @@
 </div>
 
 <div class="admin-table-card">
-  <h2>Daftar Artikel Budaya</h2>
+  <div class="admin-table-header">
+    <h2>Daftar Artikel Budaya</h2>
+    <form method="get" class="table-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="q" value="{{ q }}" placeholder="Cari judul atau kategori...">
+      {% if q %}
+        <a href="{{ url_for('admin_budaya_manage') }}" class="table-search-clear" title="Hapus pencarian">
+          <i class="fa-solid fa-xmark"></i>
+        </a>
+      {% endif %}
+    </form>
+  </div>
+  <div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
       <tr><th>Judul</th><th>Kategori</th><th>Diperbarui</th><th>Aksi</th></tr>
@@ -54,10 +73,13 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="4" class="empty-state">Belum ada data.</td></tr>
+      <tr><td colspan="4" class="empty-state">
+        {% if q %}Tidak ada artikel yang cocok dengan "{{ q }}".{% else %}Belum ada data.{% endif %}
+      </td></tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% endblock %}
 {% block extra_js %}
@@ -66,9 +88,17 @@ document.querySelectorAll('.edit-budaya-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.getElementById('edit-id').value = btn.dataset.id;
     document.getElementById('f-judul').value = btn.dataset.judul;
-    document.getElementById('f-kategori').value = btn.dataset.kategori;
     document.getElementById('f-ringkasan').value = btn.dataset.ringkasan;
     document.getElementById('f-konten').value = btn.dataset.konten;
+
+    const radios = document.querySelectorAll('#f-kategori-group input[type="radio"]');
+    let matched = false;
+    radios.forEach(r => {
+      r.checked = r.value === btn.dataset.kategori;
+      if (r.checked) matched = true;
+    });
+    if (!matched && radios.length) radios[0].checked = true;
+
     window.scrollTo({top: 0, behavior: 'smooth'});
   });
 });

@@ -1,7 +1,24 @@
-"""Inisialisasi LangChain + ChromaDB + prompt template + query ke LLM Gemini (RAG Engine)."""
+"""Inisialisasi LangChain + ChromaDB + prompt template + query ke LLM (RAG Engine).
+
+Embedding (retrieval) tetap memakai Google Gemini. Chat/generation memakai
+OpenRouter (banyak model gratis) lewat endpoint OpenAI-compatible-nya.
+"""
+import logging
+import re
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+
 from langchain_community.vectorstores import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+
+logger = logging.getLogger(__name__)
+
+# Batas waktu keras untuk panggilan LLM. Parameter `timeout=` bawaan LangChain
+# tidak selalu ditegakkan saat API sedang macet (hang), jadi kita paksa
+# lewat thread terpisah agar pengguna tidak menunggu tanpa batas.
+_LLM_CALL_TIMEOUT_SECONDS = 20
+_llm_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="rag-llm")
 
 _embeddings = None
 _vectorstore = None
@@ -13,6 +30,50 @@ FALLBACK_ANSWER = (
     "budaya Suku Moi atau destinasi wisata Kota/Kabupaten Sorong."
 )
 
+ERROR_ANSWER = (
+    "Maaf, asisten virtual sedang mengalami kendala teknis sesaat (mis. layanan AI "
+    "sedang sibuk). Silakan coba lagi dalam beberapa saat."
+)
+
+GREETING_ANSWER = (
+    "Halo! Selamat datang di Sorong Raya. Saya pemandu pintar yang siap membantu "
+    "menjawab pertanyaan seputar budaya Suku Moi maupun destinasi wisata Kota dan "
+    "Kabupaten Sorong. Silakan tanyakan apa saja, ya!"
+)
+
+# Sapaan singkat dijawab langsung tanpa RAG/LLM — lebih cepat & hemat kuota API.
+# Bentuk dasar saja (huruf berulang seperti "haloo"/"haii" dinormalisasi terlebih dahulu).
+_GREETING_WORDS = {
+    "halo", "hai", "hi", "hey", "hei", "helo",
+    "pagi", "siang", "sore", "malam",
+    "permisi", "asalamualaikum",
+    "tes", "test", "cek",
+}
+
+
+def _collapse_repeated_letters(word: str) -> str:
+    """"Haloo"/"haii"/"paagi" -> "halo"/"hai"/"pagi" agar salah ketik tetap terdeteksi."""
+    return re.sub(r"(.)\1+", r"\1", word)
+
+
+def _is_greeting(question: str) -> bool:
+    normalized = re.sub(r"[^\w\s]", "", question.lower()).strip()
+    if not normalized:
+        return False
+    words = [_collapse_repeated_letters(w) for w in normalized.split()]
+    if len(words) > 4:
+        return False
+    return any(w in _GREETING_WORDS for w in words)
+
+
+def _strip_markdown(text: str) -> str:
+    """Buang sintaks markdown (bold/bullet) agar tidak tampil sebagai tanda bintang mentah di bubble chat."""
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"(?m)^[ \t]*\*[ \t]+", "- ", text)
+    text = re.sub(r"(?m)^[ \t]*\*(?!\*)", "-", text)
+    return text.strip()
+
+
 SYSTEM_PROMPT = """Anda adalah asisten virtual "Sorong Raya" yang ramah dan sopan.
 Tugas Anda HANYA menjawab pertanyaan seputar budaya Suku Moi dan tempat wisata di
 Kota Sorong maupun Kabupaten Sorong, murni berdasarkan KONTEKS yang diberikan di bawah ini.
@@ -23,6 +84,10 @@ ATURAN KETAT:
    informasi tersebut belum tersedia dalam basis pengetahuan.
 3. Gunakan Bahasa Indonesia yang santun, ringkas, dan mudah dipahami wisatawan.
 4. Jangan menjawab pertanyaan di luar topik budaya & wisata Sorong Raya.
+5. JANGAN gunakan format markdown sama sekali (tanpa tanda bintang **tebal**,
+   tanpa bullet list berawalan *). Tulis jawaban sebagai kalimat/paragraf mengalir
+   biasa, seperti percakapan chat WhatsApp. Jika perlu daftar, gunakan tanda hubung (-)
+   atau angka (1., 2., 3.) tanpa tanda bintang.
 
 KONTEKS:
 {context}
@@ -54,13 +119,21 @@ def get_vectorstore(fresh=False):
 
 
 def get_llm():
+    """LLM chat/generation via OpenRouter (endpoint OpenAI-compatible)."""
     global _llm
     if _llm is None:
         from flask import current_app
-        _llm = ChatGoogleGenerativeAI(
-            model=current_app.config["GEMINI_CHAT_MODEL"],
-            google_api_key=current_app.config["GEMINI_API_KEY"],
+        _llm = ChatOpenAI(
+            model=current_app.config["OPENROUTER_CHAT_MODEL"],
+            api_key=current_app.config["OPENROUTER_API_KEY"],
+            base_url=current_app.config["OPENROUTER_BASE_URL"],
             temperature=0.3,
+            timeout=20,
+            max_retries=1,
+            default_headers={
+                "HTTP-Referer": "https://sorong-raya.local",
+                "X-Title": "Sorong Raya Chatbot",
+            },
         )
     return _llm
 
@@ -79,6 +152,9 @@ def answer_query(question: str) -> dict:
     if not question:
         return {"answer": FALLBACK_ANSWER, "sources": [], "grounded": False}
 
+    if _is_greeting(question):
+        return {"answer": GREETING_ANSWER, "sources": [], "grounded": False}
+
     vectorstore = get_vectorstore()
     top_k = current_app.config["RAG_TOP_K"]
     threshold = current_app.config["RAG_SIMILARITY_THRESHOLD"]
@@ -86,6 +162,7 @@ def answer_query(question: str) -> dict:
     try:
         results = vectorstore.similarity_search_with_relevance_scores(question, k=top_k)
     except Exception:
+        logger.exception("RAG retrieval gagal untuk pertanyaan: %r", question)
         results = []
 
     relevant = [(doc, score) for doc, score in results if score >= threshold]
@@ -101,10 +178,15 @@ def answer_query(question: str) -> dict:
 
     chain = prompt | get_llm()
     try:
-        response = chain.invoke({"question": question})
-        answer_text = response.content.strip()
+        future = _llm_executor.submit(chain.invoke, {"question": question})
+        response = future.result(timeout=_LLM_CALL_TIMEOUT_SECONDS)
+        answer_text = _strip_markdown(response.content.strip())
+    except FutureTimeoutError:
+        logger.warning("RAG generation timeout (>%ss) untuk pertanyaan: %r", _LLM_CALL_TIMEOUT_SECONDS, question)
+        return {"answer": ERROR_ANSWER, "sources": [], "grounded": False}
     except Exception:
-        answer_text = FALLBACK_ANSWER
+        logger.exception("RAG generation gagal untuk pertanyaan: %r", question)
+        return {"answer": ERROR_ANSWER, "sources": [], "grounded": False}
 
     sources = sorted({
         doc.metadata.get("source", "Dokumen tidak diketahui") for doc, _ in relevant

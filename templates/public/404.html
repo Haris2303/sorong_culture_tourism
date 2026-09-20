@@ -1,11 +1,18 @@
 {% extends "public/base.html" %}
-{% block title %}Halaman Tidak Ditemukan - Sorong Raya{% endblock %}
+{% block title %}Halaman Tidak Ditemukan — Sorong Raya{% endblock %}
 {% block content %}
 <section class="section">
-  <div class="section-inner narrow" style="text-align:center;">
-    <h1 class="page-title">404</h1>
-    <p>Halaman yang Anda cari tidak ditemukan.</p>
-    <a href="{{ url_for('index') }}" class="btn btn-primary">Kembali ke Beranda</a>
+  <div class="section-inner narrow">
+    <div class="section-heading center">
+      <span class="eyebrow"><i class="fa-solid fa-triangle-exclamation"></i>Error 404</span>
+      <h1 class="section-title">Halaman tidak ditemukan</h1>
+      <p class="section-subtitle">Konten yang Anda cari mungkin sudah dipindahkan atau dihapus.</p>
+    </div>
+    <div class="section-cta">
+      <a href="{{ url_for('index') }}" class="btn btn-primary">
+        <i class="fa-solid fa-house"></i>Kembali ke Beranda
+      </a>
+    </div>
   </div>
 </section>
 {% endblock %}

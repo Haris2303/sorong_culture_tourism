@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A1F3C"/>
+      <stop offset="38%" stop-color="#123E63"/>
+      <stop offset="62%" stop-color="#1B6885"/>
+      <stop offset="78%" stop-color="#2A8AA3"/>
+      <stop offset="100%" stop-color="#14586F"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1E7C97"/>
+      <stop offset="55%" stop-color="#0E4A63"/>
+      <stop offset="100%" stop-color="#082F44"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0.68" cy="0.58" r="0.42">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.55"/>
+      <stop offset="45%" stop-color="#F59E0B" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ridgeFar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#123A55"/>
+      <stop offset="100%" stop-color="#0C2B41"/>
+    </linearGradient>
+    <linearGradient id="ridgeMid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0D2C42"/>
+      <stop offset="100%" stop-color="#081F31"/>
+    </linearGradient>
+  </defs>
+
+  <!-- langit -->
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <rect width="1600" height="1000" fill="url(#sunGlow)"/>
+
+  <!-- matahari rendah -->
+  <circle cx="1090" cy="578" r="58" fill="#F8C572" opacity="0.85"/>
+
+  <!-- awan tipis -->
+  <g fill="#FFFFFF" opacity="0.07">
+    <ellipse cx="300" cy="200" rx="240" ry="26"/>
+    <ellipse cx="560" cy="260" rx="180" ry="18"/>
+    <ellipse cx="1220" cy="180" rx="260" ry="24"/>
+    <ellipse cx="980" cy="300" rx="150" ry="14"/>
+  </g>
+
+  <!-- barisan bukit jauh -->
+  <path d="M0 618 L150 560 L300 600 L470 536 L640 596 L820 548 L1000 604 L1180 566 L1360 606 L1600 552 L1600 660 L0 660 Z"
+        fill="url(#ridgeFar)" opacity="0.9"/>
+
+  <!-- pulau karang tengah -->
+  <path d="M0 660 L180 612 L360 656 L520 604 L700 654 L900 618 L1080 660 L1280 622 L1460 662 L1600 630 L1600 700 L0 700 Z"
+        fill="url(#ridgeMid)"/>
+
+  <!-- laut -->
+  <rect y="700" width="1600" height="300" fill="url(#sea)"/>
+
+  <!-- pantulan cahaya di laut -->
+  <g fill="#F8C572" opacity="0.18">
+    <rect x="1040" y="722" width="100" height="5" rx="2.5"/>
+    <rect x="1006" y="754" width="168" height="4" rx="2"/>
+    <rect x="1042" y="786" width="96" height="4" rx="2"/>
+    <rect x="988" y="820" width="204" height="3" rx="1.5"/>
+    <rect x="1052" y="856" width="76" height="3" rx="1.5"/>
+  </g>
+
+  <!-- riak gelombang -->
+  <g fill="#FFFFFF" opacity="0.06">
+    <rect x="60" y="742" width="300" height="3" rx="1.5"/>
+    <rect x="420" y="778" width="240" height="3" rx="1.5"/>
+    <rect x="120" y="828" width="380" height="3" rx="1.5"/>
+    <rect x="620" y="866" width="300" height="3" rx="1.5"/>
+    <rect x="240" y="910" width="460" height="3" rx="1.5"/>
+    <rect x="900" y="932" width="420" height="3" rx="1.5"/>
+  </g>
+
+  <!-- siluet daun palem kiri -->
+  <g fill="#04121D" opacity="0.55">
+    <path d="M-20 1000 C 60 860, 90 720, 66 600 C 106 730, 120 870, 96 1000 Z"/>
+    <path d="M66 612 C 10 560, -40 540, -96 548 C -30 520, 30 552, 70 596 Z"/>
+    <path d="M70 604 C 120 540, 190 512, 250 520 C 180 528, 118 566, 78 612 Z"/>
+    <path d="M68 600 C 40 528, 44 462, 78 410 C 66 470, 72 542, 88 596 Z"/>
+  </g>
+</svg>

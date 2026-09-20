@@ -1,0 +1,105 @@
+# BASIS PENGETAHUAN (KNOWLEDGE BASE) CHATBOT SORONG RAYA
+# Domain: Kebudayaan Suku Moi & Tempat Wisata Kota & Kabupaten Sorong, Papua Barat Daya
+# Format: Dokumen Teks Terstruktur untuk Text Splitting & Embedding RAG (ChromaDB)
+
+---
+
+## BAGIAN 1: KEBUDAYAAN SUKU MOI (MALAMOI)
+
+### 1.1 Identitas dan Wilayah Adat Suku Moi
+- Suku Moi (atau Malamoi) adalah suku asli yang mendiami wilayah Sorong Raya, mencakup Kota Sorong, Kabupaten Sorong, dan sekitarnya di Provinsi Papua Barat Daya.
+- Nama "Moi" dalam bahasa lokal memiliki makna filosofis manusia yang beradab, berbudaya, dan terikat harmonis dengan alam semesta.
+- Tanah adat Suku Moi terdiri atas pembagian wilayah marga-marga besar, seperti Marga Malaseme, Osok, Do, Kalami, Ulimpa, dan Mubalen. Setiap marga memiliki batas teritorial adat (wilayah ulayat) yang dihormati secara turun-temurun.
+
+### 1.2 Bahasa Daerah dan Filosofi Kambik
+- Bahasa Moi merupakan bahasa ibu masyarakat Malamoi yang memiliki beragam dialek lokal (seperti Moi Kelim, Moi Sigin, Moi Maya).
+- Sekolah Adat Kambik: Kambik adalah institusi pendidikan tradisional adat Suku Moi yang sangat sakral. Pada zaman dahulu, para pemuda Moi dididik di dalam rumah panggung khusus di tengah hutan oleh tetua adat (tuan Kambik) selama berbulan-bulan.
+- Materi pendidikan Kambik mencakup: pengobatan herbal tradisional menggunakan tumbuhan hutan, hukum batas tanah ulayat, silsilah marga, kepemimpinan, etika moral berburu, dan strategi pertahanan wilayah.
+
+### 1.3 Tarian Adat Suku Moi (Tari Tumbu Tanah)
+- Tari Tumbu Tanah (dansa tanah) adalah tarian komunal sakral masyarakat adat Malamoi.
+- Gerakan dan Makna: Gerakan utama berupa hentakan kaki serentak ke tanah yang diiringi ayunan langkah memutar. Maknanya adalah wujud syukur mendalam kepada Sang Pencipta dan penghormatan kepada tanah leluhur yang memberi kehidupan.
+- Iringan Musik: Tabuhan alat musik Tifa (gendang kulit biawak/rusa khas Papua) bertempo ritmis dinamis serta nyanyian syair-syair berbahasa Moi yang melantunkan riwayat nenek moyang.
+- Kostum Penari: Menggunakan rok rumbai-rumbai dari serat kulit kayu atau daun sagu kering, perhiasan dada kalung taring babi/kerang laut, serta mahkota hiasan kepala dari bulu burung kasuari.
+
+### 1.4 Tradisi Mas Kawin dan Kain Timur
+- Dalam tatanan adat perkawinan Suku Moi, penyerahan mahar (mas kawin) wajib melibatkan Kain Timur.
+- Kain Timur adalah kain tenun bernilai sejarah dan spiritual tinggi yang diperdagangkan sejak masa lampau di tanah Papua. Jenis kain timur tertentu (seperti Kain Boi, Kain Toka) memiliki nilai strata adat tertinggi.
+- Penyerahan Kain Timur melambangkan ikatan sakral perdamaian, penyatuan martabat dua klan marga, serta penghormatan pihak laki-laki kepada keluarga perempuan. Tradisi ini juga kerap disertai piring gantung antik (piring batu kuno).
+
+### 1.5 Seni Kriya dan Arsitektur Tradisional
+- Seni Ukir Malamoi: Menggunakan media kayu besi (kayu ulin) dan kayu linggua. Motif dominan berupa pola geometris spiral (simbol siklus hidup), ukiran burung cenderawasih (simbol keagungan), serta motif buaya dan kadal pohon (simbol ketangguhan pelindung tanah adat).
+- Rumah Adat Kabu: Rumah panggung tradisional suku Moi yang dibangun tinggi dari tanah untuk sirkulasi udara hutan tropis dan perlindungan dari binatang buas. Dindingnya dibuat dari pelepah daun sagu (gaba-gaba) dan atap dari anyaman daun rumbia.
+
+---
+
+## BAGIAN 2: DESTINASI TEMPAT WISATA KOTA & KABUPATEN SORONG
+
+### 2.1 Destinasi Wisata Kota Sorong
+
+#### A. Pulau Doom (Doom Island)
+- Profil & Sejarah: Pulau kecil bersejarah seluas kurang lebih 4 kilometer persegi yang terletak di hadapan Kota Sorong. Pada era kolonial Hindia Belanda (sebelum Perang Dunia II), Pulau Doom berfungsi sebagai pusat pemerintahan administratif di wilayah Sorong ("Pemerintahan Onderafdeling").
+- Daya Tarik: Pulau pertama di tanah Papua yang menikmati aliran listrik pada masa kolonial sehingga dijuluki "Kota Bintang". Menyuguhkan deretan bangunan bergaya arsitektur lawas Belanda, bunker peninggalan perang, jalanan pesisir lingkar pulau, serta air laut biru kehijauan.
+- Transportasi & Akses: Menyeberang menggunakan perahu motor (boat kayu) dari Pelabuhan Rakyat Kota Sorong dengan waktu tempuh sekitar 10–15 menit. Di pulau, moda transportasi utama adalah becak motor (bentor) tanpa mobil pribadi.
+- Tiket Masuk: Gratis (cukup membayar ongkos sewa perahu boat Rp 5.000–Rp 10.000 per orang sekali jalan).
+- Jam Buka: Terbuka 24 jam setiap hari (waktu terbaik berkunjung: pagi hingga sore).
+
+#### B. Pantai Saoka
+- Profil: Kawasan wisata pantai pesisir utara Kota Sorong yang menyajikan panorama laut lepas Samudra Pasifik.
+- Daya Tarik: Garis pantai berpasir putih bersih, air laut tenang yang aman untuk berenang santai anak-anak dan keluarga, deretan pepohonan kelapa yang rindang, serta hutan mangrove asri. Sangat populer untuk menikmati matahari terbenam (sunset).
+- Lokasi: Kelurahan Saoka, Distrik Maladum Mes, Kota Sorong (sekitar 30 menit berkendara dari pusat Kota Sorong).
+- Fasilitas: Pondok santai (gazebo tepi pantai), toilet dan tempat bilas air tawar, warung kelapa muda dan kuliner ikan bakar, area parkir kendaraan.
+- Tiket Masuk: Retribusi sekitar Rp 15.000 per mobil dan Rp 5.000 per sepeda motor.
+- Jam Operasional: Buka setiap hari pukul 07.00 - 18.00 WIT.
+
+#### C. Taman Wisata Alam (TWA) Sorong
+- Profil: Kawasan hutan konservasi dan suaka alam seluas 945 hektar yang berada tepat di kawasan administratif perkotaan Sorong.
+- Daya Tarik: Ekowisata hutan hujan tropis dengan koleksi flora endemik Papua (anggrek hutan, pohon matoa, damar, kayu besi) serta fauna liar khas Papua. Tempat favorit pengamat burung (bird watching) untuk melihat burung Cenderawasih Kuning Kecil (Paradisaea minor), raja-udang, dan kakatua jambul kuning.
+- Lokasi: Jalan Sapta Taruna, Klademak, Distrik Sorong, Kota Sorong.
+- Fasilitas: Jalur setapak paving blok untuk trekking kanopi, menara pandang observasi satwa, pos registrasi polisi kehutanan, gazebo istirahat.
+- Tiket Masuk: Sekitar Rp 10.000 - Rp 15.000 per orang.
+- Jam Operasional: Pukul 08.00 - 17.00 WIT.
+
+#### D. Tembok Berlin & Kawasan Reklamasi Pantai Kampung Baru
+- Profil: Pusat ruang terbuka publik dan kuliner malam tepi laut di pusat Kota Sorong.
+- Daya Tarik: Pemandangan matahari terbenam langsung menghadap Pulau Doom, aneka gerai jajanan seafood khas Sorong (seperti ikan bakar cakalang, kepiting saus, dan es kelapa), serta pusat nongkrong warga lokal.
+- Jam Operasional: Sore hingga tengah malam (16.00 - 24.00 WIT).
+
+---
+
+### 2.2 Destinasi Wisata Kabupaten Sorong
+
+#### A. Tanjung Batu (Seget)
+- Profil: Destinasi alam bahari pesisir barat daya Kabupaten Sorong yang didominasi tebing batu karang tinggi yang menghadap ke Selat Sele.
+- Daya Tarik: Lanskap formasi bebatuan tebing eksotis yang dihantam deburan ombak, spot fotografi lanskap tebing karang, serta salah satu lokasi terbaik untuk melihat pemandangan matahari terbenam ke cakrawala laut.
+- Lokasi: Kampung Seget, Distrik Seget, Kabupaten Sorong. Berjarak sekitar 2 hingga 2,5 jam perjalanan darat dari pusat Aimas/Kota Sorong.
+- Fasilitas: Spot swafoto, tangga menuju tebing, pondok istirahat, warung makanan ringan lokal.
+- Tiket Masuk: Rp 10.000 per orang.
+- Jam Operasional: Buka setiap hari pukul 06.00 - 18.30 WIT.
+
+#### B. Air Terjun Sasnek
+- Profil: Wisata alam air terjun alami bertingkat yang tersembunyi di rimbunnya hutan tropis Sorong Raya.
+- Daya Tarik: Guyuran air tawar jernih yang membentuk kolam alami berwarna hijau toska yang sejuk di dasar tebing batu. Cocok untuk berenang alami dan merelaksasi diri dari hiruk-pikuk kota.
+- Lokasi: Kampung Sasnek, Distrik Sawiat, Kabupaten Sorong Raya. Membutuhkan trekking ringan melalui jalan setapak hutan sekitar 15–20 menit dari titik parkir terakhir.
+- Fasilitas: Pondok kayu peristirahatan, warung sederhana warga desa, pemandu warga lokal.
+- Tiket Masuk: Donasi/retribusi desa sekitar Rp 20.000 per rombongan.
+- Jam Operasional: 08.00 - 17.00 WIT.
+
+#### C. Pemandian Air Panas Klawili (Pemberian Asri)
+- Profil: Sumber mata air panas alami belerang yang muncul dari perut bumi di kawasan pedalaman Kabupaten Sorong.
+- Daya Tarik: Kolam pemandian air hangat alami yang dipercaya masyarakat lokal mampu meredakan pegal linu dan menyegarkan tubuh, dikelilingi hutan lebat yang masih sangat terjaga keasriannya.
+- Lokasi: Distrik Klamono / Klawili, Kabupaten Sorong.
+
+---
+
+## BAGIAN 3: PANDUAN WISATAWAN & KEARIFAN LOKAL (FAQS & ETIKA)
+
+### 3.1 Etika & Adat Sopan Santun Mengunjungi Wilayah Suku Moi
+1. Menghormati Pohon & Hutan Larangan: Beberapa kawasan hutan adat memiliki status keramat ("hutan larangan"). Wisatawan wajib ditemani oleh pemandu atau tokoh marga setempat dan tidak mengambil tumbuhan atau merusak ranting sembarangan.
+2. Izin Memotret: Saat menghadiri upacara adat atau mendokumentasikan tetua suku, mintalah izin terlebih dahulu dengan sopan kepada kepala marga atau keluarga tuan rumah.
+3. Menjaga Kebersihan: Jangan membuang sampah plastik ke pesisir laut, kawasan mangrove, maupun kolam air terjun alami.
+
+### 3.2 Akses Transportasi dan Logistik Sorong Raya
+- Pintu Masuk Utama: Bandara Domine Eduard Osok (DEO) Kota Sorong yang melayani penerbangan langsung dari Jakarta, Makassar, Manado, Jayapura, dan Ambon.
+- Pelabuhan Laut: Pelabuhan Sorong yang disinggahi kapal penumpang PELNI dan kapal cepat perintis ke pulau-pulau sekitar.
+- Transportasi Darat: Taksi bandara, angkutan kota (angkot kuning), ojek pangkalan/online, serta mobil carteran/rental untuk rute antar-distrik Kabupaten Sorong (seperti ke Aimas, Klamono, atau Seget).

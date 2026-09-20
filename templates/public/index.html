@@ -1,80 +1,132 @@
 {% extends "public/base.html" %}
-{% block title %}Sorong Raya - Jelajahi Budaya & Wisata{% endblock %}
+{% block title %}Sorong Raya — Jelajahi Budaya &amp; Wisata Papua Barat Daya{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-card">
+      <span class="eyebrow eyebrow--wisata">
+        <i class="fa-solid fa-location-dot"></i>Kota &amp; Kabupaten Sorong
+      </span>
       <h1>Jelajahi Budaya &amp; Wisata Sorong Raya</h1>
-      <p>Temukan kekayaan adat istiadat Suku Moi dan pesona destinasi wisata alam
-         Kota Sorong &amp; Kabupaten Sorong, lengkap dengan asisten virtual cerdas
-         yang siap menjawab pertanyaan Anda.</p>
-      <a href="{{ url_for('wisata_list') }}" class="btn btn-primary">Mulai Jelajah</a>
-    </div>
-    <div class="hero-image-wrap">
-      <div class="hero-image-placeholder">🌴🏝️</div>
+      <p>Portal edukasi terpadu warisan adat Suku Moi dan destinasi bahari Papua Barat Daya —
+         dilengkapi pemandu virtual yang menjawab dari sumber terverifikasi.</p>
+      <div class="hero-actions">
+        <a href="{{ url_for('wisata_list') }}" class="btn btn-primary">
+          <i class="fa-solid fa-compass"></i>Mulai Jelajah
+        </a>
+        <a href="{{ url_for('budaya_list') }}" class="btn btn-secondary">
+          <i class="fa-solid fa-feather"></i>Pelajari Budaya
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-value">{{ stats.total_budaya }}</span>
+          <span class="hero-stat-label">Artikel Budaya</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value">{{ stats.total_wisata }}</span>
+          <span class="hero-stat-label">Destinasi Wisata</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value">{{ stats.total_ulasan }}</span>
+          <span class="hero-stat-label">Ulasan Pengunjung</span>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <section id="budaya" class="section">
   <div class="section-inner">
-    <h2 class="section-title">Budaya Sorong Raya</h2>
-    <p class="section-subtitle">Kekayaan adat istiadat Suku Moi yang terjaga turun-temurun.</p>
+    <div class="section-heading">
+      <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
+      <h2 class="section-title">Budaya Suku Moi</h2>
+      <p class="section-subtitle">Adat istiadat, tarian, seni ukir, dan upacara yang diwariskan turun-temurun di tanah Malamoi.</p>
+    </div>
+
     <div class="grid-3">
       {% for item in highlight_budaya %}
       <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
         <div class="card-image">
           {% if item.gambar %}
-            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}">
+            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}" loading="lazy">
           {% else %}
-            <div class="card-image-placeholder">🎭</div>
+            <div class="card-image-placeholder"><i class="fa-solid fa-feather"></i></div>
           {% endif %}
+          <span class="badge-tag badge-tag--budaya badge-overlay">
+            <i class="fa-solid fa-tag"></i>{{ item.kategori }}
+          </span>
         </div>
         <div class="card-body">
-          <span class="card-tag">{{ item.kategori }}</span>
           <h3>{{ item.judul }}</h3>
-          <p>{{ item.ringkasan[:100] }}{% if item.ringkasan|length > 100 %}...{% endif %}</p>
+          <p>{{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{% endif %}</p>
+          <div class="card-meta">
+            <span class="meta-item"><i class="fa-solid fa-book-open"></i>Artikel Edukasi</span>
+            <span class="meta-item"><i class="fa-solid fa-arrow-right"></i>Baca</span>
+          </div>
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Belum ada data budaya. Silakan tambahkan melalui dashboard admin.</p>
+        <p class="empty-state">Belum ada artikel budaya. Tambahkan melalui dashboard admin.</p>
       {% endfor %}
     </div>
+
+    {% if highlight_budaya %}
     <div class="section-cta">
-      <a href="{{ url_for('budaya_list') }}" class="btn btn-outline">Lihat Semua Budaya</a>
+      <a href="{{ url_for('budaya_list') }}" class="btn btn-secondary">
+        Lihat Semua Budaya<i class="fa-solid fa-arrow-right"></i>
+      </a>
     </div>
+    {% endif %}
   </div>
 </section>
 
-<section id="wisata" class="section section-alt">
+<section id="wisata" class="section section-photo">
   <div class="section-inner">
-    <h2 class="section-title">Wisata Sorong Raya</h2>
-    <p class="section-subtitle">Destinasi alam dan bahari unggulan Kota &amp; Kabupaten Sorong.</p>
+    <div class="section-heading">
+      <span class="eyebrow eyebrow--wisata">02 / Destinasi Bahari &amp; Alam</span>
+      <h2 class="section-title">Wisata Sorong Raya</h2>
+      <p class="section-subtitle">Pantai, tebing karang, dan kawasan konservasi unggulan di Kota dan Kabupaten Sorong.</p>
+    </div>
+
     <div class="grid-3">
       {% for item in highlight_wisata %}
       <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card">
         <div class="card-image">
           {% if item.gambar %}
-            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}">
+            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}" loading="lazy">
           {% else %}
-            <div class="card-image-placeholder">🏖️</div>
+            <div class="card-image-placeholder"><i class="fa-solid fa-water"></i></div>
           {% endif %}
+          <span class="badge-tag badge-tag--wisata badge-overlay">
+            <i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}
+          </span>
         </div>
         <div class="card-body">
-          <span class="card-tag">{{ item.wilayah }}</span>
           <h3>{{ item.nama_wisata }}</h3>
-          <p>{{ item.deskripsi[:100] }}{% if item.deskripsi|length > 100 %}...{% endif %}</p>
-          <div class="card-rating">⭐ {{ item.rating.average }} ({{ item.rating.count }} ulasan)</div>
+          <p>{{ item.deskripsi[:120] }}{% if item.deskripsi|length > 120 %}…{% endif %}</p>
+          <div class="card-meta">
+            <span class="meta-item"><i class="fa-solid fa-location-dot"></i>{{ item.wilayah }}</span>
+            <span class="meta-rating">
+              <i class="fa-solid fa-star"></i>{{ item.rating.average }}
+              <small>({{ item.rating.count }})</small>
+            </span>
+          </div>
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Belum ada data wisata. Silakan tambahkan melalui dashboard admin.</p>
+        <p class="empty-state">Belum ada destinasi wisata. Tambahkan melalui dashboard admin.</p>
       {% endfor %}
     </div>
+
+    {% if highlight_wisata %}
     <div class="section-cta">
-      <a href="{{ url_for('wisata_list') }}" class="btn btn-outline">Lihat Semua Wisata</a>
+      <a href="{{ url_for('wisata_list') }}" class="btn btn-secondary">
+        Lihat Semua Wisata<i class="fa-solid fa-arrow-right"></i>
+      </a>
     </div>
+    {% endif %}
   </div>
 </section>
 {% endblock %}

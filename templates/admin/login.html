@@ -3,35 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login Admin - Sorong Raya</title>
+<title>Login Admin — Sorong Raya</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body class="login-body">
   <div class="login-box">
-    <h1>Login Admin</h1>
-    <p class="login-subtitle">Sorong Raya - Sistem Informasi Budaya & Wisata</p>
+    <div class="login-brand">SR</div>
+    <h1>Masuk Admin</h1>
+    <p class="login-subtitle">Sistem Informasi Budaya &amp; Wisata Sorong Raya</p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="flash-container">
-          {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        </div>
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">
+            <i class="fa-solid {{ 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }}"></i>
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
       {% endif %}
     {% endwith %}
 
     <form method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label for="username">Username</label>
-      <input type="text" id="username" name="username" required autofocus>
+      <input type="text" id="username" name="username" required autofocus autocomplete="username">
 
       <label for="password">Password</label>
-      <input type="password" id="password" name="password" required>
+      <input type="password" id="password" name="password" required autocomplete="current-password">
 
-      <button type="submit" class="btn btn-primary btn-block">Masuk</button>
+      <button type="submit" class="btn btn-primary btn-block">
+        <i class="fa-solid fa-right-to-bracket"></i>Masuk
+      </button>
     </form>
+
+    <p class="login-hint">Akses khusus pengelola konten &amp; basis pengetahuan RAG</p>
   </div>
 </body>
 </html>

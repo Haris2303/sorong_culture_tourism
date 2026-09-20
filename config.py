@@ -29,10 +29,14 @@ class Config:
     DB_PASSWORD = os.getenv("DB_PASSWORD", "")
     DB_NAME = os.getenv("DB_NAME", "sorong_culture_tourism")
 
-    # --- Gemini / LLM ---
+    # --- Gemini (embedding RAG) ---
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-1.5-flash")
-    GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "models/embedding-001")
+    GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "models/gemini-embedding-001")
+
+    # --- OpenRouter (chat/generation chatbot) ---
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_CHAT_MODEL = os.getenv("OPENROUTER_CHAT_MODEL", "minimax/minimax-m2.7:free")
+    OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
     # --- ChromaDB / RAG ---
     CHROMA_PERSIST_DIR = os.path.join(BASE_DIR, "data_store", "chroma_db")

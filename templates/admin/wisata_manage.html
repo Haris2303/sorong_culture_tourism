@@ -12,10 +12,16 @@
     <input type="text" name="nama_wisata" id="f-nama" required>
 
     <label>Wilayah</label>
-    <select name="wilayah" id="f-wilayah" required>
-      <option value="Kota Sorong">Kota Sorong</option>
-      <option value="Kabupaten Sorong">Kabupaten Sorong</option>
-    </select>
+    <div class="radio-group radio-group--wisata" id="f-wilayah-group">
+      <label class="radio-option">
+        <input type="radio" name="wilayah" value="Kota Sorong" checked required>
+        <span><i class="fa-solid fa-city"></i> Kota Sorong</span>
+      </label>
+      <label class="radio-option">
+        <input type="radio" name="wilayah" value="Kabupaten Sorong" required>
+        <span><i class="fa-solid fa-tree"></i> Kabupaten Sorong</span>
+      </label>
+    </div>
 
     <label>Deskripsi</label>
     <textarea name="deskripsi" id="f-deskripsi" rows="4" required></textarea>
@@ -27,7 +33,20 @@
     <input type="text" name="lokasi" id="f-lokasi" required>
 
     <label>Tiket Masuk</label>
-    <input type="text" name="tiket_masuk" id="f-tiket" placeholder="Gratis / Menyesuaikan">
+    <div class="radio-group radio-group--wisata" id="f-tiket-group">
+      {% for opt in tiket_options %}
+      <label class="radio-option">
+        <input type="radio" name="tiket_masuk" value="{{ opt }}" {{ 'checked' if loop.first }} required>
+        <span>{{ opt }}</span>
+      </label>
+      {% endfor %}
+      <label class="radio-option">
+        <input type="radio" name="tiket_masuk" value="__custom__" id="f-tiket-custom-radio" required>
+        <span><i class="fa-solid fa-pen"></i> Lainnya</span>
+      </label>
+    </div>
+    <input type="text" name="tiket_masuk_custom" id="f-tiket-custom-input"
+           placeholder="Tulis nominal/ketentuan tiket lainnya..." hidden disabled>
 
     <label>Jam Operasional</label>
     <input type="text" name="jam_operasional" id="f-jam" placeholder="Setiap Hari">
@@ -43,7 +62,19 @@
 </div>
 
 <div class="admin-table-card">
-  <h2>Daftar Destinasi Wisata</h2>
+  <div class="admin-table-header">
+    <h2>Daftar Destinasi Wisata</h2>
+    <form method="get" class="table-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau wilayah...">
+      {% if q %}
+        <a href="{{ url_for('admin_wisata_manage') }}" class="table-search-clear" title="Hapus pencarian">
+          <i class="fa-solid fa-xmark"></i>
+        </a>
+      {% endif %}
+    </form>
+  </div>
+  <div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
       <tr><th>Nama</th><th>Wilayah</th><th>Diperbarui</th><th>Aksi</th></tr>
@@ -67,30 +98,66 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="4" class="empty-state">Belum ada data.</td></tr>
+      <tr><td colspan="4" class="empty-state">
+        {% if q %}Tidak ada destinasi yang cocok dengan "{{ q }}".{% else %}Belum ada data.{% endif %}
+      </td></tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% endblock %}
 {% block extra_js %}
 <script>
+const TIKET_PRESETS = {{ tiket_options|tojson }};
+const tiketGroup = document.getElementById('f-tiket-group');
+const tiketCustomRadio = document.getElementById('f-tiket-custom-radio');
+const tiketCustomInput = document.getElementById('f-tiket-custom-input');
+const wilayahGroup = document.getElementById('f-wilayah-group');
+
+function syncTiketCustomInput() {
+  const isCustom = tiketCustomRadio.checked;
+  tiketCustomInput.hidden = !isCustom;
+  tiketCustomInput.disabled = !isCustom;
+  tiketCustomInput.required = isCustom;
+  if (isCustom) tiketCustomInput.focus();
+}
+tiketGroup.querySelectorAll('input[type="radio"]').forEach(r => {
+  r.addEventListener('change', syncTiketCustomInput);
+});
+
 document.querySelectorAll('.edit-wisata-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.getElementById('edit-id').value = btn.dataset.id;
     document.getElementById('f-nama').value = btn.dataset.nama;
-    document.getElementById('f-wilayah').value = btn.dataset.wilayah;
+    wilayahGroup.querySelectorAll('input[type="radio"]').forEach(r => {
+      r.checked = r.value === btn.dataset.wilayah;
+    });
     document.getElementById('f-deskripsi').value = btn.dataset.deskripsi;
     document.getElementById('f-fasilitas').value = btn.dataset.fasilitas;
     document.getElementById('f-lokasi').value = btn.dataset.lokasi;
-    document.getElementById('f-tiket').value = btn.dataset.tiket;
     document.getElementById('f-jam').value = btn.dataset.jam;
+
+    const tiketValue = btn.dataset.tiket;
+    if (TIKET_PRESETS.includes(tiketValue)) {
+      tiketGroup.querySelectorAll('input[type="radio"]').forEach(r => {
+        r.checked = r.value === tiketValue;
+      });
+      tiketCustomInput.value = '';
+    } else {
+      tiketCustomRadio.checked = true;
+      tiketCustomInput.value = tiketValue;
+    }
+    syncTiketCustomInput();
+
     window.scrollTo({top: 0, behavior: 'smooth'});
   });
 });
 document.getElementById('reset-form-btn').addEventListener('click', () => {
   document.querySelector('.admin-form').reset();
   document.getElementById('edit-id').value = '';
+  tiketCustomInput.value = '';
+  syncTiketCustomInput();
 });
 </script>
 {% endblock %}

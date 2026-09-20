@@ -37,6 +37,9 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["KNOWLEDGE_DOCS_DIR"], exist_ok=True)
 os.makedirs(app.config["CHROMA_PERSIST_DIR"], exist_ok=True)
 
+BUDAYA_KATEGORI_OPTIONS = ["Tarian Tradisional", "Alat Musik", "Seni Ukir", "Upacara Adat"]
+WISATA_TIKET_OPTIONS = ["Gratis / Menyesuaikan", "Rp 5.000", "Rp 10.000", "Rp 15.000", "Rp 20.000"]
+
 
 # ============================================================
 # Helpers
@@ -113,10 +116,20 @@ def index():
     )
     for w in highlight_wisata:
         w["rating"] = get_wisata_rating_summary(w["id"])
+
+    stats = {
+        "total_budaya": dbcore.query_one("SELECT COUNT(*) AS c FROM budaya")["c"],
+        "total_wisata": dbcore.query_one("SELECT COUNT(*) AS c FROM wisata")["c"],
+        "total_ulasan": dbcore.query_one(
+            "SELECT COUNT(*) AS c FROM ratings WHERE status_tampil = 'approved'"
+        )["c"],
+    }
+
     return render_template(
         "public/index.html",
         highlight_budaya=highlight_budaya,
         highlight_wisata=highlight_wisata,
+        stats=stats,
     )
 
 
@@ -353,8 +366,17 @@ def admin_budaya_manage():
             flash("Artikel budaya berhasil ditambahkan.", "success")
         return redirect(url_for("admin_budaya_manage"))
 
-    items = dbcore.query_all("SELECT * FROM budaya ORDER BY created_at DESC")
-    return render_template("admin/budaya_manage.html", items=items)
+    q = request.args.get("q", "").strip()
+    if q:
+        like = f"%{q}%"
+        items = dbcore.query_all(
+            "SELECT * FROM budaya WHERE judul LIKE %s OR kategori LIKE %s OR ringkasan LIKE %s "
+            "ORDER BY created_at DESC",
+            (like, like, like),
+        )
+    else:
+        items = dbcore.query_all("SELECT * FROM budaya ORDER BY created_at DESC")
+    return render_template("admin/budaya_manage.html", items=items, q=q, kategori_options=BUDAYA_KATEGORI_OPTIONS)
 
 
 @app.route("/admin/budaya/<int:budaya_id>/delete", methods=["POST"])
@@ -378,7 +400,11 @@ def admin_wisata_manage():
         deskripsi = request.form.get("deskripsi", "").strip()
         fasilitas = request.form.get("fasilitas", "").strip()
         lokasi = request.form.get("lokasi", "").strip()
-        tiket_masuk = request.form.get("tiket_masuk", "Gratis / Menyesuaikan").strip()
+        tiket_choice = request.form.get("tiket_masuk", "").strip()
+        if tiket_choice == "__custom__":
+            tiket_masuk = request.form.get("tiket_masuk_custom", "").strip() or "Gratis / Menyesuaikan"
+        else:
+            tiket_masuk = tiket_choice or "Gratis / Menyesuaikan"
         jam_operasional = request.form.get("jam_operasional", "Setiap Hari").strip()
         gambar = save_uploaded_image(request.files.get("gambar"))
 
@@ -406,8 +432,17 @@ def admin_wisata_manage():
             flash("Data wisata berhasil ditambahkan.", "success")
         return redirect(url_for("admin_wisata_manage"))
 
-    items = dbcore.query_all("SELECT * FROM wisata ORDER BY created_at DESC")
-    return render_template("admin/wisata_manage.html", items=items)
+    q = request.args.get("q", "").strip()
+    if q:
+        like = f"%{q}%"
+        items = dbcore.query_all(
+            "SELECT * FROM wisata WHERE nama_wisata LIKE %s OR wilayah LIKE %s OR lokasi LIKE %s "
+            "ORDER BY created_at DESC",
+            (like, like, like),
+        )
+    else:
+        items = dbcore.query_all("SELECT * FROM wisata ORDER BY created_at DESC")
+    return render_template("admin/wisata_manage.html", items=items, q=q, tiket_options=WISATA_TIKET_OPTIONS)
 
 
 @app.route("/admin/wisata/<int:wisata_id>/delete", methods=["POST"])
@@ -519,4 +554,4 @@ def ratelimited(e):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=app.config["DEBUG"])
+    app.run(host="0.0.0.0", port=5000, debug=app.config["DEBUG"], threaded=True)

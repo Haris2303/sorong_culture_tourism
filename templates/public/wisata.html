@@ -1,16 +1,26 @@
 {% extends "public/base.html" %}
-{% block title %}Direktori Wisata - Sorong Raya{% endblock %}
+{% block title %}Direktori Wisata — Sorong Raya{% endblock %}
 {% block content %}
+<section class="page-header">
+  <div class="section-inner">
+    <span class="eyebrow eyebrow--wisata">02 / Destinasi Bahari &amp; Alam</span>
+    <h1 class="page-title">Wisata Sorong Raya</h1>
+    <p class="section-subtitle">Direktori destinasi alam, pantai, dan kawasan konservasi di Kota dan Kabupaten Sorong.</p>
+  </div>
+</section>
+
 <section class="section">
   <div class="section-inner">
-    <h1 class="page-title">Wisata Sorong Raya</h1>
-
     <div class="filter-bar">
-      <a href="{{ url_for('wisata_list') }}" class="filter-chip {{ 'active' if not active_wilayah }}">Semua</a>
+      <a href="{{ url_for('wisata_list') }}" class="filter-chip {{ 'active' if not active_wilayah }}">Semua Wilayah</a>
       <a href="{{ url_for('wisata_list', wilayah='Kota Sorong') }}"
-         class="filter-chip {{ 'active' if active_wilayah == 'Kota Sorong' }}">Kota Sorong</a>
+         class="filter-chip {{ 'active' if active_wilayah == 'Kota Sorong' }}">
+        <i class="fa-solid fa-city"></i>Kota Sorong
+      </a>
       <a href="{{ url_for('wisata_list', wilayah='Kabupaten Sorong') }}"
-         class="filter-chip {{ 'active' if active_wilayah == 'Kabupaten Sorong' }}">Kabupaten Sorong</a>
+         class="filter-chip {{ 'active' if active_wilayah == 'Kabupaten Sorong' }}">
+        <i class="fa-solid fa-tree"></i>Kabupaten Sorong
+      </a>
     </div>
 
     <div class="grid-3">
@@ -18,20 +28,28 @@
       <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card">
         <div class="card-image">
           {% if item.gambar %}
-            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}">
+            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}" loading="lazy">
           {% else %}
-            <div class="card-image-placeholder">🏖️</div>
+            <div class="card-image-placeholder"><i class="fa-solid fa-water"></i></div>
           {% endif %}
+          <span class="badge-tag badge-tag--wisata badge-overlay">
+            <i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}
+          </span>
         </div>
         <div class="card-body">
-          <span class="card-tag">{{ item.wilayah }}</span>
           <h3>{{ item.nama_wisata }}</h3>
-          <p>{{ item.deskripsi[:100] }}{% if item.deskripsi|length > 100 %}...{% endif %}</p>
-          <div class="card-rating">⭐ {{ item.rating.average }} ({{ item.rating.count }} ulasan)</div>
+          <p>{{ item.deskripsi[:120] }}{% if item.deskripsi|length > 120 %}…{% endif %}</p>
+          <div class="card-meta">
+            <span class="meta-item"><i class="fa-solid fa-location-dot"></i>{{ item.wilayah }}</span>
+            <span class="meta-rating">
+              <i class="fa-solid fa-star"></i>{{ item.rating.average }}
+              <small>({{ item.rating.count }})</small>
+            </span>
+          </div>
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Tidak ada data wisata untuk ditampilkan.</p>
+        <p class="empty-state">Tidak ada destinasi wisata untuk filter ini.</p>
       {% endfor %}
     </div>
   </div>

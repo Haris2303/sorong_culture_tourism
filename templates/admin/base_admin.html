@@ -13,13 +13,48 @@
     <aside class="admin-sidebar">
       <div class="admin-brand">SR Admin</div>
       <nav class="admin-nav">
-        <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.endpoint == 'admin_dashboard' }}">Dashboard</a>
-        <a href="{{ url_for('admin_budaya_manage') }}" class="{{ 'active' if request.endpoint == 'admin_budaya_manage' }}">Budaya</a>
-        <a href="{{ url_for('admin_wisata_manage') }}" class="{{ 'active' if request.endpoint == 'admin_wisata_manage' }}">Wisata</a>
-        <a href="{{ url_for('admin_rating_manage') }}" class="{{ 'active' if request.endpoint == 'admin_rating_manage' }}">Moderasi Rating</a>
-        <a href="{{ url_for('admin_knowledge') }}" class="{{ 'active' if request.endpoint == 'admin_knowledge' }}">Knowledge Base</a>
-        <a href="{{ url_for('index') }}" target="_blank">Lihat Situs Publik</a>
-        <a href="{{ url_for('admin_logout') }}" class="logout-link">Logout</a>
+        <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.endpoint == 'admin_dashboard' }}">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/></svg>
+          </span>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin_budaya_manage') }}" class="{{ 'active' if request.endpoint == 'admin_budaya_manage' }}">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-6h6v6"/></svg>
+          </span>
+          <span>Budaya</span>
+        </a>
+        <a href="{{ url_for('admin_wisata_manage') }}" class="{{ 'active' if request.endpoint == 'admin_wisata_manage' }}">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-2 6-6 2 2-6 6-2z"/></svg>
+          </span>
+          <span>Wisata</span>
+        </a>
+        <a href="{{ url_for('admin_rating_manage') }}" class="{{ 'active' if request.endpoint == 'admin_rating_manage' }}">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6z"/></svg>
+          </span>
+          <span>Moderasi Rating</span>
+        </a>
+        <a href="{{ url_for('admin_knowledge') }}" class="{{ 'active' if request.endpoint == 'admin_knowledge' }}">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5V12c0 1.55 3.58 2.8 8 2.8s8-1.25 8-2.8V5.5"/><path d="M4 12v6.5C4 20.05 7.58 21.3 12 21.3s8-1.25 8-2.8V12"/></svg>
+          </span>
+          <span>Knowledge Base</span>
+        </a>
+        <a href="{{ url_for('index') }}" target="_blank">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6"/></svg>
+          </span>
+          <span>Lihat Situs Publik</span>
+        </a>
+        <a href="{{ url_for('admin_logout') }}" class="logout-link">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          </span>
+          <span>Logout</span>
+        </a>
       </nav>
     </aside>
     <main class="admin-main">
