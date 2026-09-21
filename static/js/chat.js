@@ -11,30 +11,43 @@
 
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
-  toggleBtn.addEventListener('click', () => {
-    widget.classList.toggle('closed');
-    if (!widget.classList.contains('closed')) {
-      input.focus();
+  // Riwayat & status buka/tutup disimpan di sessionStorage supaya tidak hilang
+  // saat pengguna berpindah halaman (situs ini multi-halaman, tiap navigasi
+  // memuat ulang JS dari nol). sessionStorage otomatis bersih saat tab ditutup.
+  const HISTORY_KEY = 'sorongRayaChatHistory';
+  const OPEN_STATE_KEY = 'sorongRayaChatOpen';
+
+  function loadHistory() {
+    try {
+      const raw = sessionStorage.getItem(HISTORY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (err) {
+      return [];
     }
-  });
+  }
 
-  closeBtn.addEventListener('click', () => {
-    widget.classList.add('closed');
-  });
+  function saveHistory() {
+    try {
+      sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch (err) {
+      // sessionStorage penuh/diblokir (mis. mode privat) — chat tetap berfungsi, hanya tidak persist.
+    }
+  }
 
-  document.querySelectorAll('#chat-quick-replies .chip').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      input.value = chip.dataset.prompt || chip.textContent.trim();
-      form.requestSubmit();
-    });
-  });
+  let history = loadHistory();
 
-  function appendMessage(text, sender, sources) {
+  function renderMessage(text, sender, sources, isHtml) {
     const wrapper = document.createElement('div');
     wrapper.className = `chat-message ${sender}`;
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
-    bubble.textContent = text;
+    if (isHtml) {
+      // Aman: HTML ini dirender & di-escape di server (core/rag_engine.py _render_rich_answer),
+      // hanya berisi tag terbatas (p/ul/ol/li/strong), bukan HTML mentah dari input pengguna.
+      bubble.innerHTML = text;
+    } else {
+      bubble.textContent = text;
+    }
     wrapper.appendChild(bubble);
 
     const links = (sources || []).filter((s) => s && s.url);
@@ -54,6 +67,61 @@
     messagesEl.appendChild(wrapper);
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
+
+  function appendMessage(text, sender, sources, isHtml) {
+    renderMessage(text, sender, sources, isHtml);
+    history.push({ text, sender, sources: sources || [], isHtml: !!isHtml });
+    saveHistory();
+  }
+
+  if (history.length) {
+    // Ganti bubble sambutan bawaan dengan riwayat percakapan sebelumnya.
+    messagesEl.innerHTML = '';
+    history.forEach((msg) => renderMessage(msg.text, msg.sender, msg.sources, msg.isHtml));
+  } else {
+    // Kunjungan pertama di tab ini: simpan bubble sambutan bawaan sebagai riwayat awal.
+    const welcomeBubble = messagesEl.querySelector('.bubble');
+    if (welcomeBubble) {
+      history.push({ text: welcomeBubble.textContent, sender: 'bot', sources: [], isHtml: false });
+      saveHistory();
+    }
+  }
+
+  try {
+    if (sessionStorage.getItem(OPEN_STATE_KEY) === 'true') {
+      widget.classList.remove('closed');
+    }
+  } catch (err) {
+    // abaikan jika sessionStorage tidak tersedia
+  }
+
+  function persistOpenState() {
+    try {
+      sessionStorage.setItem(OPEN_STATE_KEY, (!widget.classList.contains('closed')).toString());
+    } catch (err) {
+      // abaikan jika sessionStorage tidak tersedia
+    }
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    widget.classList.toggle('closed');
+    persistOpenState();
+    if (!widget.classList.contains('closed')) {
+      input.focus();
+    }
+  });
+
+  closeBtn.addEventListener('click', () => {
+    widget.classList.add('closed');
+    persistOpenState();
+  });
+
+  document.querySelectorAll('#chat-quick-replies .chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      input.value = chip.dataset.prompt || chip.textContent.trim();
+      form.requestSubmit();
+    });
+  });
 
   function showTypingBubble() {
     const wrapper = document.createElement('div');
@@ -94,7 +162,7 @@
       hideTypingBubble();
 
       if (res.ok) {
-        appendMessage(data.answer, 'bot', data.sources);
+        appendMessage(data.answer, 'bot', data.sources, true);
       } else {
         appendMessage(data.error || 'Maaf, terjadi kesalahan. Silakan coba lagi.', 'bot');
       }

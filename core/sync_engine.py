@@ -3,7 +3,10 @@
 Alur: Document Loader (PDF/TXT/MD) + artikel MySQL (budaya & wisata)
 -> Text Splitter (RecursiveCharacterTextSplitter) -> Embedding -> Upsert ke ChromaDB.
 """
+import logging
 import os
+import re
+import time
 from datetime import datetime, timezone
 
 from flask import current_app
@@ -15,11 +18,54 @@ from core import db as dbcore
 from core.rag_engine import get_embeddings, reset_engine_cache
 from langchain_community.vectorstores import Chroma
 
+logger = logging.getLogger(__name__)
+
 SPLITTER = RecursiveCharacterTextSplitter(
     chunk_size=800,
     chunk_overlap=120,
     separators=["\n\n", "\n", ". ", " ", ""],
 )
+
+# Free tier Gemini embedding dibatasi ~100 request/menit. Kirim dalam batch kecil
+# dan hormati jeda "retry_delay" yang dikirim Google saat kena 429, alih-alih
+# gagal total di tengah sinkronisasi.
+_EMBED_BATCH_SIZE = 20
+_EMBED_MAX_RETRIES = 5
+_EMBED_RETRY_DELAY_FALLBACK = 60
+
+
+def _parse_retry_delay_seconds(message: str) -> float:
+    match = re.search(r"retry in ([\d.]+)\s*s", message, re.IGNORECASE)
+    if match:
+        return float(match.group(1)) + 1
+    match = re.search(r"seconds:\s*(\d+)", message)
+    if match:
+        return float(match.group(1)) + 1
+    return _EMBED_RETRY_DELAY_FALLBACK
+
+
+def _is_quota_error(message: str) -> bool:
+    lowered = message.lower()
+    return "429" in message or "quota" in lowered or "resource_exhausted" in lowered
+
+
+def _add_documents_with_retry(vectorstore, batch: list[Document]) -> None:
+    attempt = 0
+    while True:
+        try:
+            vectorstore.add_documents(batch)
+            return
+        except Exception as exc:
+            message = str(exc)
+            attempt += 1
+            if not _is_quota_error(message) or attempt > _EMBED_MAX_RETRIES:
+                raise
+            delay = _parse_retry_delay_seconds(message)
+            logger.warning(
+                "Kuota embedding Gemini tercapai, menunggu %.0f detik lalu mencoba lagi (percobaan %d/%d)...",
+                delay, attempt, _EMBED_MAX_RETRIES,
+            )
+            time.sleep(delay)
 
 
 def _load_pdf(path: str) -> str:
@@ -117,12 +163,14 @@ def run_sync() -> dict:
     except Exception:
         pass
 
-    vectorstore = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
+    vectorstore = Chroma(
         collection_name=collection_name,
+        embedding_function=embeddings,
         persist_directory=persist_dir,
     )
+    for i in range(0, len(chunks), _EMBED_BATCH_SIZE):
+        batch = chunks[i:i + _EMBED_BATCH_SIZE]
+        _add_documents_with_retry(vectorstore, batch)
 
     # Tandai semua dokumen pengetahuan sebagai sudah ter-index.
     dbcore.execute("UPDATE knowledge_docs SET status_indexed = TRUE")

@@ -3,10 +3,13 @@
 Embedding (retrieval) tetap memakai Google Gemini. Chat/generation memakai
 OpenRouter (banyak model gratis) lewat endpoint OpenAI-compatible-nya.
 """
+import html as html_lib
 import logging
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
+from openai import RateLimitError
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_openai import ChatOpenAI
@@ -17,26 +20,32 @@ logger = logging.getLogger(__name__)
 # Batas waktu keras untuk panggilan LLM. Parameter `timeout=` bawaan LangChain
 # tidak selalu ditegakkan saat API sedang macet (hang), jadi kita paksa
 # lewat thread terpisah agar pengguna tidak menunggu tanpa batas.
-_LLM_CALL_TIMEOUT_SECONDS = 20
+_LLM_CALL_TIMEOUT_SECONDS = 15
 _llm_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="rag-llm")
+
+# Model gratis OpenRouter kadang kena rate-limit sesaat di provider upstream-nya
+# (bukan kuota akun kita). Sebelum pindah ke model fallback berikutnya, coba lagi
+# sekali dulu di model yang sama setelah jeda singkat — sering kali sudah pulih.
+_QUOTA_RETRY_DELAY_SECONDS = 3
+_QUOTA_RETRIES_PER_MODEL = 1
 
 _embeddings = None
 _vectorstore = None
-_llm = None
+_llm_by_model = {}
 
 FALLBACK_ANSWER = (
-    "Maaf, informasi mengenai hal tersebut belum tersedia dalam basis pengetahuan "
+    "🙏 Maaf, informasi mengenai hal tersebut belum tersedia dalam basis pengetahuan "
     "budaya dan wisata Sorong Raya kami. Silakan ajukan pertanyaan lain seputar "
     "budaya Suku Moi atau destinasi wisata Kota/Kabupaten Sorong."
 )
 
 ERROR_ANSWER = (
-    "Maaf, asisten virtual sedang mengalami kendala teknis sesaat (mis. layanan AI "
+    "⚠️ Maaf, asisten virtual sedang mengalami kendala teknis sesaat (mis. layanan AI "
     "sedang sibuk). Silakan coba lagi dalam beberapa saat."
 )
 
 GREETING_ANSWER = (
-    "Halo! Selamat datang di Sorong Raya. Saya pemandu pintar yang siap membantu "
+    "👋 Halo! Selamat datang di Sorong Raya. Saya pemandu pintar yang siap membantu "
     "menjawab pertanyaan seputar budaya Suku Moi maupun destinasi wisata Kota dan "
     "Kabupaten Sorong. Silakan tanyakan apa saja, ya!"
 )
@@ -66,12 +75,54 @@ def _is_greeting(question: str) -> bool:
     return any(w in _GREETING_WORDS for w in words)
 
 
-def _strip_markdown(text: str) -> str:
-    """Buang sintaks markdown (bold/bullet) agar tidak tampil sebagai tanda bintang mentah di bubble chat."""
-    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
-    text = re.sub(r"(?m)^[ \t]*\*[ \t]+", "- ", text)
-    text = re.sub(r"(?m)^[ \t]*\*(?!\*)", "-", text)
-    return text.strip()
+_BULLET_RE = re.compile(r"^[\-\*]\s+(.*)")
+_NUMBERED_RE = re.compile(r"^\d+[.)]\s+(.*)")
+_BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+
+
+def _render_rich_answer(text: str) -> str:
+    """Escape HTML lalu ubah subset markdown (bold & bullet/nomor list) milik LLM
+    menjadi HTML aman, supaya bubble chat menampilkan highlight & daftar rapi
+    alih-alih teks abu-abu polos atau tanda bintang mentah."""
+    text = (text or "").strip()
+    if not text:
+        return ""
+
+    parts: list[str] = []
+    list_buffer: list[str] = []
+    list_tag: str | None = None
+
+    def flush_list():
+        nonlocal list_tag
+        if list_buffer:
+            items = "".join(f"<li>{item}</li>" for item in list_buffer)
+            parts.append(f"<{list_tag}>{items}</{list_tag}>")
+            list_buffer.clear()
+        list_tag = None
+
+    for raw_line in text.splitlines():
+        line = html_lib.escape(raw_line.strip(), quote=False)
+        bullet_match = _BULLET_RE.match(line)
+        numbered_match = _NUMBERED_RE.match(line)
+        if bullet_match:
+            if list_tag != "ul":
+                flush_list()
+                list_tag = "ul"
+            list_buffer.append(bullet_match.group(1))
+        elif numbered_match:
+            if list_tag != "ol":
+                flush_list()
+                list_tag = "ol"
+            list_buffer.append(numbered_match.group(1))
+        else:
+            flush_list()
+            if line:
+                parts.append(f"<p>{line}</p>")
+    flush_list()
+
+    html_out = "".join(parts) if parts else f"<p>{html_lib.escape(text, quote=False)}</p>"
+    html_out = _BOLD_RE.sub(r'<strong class="chat-highlight">\1</strong>', html_out)
+    return html_out
 
 
 SYSTEM_PROMPT = """Anda adalah asisten virtual "Sorong Raya" yang ramah dan sopan.
@@ -84,10 +135,19 @@ ATURAN KETAT:
    informasi tersebut belum tersedia dalam basis pengetahuan.
 3. Gunakan Bahasa Indonesia yang santun, ringkas, dan mudah dipahami wisatawan.
 4. Jangan menjawab pertanyaan di luar topik budaya & wisata Sorong Raya.
-5. JANGAN gunakan format markdown sama sekali (tanpa tanda bintang **tebal**,
-   tanpa bullet list berawalan *). Tulis jawaban sebagai kalimat/paragraf mengalir
-   biasa, seperti percakapan chat WhatsApp. Jika perlu daftar, gunakan tanda hubung (-)
-   atau angka (1., 2., 3.) tanpa tanda bintang.
+5. Format jawaban HANYA dengan gaya berikut (jangan pakai heading #, tabel, atau blok kode):
+   - Tebalkan (pakai **teks**) nama setiap destinasi/budaya yang Anda sebutkan, supaya
+     mudah dikenali wisatawan. Jangan menebalkan kata lain selain nama destinasi/budaya
+     dan istilah penting (mis. harga tiket).
+   - Untuk daftar/rekomendasi lebih dari satu tempat, gunakan tanda hubung (-) atau
+     angka (1., 2., 3.) di awal baris, satu tempat per baris.
+   - Selipkan emoji yang relevan dan secukupnya (maksimal 1 per kalimat/poin) supaya
+     jawaban terasa hangat, misalnya 📍 lokasi, 🎟️ tiket, ⏰ jam operasional,
+     🏖️ pantai, 🌊 pulau, 🌿 alam, 🏛️ budaya/sejarah. Jangan berlebihan.
+6. Sebutkan nama destinasi/budaya persis seperti pada KONTEKS (jangan disingkat atau
+   diganti nama lain), karena sistem akan otomatis menampilkan tombol link menuju
+   halaman detailnya di bawah jawaban Anda berdasarkan nama tersebut. JANGAN menuliskan
+   URL/tautan apapun sendiri di dalam jawaban.
 
 KONTEKS:
 {context}
@@ -118,13 +178,12 @@ def get_vectorstore(fresh=False):
     return _vectorstore
 
 
-def get_llm():
-    """LLM chat/generation via OpenRouter (endpoint OpenAI-compatible)."""
-    global _llm
-    if _llm is None:
+def get_llm(model: str):
+    """LLM chat/generation via OpenRouter (endpoint OpenAI-compatible), per-model instance di-cache."""
+    if model not in _llm_by_model:
         from flask import current_app
-        _llm = ChatOpenAI(
-            model=current_app.config["OPENROUTER_CHAT_MODEL"],
+        _llm_by_model[model] = ChatOpenAI(
+            model=model,
             api_key=current_app.config["OPENROUTER_API_KEY"],
             base_url=current_app.config["OPENROUTER_BASE_URL"],
             temperature=0.3,
@@ -135,7 +194,19 @@ def get_llm():
                 "X-Title": "Sorong Raya Chatbot",
             },
         )
-    return _llm
+    return _llm_by_model[model]
+
+
+def _candidate_models(current_app) -> list[str]:
+    models = [current_app.config["OPENROUTER_CHAT_MODEL"]]
+    models += current_app.config.get("OPENROUTER_CHAT_MODEL_FALLBACKS", [])
+    seen = set()
+    ordered = []
+    for m in models:
+        if m and m not in seen:
+            seen.add(m)
+            ordered.append(m)
+    return ordered
 
 
 def reset_engine_cache():
@@ -150,10 +221,10 @@ def answer_query(question: str) -> dict:
 
     question = (question or "").strip()
     if not question:
-        return {"answer": FALLBACK_ANSWER, "sources": [], "grounded": False}
+        return {"answer": _render_rich_answer(FALLBACK_ANSWER), "sources": [], "grounded": False}
 
     if _is_greeting(question):
-        return {"answer": GREETING_ANSWER, "sources": [], "grounded": False}
+        return {"answer": _render_rich_answer(GREETING_ANSWER), "sources": [], "grounded": False}
 
     vectorstore = get_vectorstore()
     top_k = current_app.config["RAG_TOP_K"]
@@ -168,7 +239,7 @@ def answer_query(question: str) -> dict:
     relevant = [(doc, score) for doc, score in results if score >= threshold]
 
     if not relevant:
-        return {"answer": FALLBACK_ANSWER, "sources": [], "grounded": False}
+        return {"answer": _render_rich_answer(FALLBACK_ANSWER), "sources": [], "grounded": False}
 
     context_text = "\n\n---\n\n".join(doc.page_content for doc, _ in relevant)
     prompt = ChatPromptTemplate.from_messages([
@@ -176,17 +247,41 @@ def answer_query(question: str) -> dict:
         ("human", "{question}"),
     ])
 
-    chain = prompt | get_llm()
-    try:
-        future = _llm_executor.submit(chain.invoke, {"question": question})
-        response = future.result(timeout=_LLM_CALL_TIMEOUT_SECONDS)
-        answer_text = _strip_markdown(response.content.strip())
-    except FutureTimeoutError:
-        logger.warning("RAG generation timeout (>%ss) untuk pertanyaan: %r", _LLM_CALL_TIMEOUT_SECONDS, question)
-        return {"answer": ERROR_ANSWER, "sources": [], "grounded": False}
-    except Exception:
-        logger.exception("RAG generation gagal untuk pertanyaan: %r", question)
-        return {"answer": ERROR_ANSWER, "sources": [], "grounded": False}
+    answer_text = None
+    for model in _candidate_models(current_app):
+        chain = prompt | get_llm(model)
+        for attempt in range(_QUOTA_RETRIES_PER_MODEL + 1):
+            try:
+                future = _llm_executor.submit(chain.invoke, {"question": question})
+                response = future.result(timeout=_LLM_CALL_TIMEOUT_SECONDS)
+                answer_text = _render_rich_answer(response.content.strip())
+                break
+            except FutureTimeoutError:
+                logger.warning(
+                    "RAG generation timeout (>%ss) model=%s untuk pertanyaan: %r",
+                    _LLM_CALL_TIMEOUT_SECONDS, model, question,
+                )
+                break
+            except RateLimitError:
+                if attempt < _QUOTA_RETRIES_PER_MODEL:
+                    logger.warning(
+                        "Model %s rate-limited upstream, coba lagi dalam %ss...",
+                        model, _QUOTA_RETRY_DELAY_SECONDS,
+                    )
+                    time.sleep(_QUOTA_RETRY_DELAY_SECONDS)
+                    continue
+                logger.warning("Model %s tetap rate-limited, pindah ke model fallback berikutnya.", model)
+            except Exception:
+                logger.warning(
+                    "RAG generation gagal model=%s untuk pertanyaan: %r, coba model fallback berikutnya.",
+                    model, question, exc_info=True,
+                )
+                break
+        if answer_text is not None:
+            break
+
+    if answer_text is None:
+        return {"answer": _render_rich_answer(ERROR_ANSWER), "sources": [], "grounded": False}
 
     sources = _build_sources(relevant)
 

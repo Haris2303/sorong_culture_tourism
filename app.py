@@ -225,7 +225,7 @@ def api_chat():
         result = answer_query(question)
     except Exception:
         return jsonify({
-            "answer": "Maaf, terjadi kendala teknis pada asisten virtual kami. Silakan coba lagi sebentar lagi.",
+            "answer": "⚠️ Maaf, terjadi kendala teknis pada asisten virtual kami. Silakan coba lagi sebentar lagi.",
             "sources": [],
         }), 200
 
