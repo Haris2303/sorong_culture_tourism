@@ -1,24 +1,36 @@
-{% extends "public/base.html" %}
-{% block title %}Direktori Wisata — Sorong Raya{% endblock %}
-{% block content %}
+{% extends "public/base.html" %} {% block title %}Direktori Wisata | Sorong
+Raya{% endblock %} {% block content %}
 <section class="page-header">
   <div class="section-inner">
-    <span class="eyebrow eyebrow--wisata">02 / Destinasi Bahari &amp; Alam</span>
+    <span class="eyebrow eyebrow--wisata"
+      >02 / Destinasi Bahari &amp; Alam</span
+    >
     <h1 class="page-title">Wisata Sorong Raya</h1>
-    <p class="section-subtitle">Direktori destinasi alam, pantai, dan kawasan konservasi di Kota dan Kabupaten Sorong.</p>
+    <p class="section-subtitle">
+      Direktori destinasi alam, pantai, dan kawasan konservasi di Kota dan
+      Kabupaten Sorong.
+    </p>
   </div>
 </section>
 
 <section class="section">
   <div class="section-inner">
     <div class="filter-bar">
-      <a href="{{ url_for('wisata_list') }}" class="filter-chip {{ 'active' if not active_wilayah }}">Semua Wilayah</a>
-      <a href="{{ url_for('wisata_list', wilayah='Kota Sorong') }}"
-         class="filter-chip {{ 'active' if active_wilayah == 'Kota Sorong' }}">
+      <a
+        href="{{ url_for('wisata_list') }}"
+        class="filter-chip {{ 'active' if not active_wilayah }}"
+        >Semua Wilayah</a
+      >
+      <a
+        href="{{ url_for('wisata_list', wilayah='Kota Sorong') }}"
+        class="filter-chip {{ 'active' if active_wilayah == 'Kota Sorong' }}"
+      >
         <i class="fa-solid fa-city"></i>Kota Sorong
       </a>
-      <a href="{{ url_for('wisata_list', wilayah='Kabupaten Sorong') }}"
-         class="filter-chip {{ 'active' if active_wilayah == 'Kabupaten Sorong' }}">
+      <a
+        href="{{ url_for('wisata_list', wilayah='Kabupaten Sorong') }}"
+        class="filter-chip {{ 'active' if active_wilayah == 'Kabupaten Sorong' }}"
+      >
         <i class="fa-solid fa-tree"></i>Kabupaten Sorong
       </a>
     </div>
@@ -28,9 +40,15 @@
       <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card">
         <div class="card-image">
           {% if item.gambar %}
-            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}" loading="lazy">
+          <img
+            src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}"
+            alt="{{ item.nama_wisata }}"
+            loading="lazy"
+          />
           {% else %}
-            <div class="card-image-placeholder"><i class="fa-solid fa-water"></i></div>
+          <div class="card-image-placeholder">
+            <i class="fa-solid fa-water"></i>
+          </div>
           {% endif %}
           <span class="badge-tag badge-tag--wisata badge-overlay">
             <i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}
@@ -40,7 +58,9 @@
           <h3>{{ item.nama_wisata }}</h3>
           <p>{{ item.deskripsi | striptags | truncate(120) }}</p>
           <div class="card-meta">
-            <span class="meta-item"><i class="fa-solid fa-location-dot"></i>{{ item.wilayah }}</span>
+            <span class="meta-item"
+              ><i class="fa-solid fa-location-dot"></i>{{ item.wilayah }}</span
+            >
             <span class="meta-rating">
               <i class="fa-solid fa-star"></i>{{ item.rating.average }}
               <small>({{ item.rating.count }})</small>
@@ -49,17 +69,22 @@
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Tidak ada destinasi wisata untuk filter ini.</p>
+      <p class="empty-state">Tidak ada destinasi wisata untuk filter ini.</p>
       {% endfor %}
     </div>
 
     {% if pagination.total > 0 %}
     <div class="pagination">
-      <span class="pagination-info">Menampilkan {{ items|length }} dari {{ pagination.total }} data</span>
+      <span class="pagination-info"
+        >Menampilkan {{ items|length }} dari {{ pagination.total }} data</span
+      >
       {% if pagination.total_pages > 1 %}
       <div class="pagination-controls">
         {% if pagination.has_prev %}
-        <a href="{{ url_for('wisata_list', wilayah=active_wilayah or None, page=pagination.page - 1) }}" class="btn btn-small btn-outline">
+        <a
+          href="{{ url_for('wisata_list', wilayah=active_wilayah or None, page=pagination.page - 1) }}"
+          class="btn btn-small btn-outline"
+        >
           <i class="fa-solid fa-chevron-left"></i>Sebelumnya
         </a>
         {% else %}
@@ -67,9 +92,14 @@
           <i class="fa-solid fa-chevron-left"></i>Sebelumnya
         </span>
         {% endif %}
-        <span class="pagination-pages">Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span>
+        <span class="pagination-pages"
+          >Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span
+        >
         {% if pagination.has_next %}
-        <a href="{{ url_for('wisata_list', wilayah=active_wilayah or None, page=pagination.page + 1) }}" class="btn btn-small btn-outline">
+        <a
+          href="{{ url_for('wisata_list', wilayah=active_wilayah or None, page=pagination.page + 1) }}"
+          class="btn btn-small btn-outline"
+        >
           Berikutnya<i class="fa-solid fa-chevron-right"></i>
         </a>
         {% else %}

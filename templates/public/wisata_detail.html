@@ -1,9 +1,10 @@
-{% extends "public/base.html" %}
-{% block title %}{{ item.nama_wisata }} — Wisata Sorong Raya{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.css">
-{% endblock %}
-{% block content %}
+{% extends "public/base.html" %} {% block title %}{{ item.nama_wisata }} |
+Wisata Sorong Raya{% endblock %} {% block extra_css %}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.css"
+/>
+{% endblock %} {% block content %}
 <section class="section">
   <div class="section-inner narrow">
     <a href="{{ url_for('wisata_list') }}" class="back-link">
@@ -22,22 +23,27 @@
 
     <div class="detail-image">
       {% if galeri_images %}
-        <div class="swiper detail-swiper">
-          <div class="swiper-wrapper">
-            {% for gambar in galeri_images %}
-            <div class="swiper-slide">
-              <img src="{{ url_for('static', filename='uploads/' ~ gambar) }}" alt="{{ item.nama_wisata }}">
-            </div>
-            {% endfor %}
+      <div class="swiper detail-swiper">
+        <div class="swiper-wrapper">
+          {% for gambar in galeri_images %}
+          <div class="swiper-slide">
+            <img
+              src="{{ url_for('static', filename='uploads/' ~ gambar) }}"
+              alt="{{ item.nama_wisata }}"
+            />
           </div>
-          {% if galeri_images|length > 1 %}
-          <div class="swiper-button-prev"></div>
-          <div class="swiper-button-next"></div>
-          <div class="swiper-pagination"></div>
-          {% endif %}
+          {% endfor %}
         </div>
+        {% if galeri_images|length > 1 %}
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-pagination"></div>
+        {% endif %}
+      </div>
       {% else %}
-        <div class="card-image-placeholder large"><i class="fa-solid fa-water"></i></div>
+      <div class="card-image-placeholder large">
+        <i class="fa-solid fa-water"></i>
+      </div>
       {% endif %}
     </div>
 
@@ -68,35 +74,57 @@
       <div class="map-embed">
         <iframe
           src="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}&z=15&output=embed"
-          loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen
+        ></iframe>
       </div>
-      <a href="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}" target="_blank" rel="noopener noreferrer" class="map-link">
+      <a
+        href="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="map-link"
+      >
         <i class="fa-solid fa-up-right-from-square"></i>Buka di Google Maps
       </a>
     </div>
-    {% endif %}
-
-    {% if item.sosmed_email or item.sosmed_facebook or item.sosmed_instagram or item.sosmed_youtube %}
+    {% endif %} {% if item.sosmed_email or item.sosmed_facebook or
+    item.sosmed_instagram or item.sosmed_youtube %}
     <div class="social-links-card">
       <h2>Kontak &amp; Media Sosial</h2>
       <div class="social-links">
         {% if item.sosmed_email %}
-        <a href="mailto:{{ item.sosmed_email }}" class="social-link social-link--email">
+        <a
+          href="mailto:{{ item.sosmed_email }}"
+          class="social-link social-link--email"
+        >
           <i class="fa-solid fa-envelope"></i>Email
         </a>
-        {% endif %}
-        {% if item.sosmed_facebook %}
-        <a href="{{ item.sosmed_facebook | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--facebook">
+        {% endif %} {% if item.sosmed_facebook %}
+        <a
+          href="{{ item.sosmed_facebook | social_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="social-link social-link--facebook"
+        >
           <i class="fa-brands fa-facebook"></i>Facebook
         </a>
-        {% endif %}
-        {% if item.sosmed_instagram %}
-        <a href="{{ item.sosmed_instagram | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--instagram">
+        {% endif %} {% if item.sosmed_instagram %}
+        <a
+          href="{{ item.sosmed_instagram | social_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="social-link social-link--instagram"
+        >
           <i class="fa-brands fa-instagram"></i>Instagram
         </a>
-        {% endif %}
-        {% if item.sosmed_youtube %}
-        <a href="{{ item.sosmed_youtube | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--youtube">
+        {% endif %} {% if item.sosmed_youtube %}
+        <a
+          href="{{ item.sosmed_youtube | social_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="social-link social-link--youtube"
+        >
           <i class="fa-brands fa-youtube"></i>YouTube
         </a>
         {% endif %}
@@ -104,15 +132,25 @@
     </div>
     {% endif %}
 
-    <div class="rating-section" id="rating-section" data-wisata-id="{{ item.id }}">
+    <div
+      class="rating-section"
+      id="rating-section"
+      data-wisata-id="{{ item.id }}"
+    >
       <h2>Beri Penilaian</h2>
       <form id="rating-form" class="rating-form">
         <div class="star-input" id="star-input">
           {% for i in range(1, 6) %}
-          <span class="star" data-value="{{ i }}"><i class="fa-solid fa-star"></i></span>
+          <span class="star" data-value="{{ i }}"
+            ><i class="fa-solid fa-star"></i
+          ></span>
           {% endfor %}
         </div>
-        <textarea id="rating-komentar" placeholder="Bagikan pengalaman Anda di destinasi ini (opsional)" maxlength="500"></textarea>
+        <textarea
+          id="rating-komentar"
+          placeholder="Bagikan pengalaman Anda di destinasi ini (opsional)"
+          maxlength="500"
+        ></textarea>
         <button type="submit" id="rating-submit-btn" class="btn btn-primary">
           <i class="fa-solid fa-paper-plane"></i>Kirim Ulasan
         </button>
@@ -125,34 +163,37 @@
       {% for r in ratings %}
       <div class="review-item">
         <div class="review-stars">
-          {% for _ in range(r.skor_bintang) %}<i class="fa-solid fa-star"></i>{% endfor %}
+          {% for _ in range(r.skor_bintang) %}<i class="fa-solid fa-star"></i>{%
+          endfor %}
         </div>
-        {% if r.komentar %}<p>{{ r.komentar }}</p>{% endif %}
+        {% if r.komentar %}
+        <p>{{ r.komentar }}</p>
+        {% endif %}
         <span class="review-date">{{ r.created_at.strftime('%d %B %Y') }}</span>
       </div>
       {% else %}
-      <p class="empty-state">Belum ada ulasan yang disetujui untuk destinasi ini.</p>
+      <p class="empty-state">
+        Belum ada ulasan yang disetujui untuk destinasi ini.
+      </p>
       {% endfor %}
     </div>
   </div>
 </section>
-{% endblock %}
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/rating.js') }}"></script>
 {% if galeri_images|length > 1 %}
 <script>
-new Swiper('.detail-swiper', {
-  loop: true,
-  navigation: {
-    nextEl: '.detail-swiper .swiper-button-next',
-    prevEl: '.detail-swiper .swiper-button-prev',
-  },
-  pagination: {
-    el: '.detail-swiper .swiper-pagination',
-    clickable: true,
-  },
-});
+  new Swiper(".detail-swiper", {
+    loop: true,
+    navigation: {
+      nextEl: ".detail-swiper .swiper-button-next",
+      prevEl: ".detail-swiper .swiper-button-prev",
+    },
+    pagination: {
+      el: ".detail-swiper .swiper-pagination",
+      clickable: true,
+    },
+  });
 </script>
-{% endif %}
-{% endblock %}
+{% endif %} {% endblock %}

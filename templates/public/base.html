@@ -1,70 +1,98 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<meta name="description" content="Portal edukasi budaya Suku Moi dan destinasi wisata Kota & Kabupaten Sorong, Papua Barat Daya.">
-<title>{% block title %}Sorong Raya — Budaya & Wisata{% endblock %}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-{% block extra_css %}{% endblock %}
-</head>
-<body>
-  <header class="navbar">
-    <div class="navbar-inner">
-      <a href="{{ url_for('index') }}" class="brand">
-        <span class="brand-icon">SR</span>
-        <span class="brand-text">Sorong Raya</span>
-      </a>
-      <nav class="nav-links">
-        <a href="{{ url_for('index') }}#about"><i class="fa-solid fa-circle-info"></i>About</a>
-        <a href="{{ url_for('budaya_list') }}"><i class="fa-solid fa-feather"></i>Budaya</a>
-        <a href="{{ url_for('wisata_list') }}"><i class="fa-solid fa-location-dot"></i>Wisata</a>
-        <form class="nav-search" action="{{ url_for('search') }}" method="get" role="search">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" name="q" placeholder="Cari budaya atau wisata" value="{{ request.args.get('q','') }}" aria-label="Cari">
-        </form>
-      </nav>
-    </div>
-  </header>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash-container">
-        {% for category, message in messages %}
-          <div class="flash flash-{{ category }}">
-            <i class="fa-solid {{ 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }}"></i>
-            <span>{{ message }}</span>
-          </div>
-        {% endfor %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <meta
+      name="description"
+      content="Portal edukasi budaya Suku Moi dan destinasi wisata Kota & Kabupaten Sorong, Papua Barat Daya."
+    />
+    <title>{% block title %}Sorong Raya | Budaya & Wisata{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <header class="navbar">
+      <div class="navbar-inner">
+        <a href="{{ url_for('index') }}" class="brand">
+          <span class="brand-icon">SR</span>
+          <span class="brand-text">Sorong Raya</span>
+        </a>
+        <nav class="nav-links">
+          <a href="{{ url_for('index') }}#about"
+            ><i class="fa-solid fa-circle-info"></i>About</a
+          >
+          <a href="{{ url_for('budaya_list') }}"
+            ><i class="fa-solid fa-feather"></i>Budaya</a
+          >
+          <a href="{{ url_for('wisata_list') }}"
+            ><i class="fa-solid fa-location-dot"></i>Wisata</a
+          >
+          <form
+            class="nav-search"
+            action="{{ url_for('search') }}"
+            method="get"
+            role="search"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              name="q"
+              placeholder="Cari budaya atau wisata"
+              value="{{ request.args.get('q','') }}"
+              aria-label="Cari"
+            />
+          </form>
+        </nav>
       </div>
-    {% endif %}
-  {% endwith %}
+    </header>
 
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <span class="footer-brand">
-        <span class="brand-icon">SR</span>
-        Sorong Raya
-      </span>
-      <p>&copy; {{ current_year }} Sistem Informasi &amp; Chatbot Edukasi Budaya dan Wisata.</p>
-      <span class="footer-meta">
-        <i class="fa-solid fa-location-dot"></i>
-        Sorong Raya, Papua Barat Daya
-      </span>
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div class="flash-container">
+      {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">
+        <i
+          class="fa-solid {{ 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }}"
+        ></i>
+        <span>{{ message }}</span>
+      </div>
+      {% endfor %}
     </div>
-  </footer>
+    {% endif %} {% endwith %}
 
-  {% include "public/_chat_widget.html" %}
+    <main>{% block content %}{% endblock %}</main>
 
-  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
-  {% block extra_js %}{% endblock %}
-</body>
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <span class="footer-brand">
+          <span class="brand-icon">SR</span>
+          Sorong Raya
+        </span>
+        <p>
+          &copy; {{ current_year }} Sistem Informasi &amp; Chatbot Edukasi
+          Budaya dan Wisata.
+        </p>
+        <span class="footer-meta">
+          <i class="fa-solid fa-location-dot"></i>
+          Sorong Raya, Papua Barat Daya
+        </span>
+      </div>
+    </footer>
+
+    {% include "public/_chat_widget.html" %}
+
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+  </body>
 </html>

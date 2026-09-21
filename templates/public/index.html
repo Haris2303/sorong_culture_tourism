@@ -1,7 +1,5 @@
-{% extends "public/base.html" %}
-{% block title %}Sorong Raya — Jelajahi Budaya &amp; Wisata Papua Barat Daya{% endblock %}
-
-{% block content %}
+{% extends "public/base.html" %} {% block title %}Sorong Raya | Jelajahi Budaya
+&amp; Wisata Papua Barat Daya{% endblock %} {% block content %}
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-card">
@@ -9,8 +7,11 @@
         <i class="fa-solid fa-location-dot"></i>Kota &amp; Kabupaten Sorong
       </span>
       <h1>Jelajahi Budaya &amp; Wisata Sorong Raya</h1>
-      <p>Portal edukasi terpadu warisan adat Suku Moi dan destinasi bahari Papua Barat Daya —
-         dilengkapi pemandu virtual yang menjawab dari sumber terverifikasi.</p>
+      <p>
+        Portal edukasi terpadu warisan adat Suku Moi dan destinasi bahari Papua
+        Barat Daya — dilengkapi pemandu virtual yang menjawab dari sumber
+        terverifikasi.
+      </p>
       <div class="hero-actions">
         <a href="{{ url_for('wisata_list') }}" class="btn btn-primary">
           <i class="fa-solid fa-compass"></i>Mulai Jelajah
@@ -42,7 +43,10 @@
     <div class="section-heading">
       <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
       <h2 class="section-title">Budaya Suku Moi</h2>
-      <p class="section-subtitle">Adat istiadat, tarian, seni ukir, dan upacara yang diwariskan turun-temurun di tanah Malamoi.</p>
+      <p class="section-subtitle">
+        Adat istiadat, tarian, seni ukir, dan upacara yang diwariskan
+        turun-temurun di tanah Malamoi.
+      </p>
     </div>
 
     <div class="grid-3">
@@ -50,9 +54,15 @@
       <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
         <div class="card-image">
           {% if item.gambar %}
-            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}" loading="lazy">
+          <img
+            src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}"
+            alt="{{ item.judul }}"
+            loading="lazy"
+          />
           {% else %}
-            <div class="card-image-placeholder"><i class="fa-solid fa-feather"></i></div>
+          <div class="card-image-placeholder">
+            <i class="fa-solid fa-feather"></i>
+          </div>
           {% endif %}
           <span class="badge-tag badge-tag--budaya badge-overlay">
             <i class="fa-solid fa-tag"></i>{{ item.kategori }}
@@ -60,15 +70,24 @@
         </div>
         <div class="card-body">
           <h3>{{ item.judul }}</h3>
-          <p>{{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{% endif %}</p>
+          <p>
+            {{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{%
+            endif %}
+          </p>
           <div class="card-meta">
-            <span class="meta-item"><i class="fa-solid fa-book-open"></i>Artikel Edukasi</span>
-            <span class="meta-item"><i class="fa-solid fa-arrow-right"></i>Baca</span>
+            <span class="meta-item"
+              ><i class="fa-solid fa-book-open"></i>Artikel Edukasi</span
+            >
+            <span class="meta-item"
+              ><i class="fa-solid fa-arrow-right"></i>Baca</span
+            >
           </div>
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Belum ada artikel budaya. Tambahkan melalui dashboard admin.</p>
+      <p class="empty-state">
+        Belum ada artikel budaya. Tambahkan melalui dashboard admin.
+      </p>
       {% endfor %}
     </div>
 
@@ -85,9 +104,14 @@
 <section id="wisata" class="section section-photo">
   <div class="section-inner">
     <div class="section-heading">
-      <span class="eyebrow eyebrow--wisata">02 / Destinasi Bahari &amp; Alam</span>
+      <span class="eyebrow eyebrow--wisata"
+        >02 / Destinasi Bahari &amp; Alam</span
+      >
       <h2 class="section-title">Wisata Sorong Raya</h2>
-      <p class="section-subtitle">Pantai, tebing karang, dan kawasan konservasi unggulan di Kota dan Kabupaten Sorong.</p>
+      <p class="section-subtitle">
+        Pantai, tebing karang, dan kawasan konservasi unggulan di Kota dan
+        Kabupaten Sorong.
+      </p>
     </div>
 
     <div class="grid-3">
@@ -95,9 +119,15 @@
       <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card">
         <div class="card-image">
           {% if item.gambar %}
-            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}" loading="lazy">
+          <img
+            src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}"
+            alt="{{ item.nama_wisata }}"
+            loading="lazy"
+          />
           {% else %}
-            <div class="card-image-placeholder"><i class="fa-solid fa-water"></i></div>
+          <div class="card-image-placeholder">
+            <i class="fa-solid fa-water"></i>
+          </div>
           {% endif %}
           <span class="badge-tag badge-tag--wisata badge-overlay">
             <i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}
@@ -107,7 +137,9 @@
           <h3>{{ item.nama_wisata }}</h3>
           <p>{{ item.deskripsi | striptags | truncate(120) }}</p>
           <div class="card-meta">
-            <span class="meta-item"><i class="fa-solid fa-location-dot"></i>{{ item.wilayah }}</span>
+            <span class="meta-item"
+              ><i class="fa-solid fa-location-dot"></i>{{ item.wilayah }}</span
+            >
             <span class="meta-rating">
               <i class="fa-solid fa-star"></i>{{ item.rating.average }}
               <small>({{ item.rating.count }})</small>
@@ -116,7 +148,9 @@
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Belum ada destinasi wisata. Tambahkan melalui dashboard admin.</p>
+      <p class="empty-state">
+        Belum ada destinasi wisata. Tambahkan melalui dashboard admin.
+      </p>
       {% endfor %}
     </div>
 

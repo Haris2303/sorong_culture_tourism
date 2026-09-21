@@ -1,21 +1,30 @@
-{% extends "public/base.html" %}
-{% block title %}Katalog Budaya Suku Moi — Sorong Raya{% endblock %}
-{% block content %}
+{% extends "public/base.html" %} {% block title %}Katalog Budaya Suku Moi |
+Sorong Raya{% endblock %} {% block content %}
 <section class="page-header">
   <div class="section-inner">
     <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
     <h1 class="page-title">Budaya Suku Moi</h1>
-    <p class="section-subtitle">Katalog adat istiadat, tarian, seni ukir, dan upacara adat masyarakat Sorong Raya.</p>
+    <p class="section-subtitle">
+      Katalog adat istiadat, tarian, seni ukir, dan upacara adat masyarakat
+      Sorong Raya.
+    </p>
   </div>
 </section>
 
 <section class="section">
   <div class="section-inner">
     <div class="filter-bar">
-      <a href="{{ url_for('budaya_list') }}" class="filter-chip {{ 'active' if not active_kategori }}">Semua</a>
+      <a
+        href="{{ url_for('budaya_list') }}"
+        class="filter-chip {{ 'active' if not active_kategori }}"
+        >Semua</a
+      >
       {% for k in kategori_list %}
-      <a href="{{ url_for('budaya_list', kategori=k.kategori) }}"
-         class="filter-chip {{ 'active' if active_kategori == k.kategori }}">{{ k.kategori }}</a>
+      <a
+        href="{{ url_for('budaya_list', kategori=k.kategori) }}"
+        class="filter-chip {{ 'active' if active_kategori == k.kategori }}"
+        >{{ k.kategori }}</a
+      >
       {% endfor %}
     </div>
 
@@ -24,9 +33,15 @@
       <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
         <div class="card-image">
           {% if item.gambar %}
-            <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}" loading="lazy">
+          <img
+            src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}"
+            alt="{{ item.judul }}"
+            loading="lazy"
+          />
           {% else %}
-            <div class="card-image-placeholder"><i class="fa-solid fa-feather"></i></div>
+          <div class="card-image-placeholder">
+            <i class="fa-solid fa-feather"></i>
+          </div>
           {% endif %}
           <span class="badge-tag badge-tag--budaya badge-overlay">
             <i class="fa-solid fa-tag"></i>{{ item.kategori }}
@@ -34,21 +49,29 @@
         </div>
         <div class="card-body">
           <h3>{{ item.judul }}</h3>
-          <p>{{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{% endif %}</p>
+          <p>
+            {{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{%
+            endif %}
+          </p>
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Tidak ada artikel budaya untuk filter ini.</p>
+      <p class="empty-state">Tidak ada artikel budaya untuk filter ini.</p>
       {% endfor %}
     </div>
 
     {% if pagination.total > 0 %}
     <div class="pagination">
-      <span class="pagination-info">Menampilkan {{ items|length }} dari {{ pagination.total }} data</span>
+      <span class="pagination-info"
+        >Menampilkan {{ items|length }} dari {{ pagination.total }} data</span
+      >
       {% if pagination.total_pages > 1 %}
       <div class="pagination-controls">
         {% if pagination.has_prev %}
-        <a href="{{ url_for('budaya_list', kategori=active_kategori or None, page=pagination.page - 1) }}" class="btn btn-small btn-outline">
+        <a
+          href="{{ url_for('budaya_list', kategori=active_kategori or None, page=pagination.page - 1) }}"
+          class="btn btn-small btn-outline"
+        >
           <i class="fa-solid fa-chevron-left"></i>Sebelumnya
         </a>
         {% else %}
@@ -56,9 +79,14 @@
           <i class="fa-solid fa-chevron-left"></i>Sebelumnya
         </span>
         {% endif %}
-        <span class="pagination-pages">Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span>
+        <span class="pagination-pages"
+          >Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span
+        >
         {% if pagination.has_next %}
-        <a href="{{ url_for('budaya_list', kategori=active_kategori or None, page=pagination.page + 1) }}" class="btn btn-small btn-outline">
+        <a
+          href="{{ url_for('budaya_list', kategori=active_kategori or None, page=pagination.page + 1) }}"
+          class="btn btn-small btn-outline"
+        >
           Berikutnya<i class="fa-solid fa-chevron-right"></i>
         </a>
         {% else %}

@@ -1,11 +1,15 @@
-{% extends "public/base.html" %}
-{% block title %}Pencarian "{{ q }}" — Sorong Raya{% endblock %}
-{% block content %}
+{% extends "public/base.html" %} {% block title %}Pencarian "{{ q }}" | Sorong
+Raya{% endblock %} {% block content %}
 <section class="page-header">
   <div class="section-inner">
-    <span class="eyebrow"><i class="fa-solid fa-magnifying-glass"></i>Hasil Pencarian</span>
+    <span class="eyebrow"
+      ><i class="fa-solid fa-magnifying-glass"></i>Hasil Pencarian</span
+    >
     <h1 class="page-title">{{ q or 'Kata kunci kosong' }}</h1>
-    <p class="section-subtitle">{{ budaya_results|length + wisata_results|length }} hasil ditemukan pada katalog budaya dan wisata.</p>
+    <p class="section-subtitle">
+      {{ budaya_results|length + wisata_results|length }} hasil ditemukan pada
+      katalog budaya dan wisata.
+    </p>
   </div>
 </section>
 
@@ -16,13 +20,18 @@
       {% for item in budaya_results %}
       <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
         <div class="card-body">
-          <span class="badge-tag badge-tag--budaya"><i class="fa-solid fa-tag"></i>{{ item.kategori }}</span>
+          <span class="badge-tag badge-tag--budaya"
+            ><i class="fa-solid fa-tag"></i>{{ item.kategori }}</span
+          >
           <h3>{{ item.judul }}</h3>
-          <p>{{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{% endif %}</p>
+          <p>
+            {{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{%
+            endif %}
+          </p>
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Tidak ada artikel budaya yang cocok.</p>
+      <p class="empty-state">Tidak ada artikel budaya yang cocok.</p>
       {% endfor %}
     </div>
 
@@ -31,13 +40,15 @@
       {% for item in wisata_results %}
       <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card">
         <div class="card-body">
-          <span class="badge-tag badge-tag--wisata"><i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}</span>
+          <span class="badge-tag badge-tag--wisata"
+            ><i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}</span
+          >
           <h3>{{ item.nama_wisata }}</h3>
           <p>{{ item.deskripsi | striptags | truncate(120) }}</p>
         </div>
       </a>
       {% else %}
-        <p class="empty-state">Tidak ada destinasi wisata yang cocok.</p>
+      <p class="empty-state">Tidak ada destinasi wisata yang cocok.</p>
       {% endfor %}
     </div>
   </div>

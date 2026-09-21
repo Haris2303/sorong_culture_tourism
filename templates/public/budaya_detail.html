@@ -1,9 +1,10 @@
-{% extends "public/base.html" %}
-{% block title %}{{ item.judul }} — Budaya Sorong Raya{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.css">
-{% endblock %}
-{% block content %}
+{% extends "public/base.html" %} {% block title %}{{ item.judul }} | Budaya
+Sorong Raya{% endblock %} {% block extra_css %}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.css"
+/>
+{% endblock %} {% block content %}
 <section class="section">
   <div class="section-inner narrow">
     <a href="{{ url_for('budaya_list') }}" class="back-link">
@@ -17,22 +18,27 @@
 
     <div class="detail-image">
       {% if galeri_images %}
-        <div class="swiper detail-swiper">
-          <div class="swiper-wrapper">
-            {% for gambar in galeri_images %}
-            <div class="swiper-slide">
-              <img src="{{ url_for('static', filename='uploads/' ~ gambar) }}" alt="{{ item.judul }}">
-            </div>
-            {% endfor %}
+      <div class="swiper detail-swiper">
+        <div class="swiper-wrapper">
+          {% for gambar in galeri_images %}
+          <div class="swiper-slide">
+            <img
+              src="{{ url_for('static', filename='uploads/' ~ gambar) }}"
+              alt="{{ item.judul }}"
+            />
           </div>
-          {% if galeri_images|length > 1 %}
-          <div class="swiper-button-prev"></div>
-          <div class="swiper-button-next"></div>
-          <div class="swiper-pagination"></div>
-          {% endif %}
+          {% endfor %}
         </div>
+        {% if galeri_images|length > 1 %}
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-pagination"></div>
+        {% endif %}
+      </div>
       {% else %}
-        <div class="card-image-placeholder large"><i class="fa-solid fa-feather"></i></div>
+      <div class="card-image-placeholder large">
+        <i class="fa-solid fa-feather"></i>
+      </div>
       {% endif %}
     </div>
 
@@ -50,22 +56,20 @@
     </div>
   </div>
 </section>
-{% endblock %}
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.js"></script>
 {% if galeri_images|length > 1 %}
 <script>
-new Swiper('.detail-swiper', {
-  loop: true,
-  navigation: {
-    nextEl: '.detail-swiper .swiper-button-next',
-    prevEl: '.detail-swiper .swiper-button-prev',
-  },
-  pagination: {
-    el: '.detail-swiper .swiper-pagination',
-    clickable: true,
-  },
-});
+  new Swiper(".detail-swiper", {
+    loop: true,
+    navigation: {
+      nextEl: ".detail-swiper .swiper-button-next",
+      prevEl: ".detail-swiper .swiper-button-prev",
+    },
+    pagination: {
+      el: ".detail-swiper .swiper-pagination",
+      clickable: true,
+    },
+  });
 </script>
-{% endif %}
-{% endblock %}
+{% endif %} {% endblock %}

@@ -1,12 +1,15 @@
-{% extends "public/base.html" %}
-{% block title %}Halaman Tidak Ditemukan — Sorong Raya{% endblock %}
-{% block content %}
+{% extends "public/base.html" %} {% block title %}Halaman Tidak Ditemukan |
+Sorong Raya{% endblock %} {% block content %}
 <section class="section">
   <div class="section-inner narrow">
     <div class="section-heading center">
-      <span class="eyebrow"><i class="fa-solid fa-triangle-exclamation"></i>Error 404</span>
+      <span class="eyebrow"
+        ><i class="fa-solid fa-triangle-exclamation"></i>Error 404</span
+      >
       <h1 class="section-title">Halaman tidak ditemukan</h1>
-      <p class="section-subtitle">Konten yang Anda cari mungkin sudah dipindahkan atau dihapus.</p>
+      <p class="section-subtitle">
+        Konten yang Anda cari mungkin sudah dipindahkan atau dihapus.
+      </p>
     </div>
     <div class="section-cta">
       <a href="{{ url_for('index') }}" class="btn btn-primary">
