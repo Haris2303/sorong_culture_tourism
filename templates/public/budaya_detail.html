@@ -1,5 +1,8 @@
 {% extends "public/base.html" %}
 {% block title %}{{ item.judul }} — Budaya Sorong Raya{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.css">
+{% endblock %}
 {% block content %}
 <section class="section">
   <div class="section-inner narrow">
@@ -13,14 +16,27 @@
     <h1 class="page-title">{{ item.judul }}</h1>
 
     <div class="detail-image">
-      {% if item.gambar %}
-        <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.judul }}">
+      {% if galeri_images %}
+        <div class="swiper detail-swiper">
+          <div class="swiper-wrapper">
+            {% for gambar in galeri_images %}
+            <div class="swiper-slide">
+              <img src="{{ url_for('static', filename='uploads/' ~ gambar) }}" alt="{{ item.judul }}">
+            </div>
+            {% endfor %}
+          </div>
+          {% if galeri_images|length > 1 %}
+          <div class="swiper-button-prev"></div>
+          <div class="swiper-button-next"></div>
+          <div class="swiper-pagination"></div>
+          {% endif %}
+        </div>
       {% else %}
         <div class="card-image-placeholder large"><i class="fa-solid fa-feather"></i></div>
       {% endif %}
     </div>
 
-    <div class="detail-content">{{ item.konten_lengkap }}</div>
+    <div class="detail-content">{{ item.konten_lengkap | safe }}</div>
 
     <div class="detail-meta-grid">
       <div class="meta-box">
@@ -34,4 +50,22 @@
     </div>
   </div>
 </section>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.js"></script>
+{% if galeri_images|length > 1 %}
+<script>
+new Swiper('.detail-swiper', {
+  loop: true,
+  navigation: {
+    nextEl: '.detail-swiper .swiper-button-next',
+    prevEl: '.detail-swiper .swiper-button-prev',
+  },
+  pagination: {
+    el: '.detail-swiper .swiper-pagination',
+    clickable: true,
+  },
+});
+</script>
+{% endif %}
 {% endblock %}

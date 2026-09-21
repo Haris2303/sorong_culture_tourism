@@ -33,7 +33,7 @@
         <div class="card-body">
           <span class="badge-tag badge-tag--wisata"><i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}</span>
           <h3>{{ item.nama_wisata }}</h3>
-          <p>{{ item.deskripsi[:120] }}{% if item.deskripsi|length > 120 %}…{% endif %}</p>
+          <p>{{ item.deskripsi | striptags | truncate(120) }}</p>
         </div>
       </a>
       {% else %}

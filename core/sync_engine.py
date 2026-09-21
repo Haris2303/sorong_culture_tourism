@@ -15,6 +15,7 @@ from langchain_core.documents import Document
 from pypdf import PdfReader
 
 from core import db as dbcore
+from core.content import html_to_plain_text
 from core.rag_engine import get_embeddings, reset_engine_cache
 from langchain_community.vectorstores import Chroma
 
@@ -110,7 +111,7 @@ def _load_mysql_articles() -> list[Document]:
             f"Judul Budaya: {row['judul']}\n"
             f"Kategori: {row['kategori']}\n"
             f"Ringkasan: {row['ringkasan']}\n"
-            f"Detail: {row['konten_lengkap']}"
+            f"Detail: {html_to_plain_text(row['konten_lengkap'])}"
         )
         docs.append(Document(
             page_content=content,
@@ -118,14 +119,14 @@ def _load_mysql_articles() -> list[Document]:
         ))
 
     for row in dbcore.query_all(
-        "SELECT id, nama_wisata, wilayah, deskripsi, fasilitas, lokasi, tiket_masuk, jam_operasional FROM wisata"
+        "SELECT id, nama_wisata, wilayah, deskripsi, fasilitas, alamat, tiket_masuk, jam_operasional FROM wisata"
     ):
         content = (
             f"Nama Wisata: {row['nama_wisata']}\n"
             f"Wilayah: {row['wilayah']}\n"
-            f"Deskripsi: {row['deskripsi']}\n"
+            f"Deskripsi: {html_to_plain_text(row['deskripsi'])}\n"
             f"Fasilitas: {row['fasilitas']}\n"
-            f"Lokasi: {row['lokasi']}\n"
+            f"Alamat: {row['alamat']}\n"
             f"Tiket Masuk: {row['tiket_masuk']}\n"
             f"Jam Operasional: {row['jam_operasional']}"
         )

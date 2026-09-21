@@ -29,6 +29,15 @@ CREATE TABLE IF NOT EXISTS budaya (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+-- 2b. Tabel Galeri Foto Tambahan Budaya (untuk slider di halaman detail)
+CREATE TABLE IF NOT EXISTS budaya_galeri (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    budaya_id INT NOT NULL,
+    gambar VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (budaya_id) REFERENCES budaya(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- 3. Tabel Tempat Wisata
 CREATE TABLE IF NOT EXISTS wisata (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,15 +45,30 @@ CREATE TABLE IF NOT EXISTS wisata (
     wilayah ENUM('Kota Sorong', 'Kabupaten Sorong') NOT NULL,
     deskripsi LONGTEXT NOT NULL,
     fasilitas TEXT NOT NULL,
-    lokasi VARCHAR(255) NOT NULL,
+    alamat VARCHAR(255) NOT NULL,
     tiket_masuk VARCHAR(100) DEFAULT 'Gratis / Menyesuaikan',
     jam_operasional VARCHAR(100) DEFAULT 'Setiap Hari',
     gambar VARCHAR(255) NULL,
+    latitude DECIMAL(10,7) NULL,
+    longitude DECIMAL(10,7) NULL,
+    sosmed_email VARCHAR(150) NULL,
+    sosmed_facebook VARCHAR(255) NULL,
+    sosmed_instagram VARCHAR(255) NULL,
+    sosmed_youtube VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- 4. Tabel Metadata Dokumen RAG Chatbot
+-- 4. Tabel Galeri Foto Tambahan Wisata (untuk slider di halaman detail)
+CREATE TABLE IF NOT EXISTS wisata_galeri (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    wisata_id INT NOT NULL,
+    gambar VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (wisata_id) REFERENCES wisata(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 5. Tabel Metadata Dokumen RAG Chatbot
 CREATE TABLE IF NOT EXISTS knowledge_docs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nama_file VARCHAR(255) NOT NULL,
@@ -54,7 +78,7 @@ CREATE TABLE IF NOT EXISTS knowledge_docs (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- 5. Tabel Rating & Ulasan Wisata (Proteksi Anti-Spam)
+-- 6. Tabel Rating & Ulasan Wisata (Proteksi Anti-Spam)
 CREATE TABLE IF NOT EXISTS ratings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     wisata_id INT NOT NULL,
@@ -113,39 +137,39 @@ WHERE NOT EXISTS (SELECT 1 FROM budaya WHERE judul = 'Upacara Adat Injambik');
 -- ============================================================
 -- Dummy data wisata
 -- ============================================================
-INSERT INTO wisata (nama_wisata, wilayah, deskripsi, fasilitas, lokasi, tiket_masuk, jam_operasional, gambar)
+INSERT INTO wisata (nama_wisata, wilayah, deskripsi, fasilitas, alamat, tiket_masuk, jam_operasional, gambar)
 SELECT * FROM (SELECT
   'Tanjung Batu' AS nama_wisata,
   'Kabupaten Sorong' AS wilayah,
   'Kawasan tebing batu karang yang menjorok ke laut dengan pemandangan matahari terbenam yang memukau.' AS deskripsi,
   'Area parkir, warung makan, gazebo, spot foto' AS fasilitas,
-  'Distrik Makbon, Kabupaten Sorong' AS lokasi,
+  'Distrik Makbon, Kabupaten Sorong' AS alamat,
   'Rp 10.000' AS tiket_masuk,
   '08.00 - 18.00 WIT' AS jam_operasional,
   NULL AS gambar
 ) AS tmp
 WHERE NOT EXISTS (SELECT 1 FROM wisata WHERE nama_wisata = 'Tanjung Batu');
 
-INSERT INTO wisata (nama_wisata, wilayah, deskripsi, fasilitas, lokasi, tiket_masuk, jam_operasional, gambar)
+INSERT INTO wisata (nama_wisata, wilayah, deskripsi, fasilitas, alamat, tiket_masuk, jam_operasional, gambar)
 SELECT * FROM (SELECT
   'Pantai Doom' AS nama_wisata,
   'Kota Sorong' AS wilayah,
   'Pantai bersejarah peninggalan masa kolonial yang kini menjadi destinasi rekreasi keluarga favorit warga Kota Sorong.' AS deskripsi,
   'Area parkir, kios kuliner, dermaga, kolam renang anak' AS fasilitas,
-  'Kelurahan Klawuyuk, Kota Sorong' AS lokasi,
+  'Kelurahan Klawuyuk, Kota Sorong' AS alamat,
   'Rp 5.000' AS tiket_masuk,
   '07.00 - 21.00 WIT' AS jam_operasional,
   NULL AS gambar
 ) AS tmp
 WHERE NOT EXISTS (SELECT 1 FROM wisata WHERE nama_wisata = 'Pantai Doom');
 
-INSERT INTO wisata (nama_wisata, wilayah, deskripsi, fasilitas, lokasi, tiket_masuk, jam_operasional, gambar)
+INSERT INTO wisata (nama_wisata, wilayah, deskripsi, fasilitas, alamat, tiket_masuk, jam_operasional, gambar)
 SELECT * FROM (SELECT
   'Saoka' AS nama_wisata,
   'Kota Sorong' AS wilayah,
   'Kawasan mangrove dan pantai alami yang masih asri, cocok untuk wisata edukasi konservasi.' AS deskripsi,
   'Jalur tracking mangrove, gazebo, area piknik' AS fasilitas,
-  'Kelurahan Klasaman, Kota Sorong' AS lokasi,
+  'Kelurahan Klasaman, Kota Sorong' AS alamat,
   'Gratis / Menyesuaikan' AS tiket_masuk,
   '08.00 - 17.00 WIT' AS jam_operasional,
   NULL AS gambar

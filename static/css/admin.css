@@ -240,6 +240,7 @@
   margin-bottom: var(--space-md);
 }
 .admin-table-header h2 { margin-bottom: 0; }
+.header-actions { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
 .table-search {
   position: relative;
   display: flex;
@@ -284,10 +285,62 @@
 }
 .table-search-clear:hover { background: var(--surface-2); color: var(--ink); }
 
+/* ---------- Modal tambah/sunting ---------- */
+body.modal-open { overflow: hidden; }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-md);
+  background: rgba(15, 23, 42, 0.5);
+}
+.modal-overlay:not([hidden]) { display: flex; }
+.modal-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  max-height: 100%;
+  background: var(--surface-1);
+  border-radius: var(--r-lg);
+  box-shadow: var(--elev-3);
+  overflow: hidden;
+}
+.modal-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--hairline);
+}
+.modal-header h2 { margin-bottom: 0; font-size: var(--subhead-size); font-weight: 600; letter-spacing: -0.3px; }
+.modal-close-btn {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  color: var(--ink-tertiary);
+  transition: background var(--transition), color var(--transition);
+}
+.modal-close-btn:hover { background: var(--surface-2); color: var(--ink); }
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-lg);
+  overflow-y: auto;
+}
+
 .admin-form { display: flex; flex-direction: column; }
 .admin-form label { margin: var(--space-sm) 0 6px; color: var(--ink-muted); font-size: var(--body-sm-size); font-weight: 500; }
 .admin-form input[type="text"],
-.admin-form input[type="file"],
+.admin-form input[type="email"],
 .admin-form select,
 .admin-form textarea {
   width: 100%;
@@ -309,6 +362,123 @@
   box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
 }
 .form-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-md); }
+.form-hint { margin-top: 4px; color: var(--ink-tertiary); font-size: var(--caption-size); }
+
+/* ---------- Editor WYSIWYG (Quill) untuk konten panjang ---------- */
+.wysiwyg-editor { font-family: inherit; }
+.wysiwyg-editor .ql-toolbar.ql-snow {
+  background: var(--surface-2);
+  border-color: var(--hairline);
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  font-family: inherit;
+}
+.wysiwyg-editor .ql-container.ql-snow {
+  border-color: var(--hairline);
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  background: var(--canvas);
+  font-family: inherit;
+  font-size: var(--body-sm-size);
+}
+.wysiwyg-editor .ql-editor {
+  min-height: 160px;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.wysiwyg-editor .ql-editor.ql-blank::before {
+  color: var(--ink-tertiary);
+  font-style: normal;
+}
+.wysiwyg-editor:focus-within .ql-toolbar.ql-snow,
+.wysiwyg-editor:focus-within .ql-container.ql-snow {
+  border-color: var(--hairline-tertiary);
+}
+
+/* ---------- Kontak & media sosial (admin) ---------- */
+.sosmed-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm) var(--space-md);
+}
+.sosmed-field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+.sosmed-field label i { width: 14px; color: var(--ink-tertiary); }
+@media (max-width: 560px) {
+  .sosmed-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Input file custom (gambar utama & galeri) ---------- */
+.file-input-wrap { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+.file-input-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.file-input-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 9px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  color: var(--ink-muted);
+  font-size: var(--body-sm-size);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition), color var(--transition);
+}
+.file-input-btn:hover { border-color: var(--hairline-strong); background: var(--surface-1); color: var(--ink); }
+.file-input-native:focus-visible + .file-input-btn {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+}
+.file-input-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-tertiary);
+  font-size: var(--body-sm-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Galeri foto wisata (admin) ---------- */
+.gallery-preview { margin-top: var(--space-sm); }
+.gallery-thumbs { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.gallery-thumb {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-thumb form { position: absolute; top: 4px; right: 4px; margin: 0; }
+.gallery-thumb-delete {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  background: rgba(15, 23, 42, 0.65);
+  color: #fff;
+  font-size: 11px;
+  transition: background var(--transition);
+}
+.gallery-thumb-delete:hover { background: var(--semantic-danger); }
 
 /* ---------- Radio group (dipakai kategori budaya & tiket wisata) ---------- */
 .radio-group { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
@@ -316,6 +486,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
   padding: 8px 14px;
   background: var(--canvas);
   border: 1px solid var(--hairline);
@@ -373,6 +544,22 @@
 .table-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .inline-form { display: inline-flex; }
 .admin-table .empty-state { background: transparent; border: none; padding: var(--space-lg); }
+
+/* ---------- Pagination ---------- */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--hairline);
+}
+.pagination-info { color: var(--ink-tertiary); font-size: var(--caption-size); }
+.pagination-controls { display: flex; align-items: center; gap: var(--space-sm); }
+.pagination-pages { color: var(--ink-subtle); font-size: var(--body-sm-size); font-weight: 500; white-space: nowrap; }
+.pagination-btn-disabled { opacity: 0.45; pointer-events: none; cursor: default; }
 
 .badge {
   display: inline-flex;

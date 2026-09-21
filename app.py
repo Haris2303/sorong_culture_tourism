@@ -3,6 +3,8 @@
 Router utama: Portal Publik, API Chatbot RAG, API Rating Anti-Spam, dan Dashboard Admin.
 """
 import os
+import re
+import math
 import functools
 from datetime import datetime
 
@@ -18,6 +20,7 @@ from werkzeug.utils import secure_filename
 from config import Config
 from core import db as dbcore
 from core.security import generate_fingerprint, get_client_ip, contains_badword
+from core.content import sanitize_content_html
 from core.rag_engine import answer_query
 from core.sync_engine import run_sync, get_last_sync_time
 
@@ -39,6 +42,7 @@ os.makedirs(app.config["CHROMA_PERSIST_DIR"], exist_ok=True)
 
 BUDAYA_KATEGORI_OPTIONS = ["Tarian Tradisional", "Alat Musik", "Seni Ukir", "Upacara Adat"]
 WISATA_TIKET_OPTIONS = ["Gratis / Menyesuaikan", "Rp 5.000", "Rp 10.000", "Rp 15.000", "Rp 20.000"]
+PAGE_SIZE = 5
 
 
 # ============================================================
@@ -52,6 +56,21 @@ def admin_required(view):
             return redirect(url_for("admin_login", next=request.path))
         return view(*args, **kwargs)
     return wrapped
+
+
+def paginate(total: int, page: int, per_page: int) -> dict:
+    """Hitung metadata pagination (klem nomor halaman ke rentang valid)."""
+    total_pages = max(1, math.ceil(total / per_page))
+    page = min(max(page, 1), total_pages)
+    return {
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "total_pages": total_pages,
+        "has_prev": page > 1,
+        "has_next": page < total_pages,
+        "offset": (page - 1) * per_page,
+    }
 
 
 def trimmed_average(scores: list[int]) -> float:
@@ -75,6 +94,49 @@ def get_wisata_rating_summary(wisata_id: int) -> dict:
     return {"average": trimmed_average(scores), "count": len(scores)}
 
 
+_KOORDINAT_DECIMAL_RE = re.compile(r"^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$")
+_KOORDINAT_DMS_RE = re.compile(
+    r"(\d+(?:\.\d+)?)[°:]\s*(\d+(?:\.\d+)?)['’′]\s*(\d+(?:\.\d+)?)[\"”″]?\s*([NSEWnsew])"
+)
+
+
+def parse_koordinat(text: str):
+    """Ubah teks koordinat (desimal "-0.859042, 131.247695" atau DMS
+    0°44'11.6"S 131°35'01.1"E) menjadi (latitude, longitude) float, atau None jika tidak valid."""
+    text = (text or "").strip()
+    if not text:
+        return None
+
+    decimal_match = _KOORDINAT_DECIMAL_RE.match(text)
+    if decimal_match:
+        lat, lon = float(decimal_match.group(1)), float(decimal_match.group(2))
+        if -90 <= lat <= 90 and -180 <= lon <= 180:
+            return round(lat, 6), round(lon, 6)
+        return None
+
+    matches = _KOORDINAT_DMS_RE.findall(text)
+    if len(matches) != 2:
+        return None
+
+    values = {}
+    for deg, minute, sec, direction in matches:
+        decimal = float(deg) + float(minute) / 60 + float(sec) / 3600
+        direction = direction.upper()
+        if direction in ("S", "W"):
+            decimal = -decimal
+        values["lat" if direction in ("N", "S") else "lon"] = decimal
+
+    if "lat" not in values or "lon" not in values:
+        return None
+    lat, lon = values["lat"], values["lon"]
+    if -90 <= lat <= 90 and -180 <= lon <= 180:
+        return round(lat, 6), round(lon, 6)
+    return None
+
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
 def save_uploaded_image(file_storage):
     if not file_storage or not file_storage.filename:
         return None
@@ -84,6 +146,16 @@ def save_uploaded_image(file_storage):
     filename = secure_filename(f"{datetime.utcnow().timestamp()}_{file_storage.filename}")
     file_storage.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
     return filename
+
+
+def save_uploaded_images(file_storages):
+    """Simpan beberapa gambar galeri sekaligus, kembalikan daftar nama file yang valid."""
+    filenames = []
+    for file_storage in file_storages:
+        filename = save_uploaded_image(file_storage)
+        if filename:
+            filenames.append(filename)
+    return filenames
 
 
 def save_uploaded_doc(file_storage):
@@ -100,6 +172,17 @@ def save_uploaded_doc(file_storage):
 @app.context_processor
 def inject_globals():
     return {"current_year": datetime.utcnow().year}
+
+
+@app.template_filter("social_url")
+def social_url_filter(value):
+    """Pastikan link sosmed punya skema http(s), agar aman dipakai di href."""
+    if not value:
+        return "#"
+    value = value.strip()
+    if value.startswith("http://") or value.startswith("https://"):
+        return value
+    return f"https://{value}"
 
 
 # ============================================================
@@ -136,17 +219,26 @@ def index():
 @app.route("/budaya")
 def budaya_list():
     kategori = request.args.get("kategori", "").strip()
+    page = request.args.get("page", 1, type=int) or 1
     if kategori:
-        rows = dbcore.query_all(
-            "SELECT id, judul, kategori, ringkasan, gambar FROM budaya WHERE kategori = %s ORDER BY created_at DESC",
-            (kategori,),
-        )
+        where_sql = "WHERE kategori = %s"
+        where_params = (kategori,)
     else:
-        rows = dbcore.query_all(
-            "SELECT id, judul, kategori, ringkasan, gambar FROM budaya ORDER BY created_at DESC"
-        )
+        where_sql = ""
+        where_params = ()
+
+    total = dbcore.query_one(f"SELECT COUNT(*) AS c FROM budaya {where_sql}", where_params)["c"]
+    pagination = paginate(total, page, PAGE_SIZE)
+
+    rows = dbcore.query_all(
+        f"SELECT id, judul, kategori, ringkasan, gambar FROM budaya {where_sql} "
+        "ORDER BY created_at DESC LIMIT %s OFFSET %s",
+        where_params + (pagination["per_page"], pagination["offset"]),
+    )
     kategori_list = dbcore.query_all("SELECT DISTINCT kategori FROM budaya ORDER BY kategori")
-    return render_template("public/budaya.html", items=rows, kategori_list=kategori_list, active_kategori=kategori)
+    return render_template(
+        "public/budaya.html", items=rows, kategori_list=kategori_list, active_kategori=kategori, pagination=pagination
+    )
 
 
 @app.route("/budaya/<int:budaya_id>")
@@ -154,24 +246,39 @@ def budaya_detail(budaya_id):
     item = dbcore.query_one("SELECT * FROM budaya WHERE id = %s", (budaya_id,))
     if not item:
         return render_template("public/404.html"), 404
-    return render_template("public/budaya_detail.html", item=item)
+
+    galeri_images = [item["gambar"]] if item["gambar"] else []
+    galeri_images += [
+        g["gambar"] for g in dbcore.query_all(
+            "SELECT gambar FROM budaya_galeri WHERE budaya_id = %s ORDER BY id ASC", (budaya_id,)
+        )
+    ]
+
+    return render_template("public/budaya_detail.html", item=item, galeri_images=galeri_images)
 
 
 @app.route("/wisata")
 def wisata_list():
     wilayah = request.args.get("wilayah", "").strip()
+    page = request.args.get("page", 1, type=int) or 1
     if wilayah:
-        rows = dbcore.query_all(
-            "SELECT id, nama_wisata, wilayah, deskripsi, gambar FROM wisata WHERE wilayah = %s ORDER BY created_at DESC",
-            (wilayah,),
-        )
+        where_sql = "WHERE wilayah = %s"
+        where_params = (wilayah,)
     else:
-        rows = dbcore.query_all(
-            "SELECT id, nama_wisata, wilayah, deskripsi, gambar FROM wisata ORDER BY created_at DESC"
-        )
+        where_sql = ""
+        where_params = ()
+
+    total = dbcore.query_one(f"SELECT COUNT(*) AS c FROM wisata {where_sql}", where_params)["c"]
+    pagination = paginate(total, page, PAGE_SIZE)
+
+    rows = dbcore.query_all(
+        f"SELECT id, nama_wisata, wilayah, deskripsi, gambar FROM wisata {where_sql} "
+        "ORDER BY created_at DESC LIMIT %s OFFSET %s",
+        where_params + (pagination["per_page"], pagination["offset"]),
+    )
     for r in rows:
         r["rating"] = get_wisata_rating_summary(r["id"])
-    return render_template("public/wisata.html", items=rows, active_wilayah=wilayah)
+    return render_template("public/wisata.html", items=rows, active_wilayah=wilayah, pagination=pagination)
 
 
 @app.route("/wisata/<int:wisata_id>")
@@ -185,7 +292,17 @@ def wisata_detail(wisata_id):
         (wisata_id,),
     )
     summary = get_wisata_rating_summary(wisata_id)
-    return render_template("public/wisata_detail.html", item=item, ratings=ratings, summary=summary)
+
+    galeri_images = [item["gambar"]] if item["gambar"] else []
+    galeri_images += [
+        g["gambar"] for g in dbcore.query_all(
+            "SELECT gambar FROM wisata_galeri WHERE wisata_id = %s ORDER BY id ASC", (wisata_id,)
+        )
+    ]
+
+    return render_template(
+        "public/wisata_detail.html", item=item, ratings=ratings, summary=summary, galeri_images=galeri_images
+    )
 
 
 @app.route("/search")
@@ -342,8 +459,9 @@ def admin_budaya_manage():
         judul = request.form.get("judul", "").strip()
         kategori = request.form.get("kategori", "").strip()
         ringkasan = request.form.get("ringkasan", "").strip()
-        konten = request.form.get("konten_lengkap", "").strip()
+        konten = sanitize_content_html(request.form.get("konten_lengkap", "").strip())
         gambar = save_uploaded_image(request.files.get("gambar"))
+        galeri_filenames = save_uploaded_images(request.files.getlist("galeri"))
 
         edit_id = request.form.get("id")
         if edit_id:
@@ -357,26 +475,46 @@ def admin_budaya_manage():
                     "UPDATE budaya SET judul=%s, kategori=%s, ringkasan=%s, konten_lengkap=%s WHERE id=%s",
                     (judul, kategori, ringkasan, konten, edit_id),
                 )
+            budaya_id = edit_id
             flash("Artikel budaya berhasil diperbarui.", "success")
         else:
-            dbcore.execute(
+            budaya_id = dbcore.execute(
                 "INSERT INTO budaya (judul, kategori, ringkasan, konten_lengkap, gambar) VALUES (%s,%s,%s,%s,%s)",
                 (judul, kategori, ringkasan, konten, gambar),
             )
             flash("Artikel budaya berhasil ditambahkan.", "success")
+
+        for filename in galeri_filenames:
+            dbcore.execute(
+                "INSERT INTO budaya_galeri (budaya_id, gambar) VALUES (%s, %s)",
+                (budaya_id, filename),
+            )
         return redirect(url_for("admin_budaya_manage"))
 
     q = request.args.get("q", "").strip()
+    page = request.args.get("page", 1, type=int) or 1
     if q:
         like = f"%{q}%"
-        items = dbcore.query_all(
-            "SELECT * FROM budaya WHERE judul LIKE %s OR kategori LIKE %s OR ringkasan LIKE %s "
-            "ORDER BY created_at DESC",
-            (like, like, like),
-        )
+        where_sql = "WHERE judul LIKE %s OR kategori LIKE %s OR ringkasan LIKE %s"
+        where_params = (like, like, like)
     else:
-        items = dbcore.query_all("SELECT * FROM budaya ORDER BY created_at DESC")
-    return render_template("admin/budaya_manage.html", items=items, q=q, kategori_options=BUDAYA_KATEGORI_OPTIONS)
+        where_sql = ""
+        where_params = ()
+
+    total = dbcore.query_one(f"SELECT COUNT(*) AS c FROM budaya {where_sql}", where_params)["c"]
+    pagination = paginate(total, page, PAGE_SIZE)
+
+    items = dbcore.query_all(
+        f"SELECT * FROM budaya {where_sql} ORDER BY created_at DESC LIMIT %s OFFSET %s",
+        where_params + (pagination["per_page"], pagination["offset"]),
+    )
+    for item in items:
+        item["galeri"] = dbcore.query_all(
+            "SELECT id, gambar FROM budaya_galeri WHERE budaya_id = %s ORDER BY id ASC", (item["id"],)
+        )
+    return render_template(
+        "admin/budaya_manage.html", items=items, q=q, kategori_options=BUDAYA_KATEGORI_OPTIONS, pagination=pagination
+    )
 
 
 @app.route("/admin/budaya/<int:budaya_id>/delete", methods=["POST"])
@@ -384,6 +522,32 @@ def admin_budaya_manage():
 def admin_budaya_delete(budaya_id):
     dbcore.execute("DELETE FROM budaya WHERE id = %s", (budaya_id,))
     flash("Artikel budaya dihapus.", "success")
+    return redirect(url_for("admin_budaya_manage"))
+
+
+@app.route("/admin/budaya/galeri/<int:galeri_id>/delete", methods=["POST"])
+@admin_required
+def admin_budaya_galeri_delete(galeri_id):
+    foto = dbcore.query_one("SELECT * FROM budaya_galeri WHERE id = %s", (galeri_id,))
+    if foto:
+        path = os.path.join(app.config["UPLOAD_FOLDER"], foto["gambar"])
+        if os.path.exists(path):
+            os.remove(path)
+        dbcore.execute("DELETE FROM budaya_galeri WHERE id = %s", (galeri_id,))
+        flash("Foto galeri dihapus.", "success")
+    return redirect(url_for("admin_budaya_manage"))
+
+
+@app.route("/admin/budaya/<int:budaya_id>/gambar/delete", methods=["POST"])
+@admin_required
+def admin_budaya_gambar_delete(budaya_id):
+    budaya = dbcore.query_one("SELECT gambar FROM budaya WHERE id = %s", (budaya_id,))
+    if budaya and budaya["gambar"]:
+        path = os.path.join(app.config["UPLOAD_FOLDER"], budaya["gambar"])
+        if os.path.exists(path):
+            os.remove(path)
+        dbcore.execute("UPDATE budaya SET gambar = NULL WHERE id = %s", (budaya_id,))
+        flash("Gambar utama dihapus.", "success")
     return redirect(url_for("admin_budaya_manage"))
 
 
@@ -397,9 +561,9 @@ def admin_wisata_manage():
     if request.method == "POST":
         nama_wisata = request.form.get("nama_wisata", "").strip()
         wilayah = request.form.get("wilayah", "").strip()
-        deskripsi = request.form.get("deskripsi", "").strip()
+        deskripsi = sanitize_content_html(request.form.get("deskripsi", "").strip())
         fasilitas = request.form.get("fasilitas", "").strip()
-        lokasi = request.form.get("lokasi", "").strip()
+        alamat = request.form.get("alamat", "").strip()
         tiket_choice = request.form.get("tiket_masuk", "").strip()
         if tiket_choice == "__custom__":
             tiket_masuk = request.form.get("tiket_masuk_custom", "").strip() or "Gratis / Menyesuaikan"
@@ -407,42 +571,93 @@ def admin_wisata_manage():
             tiket_masuk = tiket_choice or "Gratis / Menyesuaikan"
         jam_operasional = request.form.get("jam_operasional", "Setiap Hari").strip()
         gambar = save_uploaded_image(request.files.get("gambar"))
+        galeri_filenames = save_uploaded_images(request.files.getlist("galeri"))
+
+        koordinat_input = request.form.get("koordinat", "").strip()
+        latitude, longitude = None, None
+        if koordinat_input:
+            parsed = parse_koordinat(koordinat_input)
+            if parsed:
+                latitude, longitude = parsed
+            else:
+                flash(
+                    "Format koordinat tidak dikenali. Gunakan format desimal (-0.859042, 131.247695) "
+                    "atau DMS (0°44'11.6\"S 131°35'01.1\"E). Lokasi peta tidak disimpan.",
+                    "error",
+                )
+
+        sosmed_email = request.form.get("sosmed_email", "").strip()
+        if sosmed_email and not _EMAIL_RE.match(sosmed_email):
+            flash("Format email tidak valid. Email tidak disimpan.", "error")
+            sosmed_email = ""
+        sosmed_facebook = request.form.get("sosmed_facebook", "").strip()
+        sosmed_instagram = request.form.get("sosmed_instagram", "").strip()
+        sosmed_youtube = request.form.get("sosmed_youtube", "").strip()
 
         edit_id = request.form.get("id")
         if edit_id:
             if gambar:
                 dbcore.execute(
-                    "UPDATE wisata SET nama_wisata=%s, wilayah=%s, deskripsi=%s, fasilitas=%s, lokasi=%s, "
-                    "tiket_masuk=%s, jam_operasional=%s, gambar=%s WHERE id=%s",
-                    (nama_wisata, wilayah, deskripsi, fasilitas, lokasi, tiket_masuk, jam_operasional, gambar, edit_id),
+                    "UPDATE wisata SET nama_wisata=%s, wilayah=%s, deskripsi=%s, fasilitas=%s, alamat=%s, "
+                    "tiket_masuk=%s, jam_operasional=%s, gambar=%s, latitude=%s, longitude=%s, "
+                    "sosmed_email=%s, sosmed_facebook=%s, sosmed_instagram=%s, sosmed_youtube=%s WHERE id=%s",
+                    (nama_wisata, wilayah, deskripsi, fasilitas, alamat, tiket_masuk, jam_operasional,
+                     gambar, latitude, longitude, sosmed_email or None, sosmed_facebook or None,
+                     sosmed_instagram or None, sosmed_youtube or None, edit_id),
                 )
             else:
                 dbcore.execute(
-                    "UPDATE wisata SET nama_wisata=%s, wilayah=%s, deskripsi=%s, fasilitas=%s, lokasi=%s, "
-                    "tiket_masuk=%s, jam_operasional=%s WHERE id=%s",
-                    (nama_wisata, wilayah, deskripsi, fasilitas, lokasi, tiket_masuk, jam_operasional, edit_id),
+                    "UPDATE wisata SET nama_wisata=%s, wilayah=%s, deskripsi=%s, fasilitas=%s, alamat=%s, "
+                    "tiket_masuk=%s, jam_operasional=%s, latitude=%s, longitude=%s, "
+                    "sosmed_email=%s, sosmed_facebook=%s, sosmed_instagram=%s, sosmed_youtube=%s WHERE id=%s",
+                    (nama_wisata, wilayah, deskripsi, fasilitas, alamat, tiket_masuk, jam_operasional,
+                     latitude, longitude, sosmed_email or None, sosmed_facebook or None,
+                     sosmed_instagram or None, sosmed_youtube or None, edit_id),
                 )
+            wisata_id = edit_id
             flash("Data wisata berhasil diperbarui.", "success")
         else:
-            dbcore.execute(
-                "INSERT INTO wisata (nama_wisata, wilayah, deskripsi, fasilitas, lokasi, tiket_masuk, jam_operasional, gambar) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-                (nama_wisata, wilayah, deskripsi, fasilitas, lokasi, tiket_masuk, jam_operasional, gambar),
+            wisata_id = dbcore.execute(
+                "INSERT INTO wisata (nama_wisata, wilayah, deskripsi, fasilitas, alamat, tiket_masuk, "
+                "jam_operasional, gambar, latitude, longitude, sosmed_email, sosmed_facebook, "
+                "sosmed_instagram, sosmed_youtube) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (nama_wisata, wilayah, deskripsi, fasilitas, alamat, tiket_masuk, jam_operasional,
+                 gambar, latitude, longitude, sosmed_email or None, sosmed_facebook or None,
+                 sosmed_instagram or None, sosmed_youtube or None),
             )
             flash("Data wisata berhasil ditambahkan.", "success")
+
+        for filename in galeri_filenames:
+            dbcore.execute(
+                "INSERT INTO wisata_galeri (wisata_id, gambar) VALUES (%s, %s)",
+                (wisata_id, filename),
+            )
         return redirect(url_for("admin_wisata_manage"))
 
     q = request.args.get("q", "").strip()
+    page = request.args.get("page", 1, type=int) or 1
     if q:
         like = f"%{q}%"
-        items = dbcore.query_all(
-            "SELECT * FROM wisata WHERE nama_wisata LIKE %s OR wilayah LIKE %s OR lokasi LIKE %s "
-            "ORDER BY created_at DESC",
-            (like, like, like),
-        )
+        where_sql = "WHERE nama_wisata LIKE %s OR wilayah LIKE %s OR alamat LIKE %s"
+        where_params = (like, like, like)
     else:
-        items = dbcore.query_all("SELECT * FROM wisata ORDER BY created_at DESC")
-    return render_template("admin/wisata_manage.html", items=items, q=q, tiket_options=WISATA_TIKET_OPTIONS)
+        where_sql = ""
+        where_params = ()
+
+    total = dbcore.query_one(f"SELECT COUNT(*) AS c FROM wisata {where_sql}", where_params)["c"]
+    pagination = paginate(total, page, PAGE_SIZE)
+
+    items = dbcore.query_all(
+        f"SELECT * FROM wisata {where_sql} ORDER BY created_at DESC LIMIT %s OFFSET %s",
+        where_params + (pagination["per_page"], pagination["offset"]),
+    )
+    for item in items:
+        item["galeri"] = dbcore.query_all(
+            "SELECT id, gambar FROM wisata_galeri WHERE wisata_id = %s ORDER BY id ASC", (item["id"],)
+        )
+    return render_template(
+        "admin/wisata_manage.html", items=items, q=q, tiket_options=WISATA_TIKET_OPTIONS, pagination=pagination
+    )
 
 
 @app.route("/admin/wisata/<int:wisata_id>/delete", methods=["POST"])
@@ -450,6 +665,32 @@ def admin_wisata_manage():
 def admin_wisata_delete(wisata_id):
     dbcore.execute("DELETE FROM wisata WHERE id = %s", (wisata_id,))
     flash("Data wisata dihapus.", "success")
+    return redirect(url_for("admin_wisata_manage"))
+
+
+@app.route("/admin/wisata/galeri/<int:galeri_id>/delete", methods=["POST"])
+@admin_required
+def admin_wisata_galeri_delete(galeri_id):
+    foto = dbcore.query_one("SELECT * FROM wisata_galeri WHERE id = %s", (galeri_id,))
+    if foto:
+        path = os.path.join(app.config["UPLOAD_FOLDER"], foto["gambar"])
+        if os.path.exists(path):
+            os.remove(path)
+        dbcore.execute("DELETE FROM wisata_galeri WHERE id = %s", (galeri_id,))
+        flash("Foto galeri dihapus.", "success")
+    return redirect(url_for("admin_wisata_manage"))
+
+
+@app.route("/admin/wisata/<int:wisata_id>/gambar/delete", methods=["POST"])
+@admin_required
+def admin_wisata_gambar_delete(wisata_id):
+    wisata = dbcore.query_one("SELECT gambar FROM wisata WHERE id = %s", (wisata_id,))
+    if wisata and wisata["gambar"]:
+        path = os.path.join(app.config["UPLOAD_FOLDER"], wisata["gambar"])
+        if os.path.exists(path):
+            os.remove(path)
+        dbcore.execute("UPDATE wisata SET gambar = NULL WHERE id = %s", (wisata_id,))
+        flash("Gambar utama dihapus.", "success")
     return redirect(url_for("admin_wisata_manage"))
 
 

@@ -105,7 +105,7 @@
         </div>
         <div class="card-body">
           <h3>{{ item.nama_wisata }}</h3>
-          <p>{{ item.deskripsi[:120] }}{% if item.deskripsi|length > 120 %}…{% endif %}</p>
+          <p>{{ item.deskripsi | striptags | truncate(120) }}</p>
           <div class="card-meta">
             <span class="meta-item"><i class="fa-solid fa-location-dot"></i>{{ item.wilayah }}</span>
             <span class="meta-rating">

@@ -1,78 +1,27 @@
 {% extends "admin/base_admin.html" %}
 {% block title %}Kelola Wisata - Admin{% endblock %}
 {% block page_title %}Manajemen Data Wisata{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.css">
+{% endblock %}
 {% block admin_content %}
-<div class="admin-form-card">
-  <h2>Tambah / Sunting Destinasi Wisata</h2>
-  <form method="post" enctype="multipart/form-data" class="admin-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="id" id="edit-id">
-
-    <label>Nama Wisata</label>
-    <input type="text" name="nama_wisata" id="f-nama" required>
-
-    <label>Wilayah</label>
-    <div class="radio-group radio-group--wisata" id="f-wilayah-group">
-      <label class="radio-option">
-        <input type="radio" name="wilayah" value="Kota Sorong" checked required>
-        <span><i class="fa-solid fa-city"></i> Kota Sorong</span>
-      </label>
-      <label class="radio-option">
-        <input type="radio" name="wilayah" value="Kabupaten Sorong" required>
-        <span><i class="fa-solid fa-tree"></i> Kabupaten Sorong</span>
-      </label>
-    </div>
-
-    <label>Deskripsi</label>
-    <textarea name="deskripsi" id="f-deskripsi" rows="4" required></textarea>
-
-    <label>Fasilitas</label>
-    <textarea name="fasilitas" id="f-fasilitas" rows="2" required></textarea>
-
-    <label>Lokasi</label>
-    <input type="text" name="lokasi" id="f-lokasi" required>
-
-    <label>Tiket Masuk</label>
-    <div class="radio-group radio-group--wisata" id="f-tiket-group">
-      {% for opt in tiket_options %}
-      <label class="radio-option">
-        <input type="radio" name="tiket_masuk" value="{{ opt }}" {{ 'checked' if loop.first }} required>
-        <span>{{ opt }}</span>
-      </label>
-      {% endfor %}
-      <label class="radio-option">
-        <input type="radio" name="tiket_masuk" value="__custom__" id="f-tiket-custom-radio" required>
-        <span><i class="fa-solid fa-pen"></i> Lainnya</span>
-      </label>
-    </div>
-    <input type="text" name="tiket_masuk_custom" id="f-tiket-custom-input"
-           placeholder="Tulis nominal/ketentuan tiket lainnya..." hidden disabled>
-
-    <label>Jam Operasional</label>
-    <input type="text" name="jam_operasional" id="f-jam" placeholder="Setiap Hari">
-
-    <label>Gambar (opsional)</label>
-    <input type="file" name="gambar" accept=".png,.jpg,.jpeg,.webp">
-
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Simpan</button>
-      <button type="button" id="reset-form-btn" class="btn btn-outline">Batal Edit</button>
-    </div>
-  </form>
-</div>
-
 <div class="admin-table-card">
   <div class="admin-table-header">
     <h2>Daftar Destinasi Wisata</h2>
-    <form method="get" class="table-search">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau wilayah...">
-      {% if q %}
-        <a href="{{ url_for('admin_wisata_manage') }}" class="table-search-clear" title="Hapus pencarian">
-          <i class="fa-solid fa-xmark"></i>
-        </a>
-      {% endif %}
-    </form>
+    <div class="header-actions">
+      <form method="get" class="table-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau wilayah...">
+        {% if q %}
+          <a href="{{ url_for('admin_wisata_manage') }}" class="table-search-clear" title="Hapus pencarian">
+            <i class="fa-solid fa-xmark"></i>
+          </a>
+        {% endif %}
+      </form>
+      <button type="button" id="add-wisata-btn" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i>Tambah Wisata
+      </button>
+    </div>
   </div>
   <div class="admin-table-wrap">
   <table class="admin-table">
@@ -89,7 +38,15 @@
           <button type="button" class="btn btn-small btn-outline edit-wisata-btn"
             data-id="{{ item.id }}" data-nama="{{ item.nama_wisata }}" data-wilayah="{{ item.wilayah }}"
             data-deskripsi="{{ item.deskripsi }}" data-fasilitas="{{ item.fasilitas }}"
-            data-lokasi="{{ item.lokasi }}" data-tiket="{{ item.tiket_masuk }}" data-jam="{{ item.jam_operasional }}">Edit</button>
+            data-alamat="{{ item.alamat }}" data-tiket="{{ item.tiket_masuk }}" data-jam="{{ item.jam_operasional }}"
+            data-gambar="{{ item.gambar or '' }}"
+            data-lat="{{ item.latitude if item.latitude is not none else '' }}"
+            data-lon="{{ item.longitude if item.longitude is not none else '' }}"
+            data-sosmed-email="{{ item.sosmed_email or '' }}"
+            data-sosmed-facebook="{{ item.sosmed_facebook or '' }}"
+            data-sosmed-instagram="{{ item.sosmed_instagram or '' }}"
+            data-sosmed-youtube="{{ item.sosmed_youtube or '' }}"
+            data-galeri="{{ item.galeri | tojson | forceescape }}">Edit</button>
           <form method="post" action="{{ url_for('admin_wisata_delete', wisata_id=item.id) }}" class="inline-form"
                 onsubmit="return confirm('Hapus destinasi ini?');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -105,15 +62,186 @@
     </tbody>
   </table>
   </div>
+  {% if pagination.total > 0 %}
+  <div class="pagination">
+    <span class="pagination-info">Menampilkan {{ items|length }} dari {{ pagination.total }} data</span>
+    {% if pagination.total_pages > 1 %}
+    <div class="pagination-controls">
+      {% if pagination.has_prev %}
+      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page - 1) }}" class="btn btn-small btn-outline">
+        <i class="fa-solid fa-chevron-left"></i>Sebelumnya
+      </a>
+      {% else %}
+      <span class="btn btn-small btn-outline pagination-btn-disabled">
+        <i class="fa-solid fa-chevron-left"></i>Sebelumnya
+      </span>
+      {% endif %}
+      <span class="pagination-pages">Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span>
+      {% if pagination.has_next %}
+      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page + 1) }}" class="btn btn-small btn-outline">
+        Berikutnya<i class="fa-solid fa-chevron-right"></i>
+      </a>
+      {% else %}
+      <span class="btn btn-small btn-outline pagination-btn-disabled">
+        Berikutnya<i class="fa-solid fa-chevron-right"></i>
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="modal-overlay" id="wisata-modal-overlay" hidden>
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2 id="wisata-modal-title">Tambah Destinasi Wisata</h2>
+      <button type="button" class="modal-close-btn" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <form method="post" enctype="multipart/form-data" class="admin-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" id="edit-id">
+
+        <label>Nama Wisata</label>
+        <input type="text" name="nama_wisata" id="f-nama" required>
+
+        <label>Wilayah</label>
+        <div class="radio-group radio-group--wisata" id="f-wilayah-group">
+          <label class="radio-option">
+            <input type="radio" name="wilayah" value="Kota Sorong" checked required>
+            <span><i class="fa-solid fa-city"></i> Kota Sorong</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="wilayah" value="Kabupaten Sorong" required>
+            <span><i class="fa-solid fa-tree"></i> Kabupaten Sorong</span>
+          </label>
+        </div>
+
+        <label>Deskripsi</label>
+        <div class="wysiwyg-editor" id="f-deskripsi-editor"></div>
+        <textarea name="deskripsi" id="f-deskripsi" hidden></textarea>
+
+        <label>Fasilitas</label>
+        <textarea name="fasilitas" id="f-fasilitas" rows="2" required></textarea>
+
+        <label>Alamat</label>
+        <input type="text" name="alamat" id="f-alamat" placeholder="Jl. ..., Distrik ..., Kota/Kabupaten Sorong" required>
+
+        <label>Tiket Masuk</label>
+        <div class="radio-group radio-group--wisata" id="f-tiket-group">
+          {% for opt in tiket_options %}
+          <label class="radio-option">
+            <input type="radio" name="tiket_masuk" value="{{ opt }}" {{ 'checked' if loop.first }} required>
+            <span>{{ opt }}</span>
+          </label>
+          {% endfor %}
+          <label class="radio-option">
+            <input type="radio" name="tiket_masuk" value="__custom__" id="f-tiket-custom-radio" required>
+            <span><i class="fa-solid fa-pen"></i> Lainnya</span>
+          </label>
+        </div>
+        <input type="text" name="tiket_masuk_custom" id="f-tiket-custom-input"
+               placeholder="Tulis nominal/ketentuan tiket lainnya..." hidden disabled>
+
+        <label>Jam Operasional</label>
+        <input type="text" name="jam_operasional" id="f-jam" placeholder="Setiap Hari">
+
+        <label>Koordinat Lokasi (opsional)</label>
+        <input type="text" name="koordinat" id="f-koordinat"
+               placeholder='Contoh: -0.859042, 131.247695 atau 0°44&#39;11.6&quot;S 131°35&#39;01.1&quot;E'>
+        <small class="form-hint">Diisi format desimal (lat, lon) atau DMS. Dipakai untuk menampilkan peta lokasi di halaman detail wisata.</small>
+
+        <label>Gambar Utama (opsional)</label>
+        <div class="file-input-wrap">
+          <input type="file" name="gambar" id="f-gambar" accept=".png,.jpg,.jpeg,.webp" class="file-input-native">
+          <label for="f-gambar" class="file-input-btn"><i class="fa-solid fa-upload"></i>Pilih Gambar</label>
+          <span class="file-input-name" id="f-gambar-name">Belum ada file dipilih</span>
+        </div>
+        <div class="gallery-preview" id="gambar-preview" hidden>
+          <label>Gambar Utama Saat Ini</label>
+          <div class="gallery-thumbs">
+            <div class="gallery-thumb" id="gambar-preview-thumb">
+              <img id="gambar-preview-img" src="" alt="Gambar utama saat ini">
+            </div>
+          </div>
+        </div>
+
+        <label>Galeri Foto Tambahan (opsional, bisa pilih beberapa gambar sekaligus)</label>
+        <div class="file-input-wrap">
+          <input type="file" name="galeri" id="f-galeri" accept=".png,.jpg,.jpeg,.webp" multiple class="file-input-native">
+          <label for="f-galeri" class="file-input-btn"><i class="fa-solid fa-images"></i>Pilih Galeri</label>
+          <span class="file-input-name" id="f-galeri-name">Belum ada file dipilih</span>
+        </div>
+        <small class="form-hint">Gambar utama + galeri akan tampil sebagai slider di halaman detail wisata.</small>
+
+        <div class="gallery-preview" id="gallery-preview" hidden>
+          <label>Galeri Foto Saat Ini</label>
+          <div class="gallery-thumbs" id="gallery-preview-thumbs"></div>
+        </div>
+
+        <label>Kontak &amp; Media Sosial (opsional)</label>
+        <div class="sosmed-grid">
+          <div class="sosmed-field">
+            <label for="f-sosmed-email"><i class="fa-solid fa-envelope"></i>Email</label>
+            <input type="email" name="sosmed_email" id="f-sosmed-email" placeholder="info@contoh.com">
+          </div>
+          <div class="sosmed-field">
+            <label for="f-sosmed-facebook"><i class="fa-brands fa-facebook"></i>Facebook</label>
+            <input type="text" name="sosmed_facebook" id="f-sosmed-facebook" placeholder="facebook.com/namahalaman">
+          </div>
+          <div class="sosmed-field">
+            <label for="f-sosmed-instagram"><i class="fa-brands fa-instagram"></i>Instagram</label>
+            <input type="text" name="sosmed_instagram" id="f-sosmed-instagram" placeholder="instagram.com/namaakun">
+          </div>
+          <div class="sosmed-field">
+            <label for="f-sosmed-youtube"><i class="fa-brands fa-youtube"></i>YouTube</label>
+            <input type="text" name="sosmed_youtube" id="f-sosmed-youtube" placeholder="youtube.com/@namakanal">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Simpan</button>
+          <button type="button" id="reset-form-btn" class="btn btn-outline">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
 <script>
 const TIKET_PRESETS = {{ tiket_options|tojson }};
 const tiketGroup = document.getElementById('f-tiket-group');
 const tiketCustomRadio = document.getElementById('f-tiket-custom-radio');
 const tiketCustomInput = document.getElementById('f-tiket-custom-input');
 const wilayahGroup = document.getElementById('f-wilayah-group');
+const wisataModal = setupAdminModal('wisata-modal-overlay');
+const wisataModalTitle = document.getElementById('wisata-modal-title');
+
+// ---------- Editor WYSIWYG untuk Deskripsi ----------
+const deskripsiQuill = new Quill('#f-deskripsi-editor', {
+  theme: 'snow',
+  placeholder: 'Tulis deskripsi destinasi wisata...',
+  modules: {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ header: [2, 3, false] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['blockquote', 'link'],
+      ['clean'],
+    ],
+  },
+});
+const deskripsiInput = document.getElementById('f-deskripsi');
+function setDeskripsiHtml(html) {
+  deskripsiQuill.setText('');
+  if (html) deskripsiQuill.clipboard.dangerouslyPasteHTML(html);
+}
+function isDeskripsiEmpty() {
+  return deskripsiQuill.getText().trim().length === 0;
+}
 
 function syncTiketCustomInput() {
   const isCustom = tiketCustomRadio.checked;
@@ -126,6 +254,127 @@ tiketGroup.querySelectorAll('input[type="radio"]').forEach(r => {
   r.addEventListener('change', syncTiketCustomInput);
 });
 
+// ---------- Nama file yang dipilih pada input gambar & galeri ----------
+function bindFileInputName(inputId, nameId) {
+  const input = document.getElementById(inputId);
+  const nameEl = document.getElementById(nameId);
+  input.addEventListener('change', () => {
+    if (!input.files || input.files.length === 0) {
+      nameEl.textContent = 'Belum ada file dipilih';
+    } else if (input.files.length === 1) {
+      nameEl.textContent = input.files[0].name;
+    } else {
+      nameEl.textContent = `${input.files.length} file dipilih`;
+    }
+  });
+}
+bindFileInputName('f-gambar', 'f-gambar-name');
+bindFileInputName('f-galeri', 'f-galeri-name');
+
+// ---------- Preview galeri foto saat ini (muncul saat Edit) ----------
+const galleryPreview = document.getElementById('gallery-preview');
+const galleryPreviewThumbs = document.getElementById('gallery-preview-thumbs');
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+function renderGalleryPreview(galeri) {
+  galleryPreviewThumbs.innerHTML = '';
+  if (!galeri || galeri.length === 0) {
+    galleryPreview.hidden = true;
+    return;
+  }
+  galeri.forEach(g => {
+    const thumb = document.createElement('div');
+    thumb.className = 'gallery-thumb';
+
+    const img = document.createElement('img');
+    img.src = `/static/uploads/${encodeURIComponent(g.gambar)}`;
+    img.alt = 'Foto galeri';
+    thumb.appendChild(img);
+
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = `/admin/wisata/galeri/${g.id}/delete`;
+    form.addEventListener('submit', (e) => {
+      if (!confirm('Hapus foto ini?')) e.preventDefault();
+    });
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'submit';
+    delBtn.className = 'gallery-thumb-delete';
+    delBtn.title = 'Hapus foto';
+    delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    form.appendChild(delBtn);
+
+    thumb.appendChild(form);
+    galleryPreviewThumbs.appendChild(thumb);
+  });
+  galleryPreview.hidden = false;
+}
+
+// ---------- Preview gambar utama saat ini (muncul saat Edit) ----------
+const gambarPreview = document.getElementById('gambar-preview');
+const gambarPreviewImg = document.getElementById('gambar-preview-img');
+const gambarPreviewThumb = document.getElementById('gambar-preview-thumb');
+
+function renderGambarPreview(filename, wisataId) {
+  const oldForm = gambarPreviewThumb.querySelector('form');
+  if (oldForm) oldForm.remove();
+
+  if (!filename) {
+    gambarPreviewImg.src = '';
+    gambarPreview.hidden = true;
+    return;
+  }
+  gambarPreviewImg.src = `/static/uploads/${encodeURIComponent(filename)}`;
+
+  const form = document.createElement('form');
+  form.method = 'post';
+  form.action = `/admin/wisata/${wisataId}/gambar/delete`;
+  form.addEventListener('submit', (e) => {
+    if (!confirm('Hapus gambar utama ini?')) e.preventDefault();
+  });
+
+  const csrfInput = document.createElement('input');
+  csrfInput.type = 'hidden';
+  csrfInput.name = 'csrf_token';
+  csrfInput.value = csrfToken;
+  form.appendChild(csrfInput);
+
+  const delBtn = document.createElement('button');
+  delBtn.type = 'submit';
+  delBtn.className = 'gallery-thumb-delete';
+  delBtn.title = 'Hapus gambar utama';
+  delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  form.appendChild(delBtn);
+
+  gambarPreviewThumb.appendChild(form);
+  gambarPreview.hidden = false;
+}
+
+function resetWisataForm() {
+  document.querySelector('.admin-form').reset();
+  document.getElementById('edit-id').value = '';
+  tiketCustomInput.value = '';
+  syncTiketCustomInput();
+  document.getElementById('f-gambar-name').textContent = 'Belum ada file dipilih';
+  document.getElementById('f-galeri-name').textContent = 'Belum ada file dipilih';
+  renderGambarPreview(null);
+  renderGalleryPreview([]);
+  setDeskripsiHtml('');
+}
+
+document.getElementById('add-wisata-btn').addEventListener('click', () => {
+  resetWisataForm();
+  wisataModalTitle.textContent = 'Tambah Destinasi Wisata';
+  wisataModal.open();
+});
+
 document.querySelectorAll('.edit-wisata-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.getElementById('edit-id').value = btn.dataset.id;
@@ -133,10 +382,19 @@ document.querySelectorAll('.edit-wisata-btn').forEach(btn => {
     wilayahGroup.querySelectorAll('input[type="radio"]').forEach(r => {
       r.checked = r.value === btn.dataset.wilayah;
     });
-    document.getElementById('f-deskripsi').value = btn.dataset.deskripsi;
+    setDeskripsiHtml(btn.dataset.deskripsi);
     document.getElementById('f-fasilitas').value = btn.dataset.fasilitas;
-    document.getElementById('f-lokasi').value = btn.dataset.lokasi;
+    document.getElementById('f-alamat').value = btn.dataset.alamat;
     document.getElementById('f-jam').value = btn.dataset.jam;
+
+    const lat = btn.dataset.lat;
+    const lon = btn.dataset.lon;
+    document.getElementById('f-koordinat').value = (lat && lon) ? `${lat}, ${lon}` : '';
+
+    document.getElementById('f-sosmed-email').value = btn.dataset.sosmedEmail;
+    document.getElementById('f-sosmed-facebook').value = btn.dataset.sosmedFacebook;
+    document.getElementById('f-sosmed-instagram').value = btn.dataset.sosmedInstagram;
+    document.getElementById('f-sosmed-youtube').value = btn.dataset.sosmedYoutube;
 
     const tiketValue = btn.dataset.tiket;
     if (TIKET_PRESETS.includes(tiketValue)) {
@@ -150,14 +408,28 @@ document.querySelectorAll('.edit-wisata-btn').forEach(btn => {
     }
     syncTiketCustomInput();
 
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    renderGambarPreview(btn.dataset.gambar, btn.dataset.id);
+
+    let galeriData = [];
+    try { galeriData = JSON.parse(btn.dataset.galeri || '[]'); } catch (e) { galeriData = []; }
+    renderGalleryPreview(galeriData);
+
+    wisataModalTitle.textContent = 'Sunting Destinasi Wisata';
+    wisataModal.open();
   });
 });
 document.getElementById('reset-form-btn').addEventListener('click', () => {
-  document.querySelector('.admin-form').reset();
-  document.getElementById('edit-id').value = '';
-  tiketCustomInput.value = '';
-  syncTiketCustomInput();
+  resetWisataForm();
+  wisataModal.close();
+});
+
+document.querySelector('.admin-form').addEventListener('submit', (e) => {
+  if (isDeskripsiEmpty()) {
+    e.preventDefault();
+    alert('Deskripsi wajib diisi.');
+    return;
+  }
+  deskripsiInput.value = deskripsiQuill.root.innerHTML;
 });
 </script>
 {% endblock %}

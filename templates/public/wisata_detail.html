@@ -1,5 +1,8 @@
 {% extends "public/base.html" %}
 {% block title %}{{ item.nama_wisata }} — Wisata Sorong Raya{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.css">
+{% endblock %}
 {% block content %}
 <section class="section">
   <div class="section-inner narrow">
@@ -18,14 +21,27 @@
     </div>
 
     <div class="detail-image">
-      {% if item.gambar %}
-        <img src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="{{ item.nama_wisata }}">
+      {% if galeri_images %}
+        <div class="swiper detail-swiper">
+          <div class="swiper-wrapper">
+            {% for gambar in galeri_images %}
+            <div class="swiper-slide">
+              <img src="{{ url_for('static', filename='uploads/' ~ gambar) }}" alt="{{ item.nama_wisata }}">
+            </div>
+            {% endfor %}
+          </div>
+          {% if galeri_images|length > 1 %}
+          <div class="swiper-button-prev"></div>
+          <div class="swiper-button-next"></div>
+          <div class="swiper-pagination"></div>
+          {% endif %}
+        </div>
       {% else %}
         <div class="card-image-placeholder large"><i class="fa-solid fa-water"></i></div>
       {% endif %}
     </div>
 
-    <div class="detail-content">{{ item.deskripsi }}</div>
+    <div class="detail-content">{{ item.deskripsi | safe }}</div>
 
     <div class="detail-meta-grid">
       <div class="meta-box">
@@ -33,8 +49,8 @@
         <p>{{ item.fasilitas }}</p>
       </div>
       <div class="meta-box">
-        <strong><i class="fa-solid fa-location-dot"></i>Lokasi</strong>
-        <p>{{ item.lokasi }}</p>
+        <strong><i class="fa-solid fa-location-dot"></i>Alamat</strong>
+        <p>{{ item.alamat }}</p>
       </div>
       <div class="meta-box">
         <strong><i class="fa-solid fa-ticket"></i>Tiket Masuk</strong>
@@ -45,6 +61,48 @@
         <p>{{ item.jam_operasional }}</p>
       </div>
     </div>
+
+    {% if item.latitude is not none and item.longitude is not none %}
+    <div class="location-map-card">
+      <h2>Peta Lokasi</h2>
+      <div class="map-embed">
+        <iframe
+          src="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}&z=15&output=embed"
+          loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      </div>
+      <a href="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}" target="_blank" rel="noopener noreferrer" class="map-link">
+        <i class="fa-solid fa-up-right-from-square"></i>Buka di Google Maps
+      </a>
+    </div>
+    {% endif %}
+
+    {% if item.sosmed_email or item.sosmed_facebook or item.sosmed_instagram or item.sosmed_youtube %}
+    <div class="social-links-card">
+      <h2>Kontak &amp; Media Sosial</h2>
+      <div class="social-links">
+        {% if item.sosmed_email %}
+        <a href="mailto:{{ item.sosmed_email }}" class="social-link social-link--email">
+          <i class="fa-solid fa-envelope"></i>Email
+        </a>
+        {% endif %}
+        {% if item.sosmed_facebook %}
+        <a href="{{ item.sosmed_facebook | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--facebook">
+          <i class="fa-brands fa-facebook"></i>Facebook
+        </a>
+        {% endif %}
+        {% if item.sosmed_instagram %}
+        <a href="{{ item.sosmed_instagram | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--instagram">
+          <i class="fa-brands fa-instagram"></i>Instagram
+        </a>
+        {% endif %}
+        {% if item.sosmed_youtube %}
+        <a href="{{ item.sosmed_youtube | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--youtube">
+          <i class="fa-brands fa-youtube"></i>YouTube
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
 
     <div class="rating-section" id="rating-section" data-wisata-id="{{ item.id }}">
       <h2>Beri Penilaian</h2>
@@ -80,5 +138,21 @@
 </section>
 {% endblock %}
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/rating.js') }}"></script>
+{% if galeri_images|length > 1 %}
+<script>
+new Swiper('.detail-swiper', {
+  loop: true,
+  navigation: {
+    nextEl: '.detail-swiper .swiper-button-next',
+    prevEl: '.detail-swiper .swiper-button-prev',
+  },
+  pagination: {
+    el: '.detail-swiper .swiper-pagination',
+    clickable: true,
+  },
+});
+</script>
+{% endif %}
 {% endblock %}
