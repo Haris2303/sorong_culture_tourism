@@ -25,10 +25,10 @@
   --ink-tertiary: #94a3b8;
   --on-primary: #ffffff;
 
-  /* ---------- Brand & Accent Harmony ---------- */
-  --primary: #0f172a;
-  --primary-hover: #1e293b;
-  --primary-focus: rgba(15, 23, 42, 0.45);
+  /* ---------- Brand & Accent Harmony (biru laut Sorong, elegan & gelap) ---------- */
+  --primary: #123a5c;
+  --primary-hover: #1c4f78;
+  --primary-focus: rgba(18, 58, 92, 0.45);
 
   --accent-wisata: #0284c7;
   --accent-wisata-soft: rgba(2, 132, 199, 0.08);
@@ -88,6 +88,11 @@
 
   --container: 1280px;
   --transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---------- Motif Papua (kait ganda ala ukiran Asmat/Moi, ringan & non-intrusif) ---------- */
+  --motif-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23123a5c' stroke-width='2.2' stroke-linecap='round' opacity='0.055'%3E%3Cpath d='M15 60 C15 35 30 22 45 26 C55 29 57 42 47 45 C40 47 36 40 41 36'/%3E%3Cpath d='M75 30 C75 55 60 68 45 64 C35 61 33 48 43 45 C50 43 54 50 49 54'/%3E%3C/g%3E%3C/svg%3E");
+  --motif-wisata: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%230284c7' stroke-width='2.2' stroke-linecap='round' opacity='0.12'%3E%3Cpath d='M15 60 C15 35 30 22 45 26 C55 29 57 42 47 45 C40 47 36 40 41 36'/%3E%3Cpath d='M75 30 C75 55 60 68 45 64 C35 61 33 48 43 45 C50 43 54 50 49 54'/%3E%3C/g%3E%3C/svg%3E");
+  --motif-budaya: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23b45309' stroke-width='2.2' stroke-linecap='round' opacity='0.12'%3E%3Cpath d='M15 60 C15 35 30 22 45 26 C55 29 57 42 47 45 C40 47 36 40 41 36'/%3E%3Cpath d='M75 30 C75 55 60 68 45 64 C35 61 33 48 43 45 C50 43 54 50 49 54'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* ============================================================
@@ -105,7 +110,10 @@ html {
 
 body {
   margin: 0;
-  background: var(--canvas);
+  background-color: var(--canvas);
+  background-image: var(--motif-ink);
+  background-repeat: repeat;
+  background-size: 72px 72px;
   color: var(--ink-muted);
   font-family: var(--font-sans);
   font-size: var(--body-size);
@@ -437,11 +445,30 @@ h4 {
   background-repeat: no-repeat;
 }
 
-/* Scrim gelap di atas gambar — lebih pekat di sisi kiri agar kartu tetap terbaca */
+/* Video latar — dimuat & diputar via JS setelah halaman selesai load (lihat
+   hero-video.js) supaya file video tidak memperlambat render pertama. Gambar
+   di .hero (di atas) tetap tampil sebagai poster sampai video siap. */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+.hero-video.is-loaded {
+  opacity: 1;
+}
+
+/* Scrim gelap di atas gambar/video — lebih pekat di sisi kiri agar kartu tetap terbaca */
 .hero::before {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 1;
   background:
     linear-gradient(
       100deg,
@@ -460,6 +487,7 @@ h4 {
 }
 .hero-inner {
   position: relative;
+  z-index: 2;
   display: grid;
   /* Kartu mengambang di kiri; sisa ruang dibiarkan menampilkan foto latar */
   grid-template-columns: minmax(0, 620px);
@@ -549,13 +577,17 @@ h4 {
    SECTIONS
    ============================================================ */
 .section {
+  position: relative;
   padding: var(--space-section) 0;
+  overflow: hidden;
 }
 .section-alt {
   background: var(--surface-2);
   border-block: 1px solid var(--hairline);
 }
 .section-inner {
+  position: relative;
+  z-index: 1;
   max-width: var(--container);
   margin-inline: auto;
   padding-inline: var(--space-lg);
@@ -691,6 +723,40 @@ h4 {
   justify-content: center;
   margin-top: var(--space-xxl);
 }
+
+/* ============================================================
+   IKON DEKORATIF (watermark bertema budaya/wisata, sudut section)
+   ============================================================ */
+.motif-icon {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  line-height: 1;
+  color: var(--primary);
+  opacity: 0.06;
+}
+.motif-icon.budaya {
+  color: var(--accent-budaya);
+}
+.motif-icon.wisata {
+  color: var(--accent-wisata);
+}
+.motif-icon.on-dark {
+  color: #ffffff;
+  opacity: 0.16;
+}
+.motif-icon--tr {
+  top: -8%;
+  right: -3%;
+  font-size: clamp(120px, 14vw, 220px);
+  transform: rotate(12deg);
+}
+.motif-icon--bl {
+  bottom: -10%;
+  left: -4%;
+  font-size: clamp(100px, 12vw, 190px);
+  transform: rotate(-14deg);
+}
 .section-subheading {
   margin: var(--space-xl) 0 var(--space-md);
   font-size: var(--headline-size);
@@ -698,9 +764,21 @@ h4 {
 }
 
 .page-header {
+  position: relative;
+  overflow: hidden;
   padding: var(--space-xxl) 0 var(--space-xl);
   border-bottom: 1px solid var(--hairline);
-  background: var(--surface-2);
+  background-color: var(--surface-2);
+  background-image: var(--motif-ink);
+  background-size: 72px 72px;
+}
+.page-header--wisata {
+  background-color: var(--accent-wisata-soft);
+  background-image: var(--motif-wisata);
+}
+.page-header--budaya {
+  background-color: var(--accent-budaya-soft);
+  background-image: var(--motif-budaya);
 }
 .page-title {
   margin: var(--space-sm) 0 var(--space-xs);
@@ -1242,6 +1320,8 @@ h4 {
 .site-footer {
   padding: var(--space-xxl) 0;
   background: var(--surface-1);
+  background-image: var(--motif-ink);
+  background-size: 72px 72px;
   border-top: 1px solid var(--hairline);
 }
 .footer-inner {
@@ -1642,5 +1722,11 @@ h4 {
   .chat-widget {
     right: var(--space-md);
     bottom: var(--space-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-video {
+    display: none;
   }
 }

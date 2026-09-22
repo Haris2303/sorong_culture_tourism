@@ -1,6 +1,15 @@
 {% extends "public/base.html" %} {% block title %}Sorong Raya | Jelajahi Budaya
 &amp; Wisata Papua Barat Daya{% endblock %} {% block content %}
 <section class="hero">
+  <video
+    class="hero-video"
+    muted
+    loop
+    playsinline
+    preload="none"
+    aria-hidden="true"
+    data-src="{{ url_for('static', filename='video/hero.webm') }}"
+  ></video>
   <div class="hero-inner">
     <div class="hero-card">
       <span class="eyebrow eyebrow--wisata">
@@ -39,6 +48,9 @@
 </section>
 
 <section id="budaya" class="section">
+  <span class="motif-icon motif-icon--tr budaya" aria-hidden="true"
+    ><i class="fa-solid fa-feather-pointed"></i
+  ></span>
   <div class="section-inner">
     <div class="section-heading">
       <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
@@ -102,6 +114,9 @@
 </section>
 
 <section id="wisata" class="section section-photo">
+  <span class="motif-icon motif-icon--tr on-dark" aria-hidden="true"
+    ><i class="fa-solid fa-water"></i
+  ></span>
   <div class="section-inner">
     <div class="section-heading">
       <span class="eyebrow eyebrow--wisata"
@@ -163,4 +178,6 @@
     {% endif %}
   </div>
 </section>
+{% endblock %} {% block extra_js %}
+<script src="{{ url_for('static', filename='js/hero-video.js') }}"></script>
 {% endblock %}
