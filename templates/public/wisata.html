@@ -1,9 +1,12 @@
 {% extends "public/base.html" %} {% block title %}Direktori Wisata | Sorong
 Raya{% endblock %} {% block content %}
 <section class="page-header page-header--wisata">
-  <span class="motif-icon motif-icon--tr wisata" aria-hidden="true"
-    ><i class="fa-solid fa-water"></i
-  ></span>
+  <span class="motif-icon motif-icon--tr" aria-hidden="true">
+    <img
+      src="{{ url_for('static', filename='assets/cendrawasih.png') }}"
+      alt=""
+    />
+  </span>
   <div class="section-inner">
     <span class="eyebrow eyebrow--wisata"
       >02 / Destinasi Bahari &amp; Alam</span

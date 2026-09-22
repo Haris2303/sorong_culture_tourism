@@ -7,32 +7,36 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 :root {
-  /* ---------- Surface Ladder (inverse dari Linear dark canvas) ---------- */
-  --canvas: #f8fafc;
-  --surface-1: #ffffff;
-  --surface-2: #f1f5f9;
-  --surface-3: #e8edf3;
+  /* ---------- Surface Ladder (biru muda — bukan putih polos, lihat DESIGN.md) ---------- */
+  --canvas: #e9f2fb;
+  --surface-1: #f5f9fd;
+  --surface-2: #e3eef9;
+  --surface-3: #d2e3f2;
 
-  /* ---------- Hairlines (aturan 1px ultra-crisp Linear) ---------- */
-  --hairline: #e2e8f0;
-  --hairline-strong: #cbd5e1;
-  --hairline-tertiary: #94a3b8;
+  /* ---------- Hairlines (biru keabuan, aturan 1px ultra-crisp Linear) ---------- */
+  --hairline: #cfe0ef;
+  --hairline-strong: #a9c8e0;
+  --hairline-tertiary: #7fa9c9;
 
   /* ---------- Ink ---------- */
-  --ink: #0f172a;
-  --ink-muted: #475569;
-  --ink-subtle: #64748b;
-  --ink-tertiary: #94a3b8;
+  --ink: #0b2947;
+  --ink-muted: #33587a;
+  --ink-subtle: #4d6987;
+  --ink-tertiary: #84a1ba;
   --on-primary: #ffffff;
 
   /* ---------- Brand & Accent Harmony (biru laut Sorong, elegan & gelap) ---------- */
   --primary: #123a5c;
   --primary-hover: #1c4f78;
+  --primary-deep: #0a2540;
   --primary-focus: rgba(18, 58, 92, 0.45);
+  /* Biru terang diambil langsung dari motif batik (static/assets/motif-papua.jpg) —
+     dipakai untuk gradient & aksen besar, bukan teks (kontras terlalu tipis untuk teks). */
+  --brand-vivid: #0494ed;
 
-  --accent-wisata: #0284c7;
-  --accent-wisata-soft: rgba(2, 132, 199, 0.08);
-  --accent-wisata-line: rgba(2, 132, 199, 0.22);
+  --accent-wisata: #0577bd;
+  --accent-wisata-soft: rgba(5, 119, 189, 0.08);
+  --accent-wisata-line: rgba(5, 119, 189, 0.22);
 
   --accent-budaya: #b45309;
   --accent-budaya-soft: rgba(180, 83, 9, 0.08);
@@ -89,10 +93,11 @@
   --container: 1280px;
   --transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* ---------- Motif Papua (kait ganda ala ukiran Asmat/Moi, ringan & non-intrusif) ---------- */
-  --motif-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23123a5c' stroke-width='2.2' stroke-linecap='round' opacity='0.055'%3E%3Cpath d='M15 60 C15 35 30 22 45 26 C55 29 57 42 47 45 C40 47 36 40 41 36'/%3E%3Cpath d='M75 30 C75 55 60 68 45 64 C35 61 33 48 43 45 C50 43 54 50 49 54'/%3E%3C/g%3E%3C/svg%3E");
-  --motif-wisata: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%230284c7' stroke-width='2.2' stroke-linecap='round' opacity='0.12'%3E%3Cpath d='M15 60 C15 35 30 22 45 26 C55 29 57 42 47 45 C40 47 36 40 41 36'/%3E%3Cpath d='M75 30 C75 55 60 68 45 64 C35 61 33 48 43 45 C50 43 54 50 49 54'/%3E%3C/g%3E%3C/svg%3E");
-  --motif-budaya: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23b45309' stroke-width='2.2' stroke-linecap='round' opacity='0.12'%3E%3Cpath d='M15 60 C15 35 30 22 45 26 C55 29 57 42 47 45 C40 47 36 40 41 36'/%3E%3Cpath d='M75 30 C75 55 60 68 45 64 C35 61 33 48 43 45 C50 43 54 50 49 54'/%3E%3C/g%3E%3C/svg%3E");
+  /* ---------- Motif Papua ---------- */
+  /* Tekstur latar bertekanan rendah, ditarik dari batik/ukiran Malamoi asli
+     (static/assets/motif-papua.jpg → dipra-proses jadi PNG alpha rendah,
+     lihat static/assets/motif-tile.png) — dipakai di body, page-header & footer. */
+  --motif-tile: url("../assets/motif-tile.png");
 }
 
 /* ============================================================
@@ -111,9 +116,13 @@ html {
 body {
   margin: 0;
   background-color: var(--canvas);
-  background-image: var(--motif-ink);
-  background-repeat: repeat;
-  background-size: 72px 72px;
+  background-image:
+    linear-gradient(180deg, #f2f8fd 0%, #e3eef9 45%, #cfe4f6 100%),
+    var(--motif-tile);
+  background-repeat: no-repeat, repeat;
+  background-size:
+    cover,
+    220px 220px;
   color: var(--ink-muted);
   font-family: var(--font-sans);
   font-size: var(--body-size);
@@ -222,7 +231,7 @@ h4 {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(248, 250, 252, 0.85);
+  background: rgba(233, 242, 251, 0.85);
   backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid var(--hairline);
 }
@@ -248,7 +257,7 @@ h4 {
   width: 32px;
   height: 32px;
   border-radius: var(--r-md);
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--brand-vivid), var(--primary));
   color: var(--on-primary);
   font-size: var(--caption-size);
   font-weight: 700;
@@ -472,16 +481,16 @@ h4 {
   background:
     linear-gradient(
       100deg,
-      rgba(10, 15, 28, 0.92) 0%,
-      rgba(10, 15, 28, 0.78) 42%,
-      rgba(10, 15, 28, 0.55) 72%,
-      rgba(10, 15, 28, 0.48) 100%
+      rgba(8, 22, 40, 0.92) 0%,
+      rgba(8, 22, 40, 0.78) 42%,
+      rgba(9, 33, 58, 0.55) 72%,
+      rgba(9, 33, 58, 0.46) 100%
     ),
     linear-gradient(
       to bottom,
-      rgba(10, 15, 28, 0.45) 0%,
-      rgba(10, 15, 28, 0.1) 38%,
-      rgba(10, 15, 28, 0.6) 100%
+      rgba(8, 22, 40, 0.45) 0%,
+      rgba(8, 22, 40, 0.08) 38%,
+      rgba(8, 22, 40, 0.58) 100%
     );
   pointer-events: none;
 }
@@ -617,9 +626,9 @@ h4 {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(6, 15, 26, 0.82) 0%,
-    rgba(6, 15, 26, 0.62) 45%,
-    rgba(6, 15, 26, 0.86) 100%
+    rgba(6, 20, 34, 0.82) 0%,
+    rgba(7, 28, 46, 0.6) 45%,
+    rgba(6, 20, 34, 0.86) 100%
   );
 }
 .section-photo .section-inner {
@@ -725,37 +734,37 @@ h4 {
 }
 
 /* ============================================================
-   IKON DEKORATIF (watermark bertema budaya/wisata, sudut section)
+   IKON DEKORATIF (watermark ilustrasi cendrawasih/tifa, sudut section —
+   lihat static/assets/. Ganti dari glyph FontAwesome jadi ilustrasi asli
+   supaya lebih khas Papua, bukan bentuk generik.)
    ============================================================ */
 .motif-icon {
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  line-height: 1;
-  color: var(--primary);
-  opacity: 0.06;
+  opacity: 0.14;
+  filter: drop-shadow(0 8px 20px rgba(10, 37, 64, 0.12));
 }
-.motif-icon.budaya {
-  color: var(--accent-budaya);
-}
-.motif-icon.wisata {
-  color: var(--accent-wisata);
+.motif-icon img {
+  display: block;
+  width: clamp(120px, 14vw, 220px);
+  height: auto;
 }
 .motif-icon.on-dark {
-  color: #ffffff;
-  opacity: 0.16;
+  opacity: 0.28;
+}
+.motif-icon.small img {
+  width: clamp(80px, 9vw, 140px);
 }
 .motif-icon--tr {
   top: -8%;
   right: -3%;
-  font-size: clamp(120px, 14vw, 220px);
-  transform: rotate(12deg);
+  transform: rotate(8deg);
 }
 .motif-icon--bl {
   bottom: -10%;
   left: -4%;
-  font-size: clamp(100px, 12vw, 190px);
-  transform: rotate(-14deg);
+  transform: rotate(-10deg) scaleX(-1);
 }
 .section-subheading {
   margin: var(--space-xl) 0 var(--space-md);
@@ -769,16 +778,14 @@ h4 {
   padding: var(--space-xxl) 0 var(--space-xl);
   border-bottom: 1px solid var(--hairline);
   background-color: var(--surface-2);
-  background-image: var(--motif-ink);
-  background-size: 72px 72px;
+  background-image: var(--motif-tile);
+  background-size: 200px 200px;
 }
 .page-header--wisata {
   background-color: var(--accent-wisata-soft);
-  background-image: var(--motif-wisata);
 }
 .page-header--budaya {
   background-color: var(--accent-budaya-soft);
-  background-image: var(--motif-budaya);
 }
 .page-title {
   margin: var(--space-sm) 0 var(--space-xs);
@@ -1319,9 +1326,9 @@ h4 {
    ============================================================ */
 .site-footer {
   padding: var(--space-xxl) 0;
-  background: var(--surface-1);
-  background-image: var(--motif-ink);
-  background-size: 72px 72px;
+  background-color: var(--surface-1);
+  background-image: var(--motif-tile);
+  background-size: 200px 200px;
   border-top: 1px solid var(--hairline);
 }
 .footer-inner {
@@ -1375,7 +1382,7 @@ h4 {
   place-items: center;
   width: 52px;
   height: 52px;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--brand-vivid), var(--primary));
   border: none;
   border-radius: var(--r-pill);
   color: var(--on-primary);
@@ -1383,11 +1390,11 @@ h4 {
   cursor: pointer;
   box-shadow: var(--elev-3);
   transition:
-    background var(--transition),
+    filter var(--transition),
     transform var(--transition);
 }
 .chat-toggle-btn:hover {
-  background: var(--primary-hover);
+  filter: brightness(1.06);
   transform: translateY(-2px);
 }
 .chat-widget.closed .chat-panel {
@@ -1418,7 +1425,7 @@ h4 {
   justify-content: space-between;
   gap: var(--space-sm);
   padding: var(--space-md);
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--brand-vivid), var(--primary));
   color: var(--on-primary);
 }
 .chat-header-info {

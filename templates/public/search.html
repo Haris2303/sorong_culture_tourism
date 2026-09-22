@@ -1,9 +1,12 @@
 {% extends "public/base.html" %} {% block title %}Pencarian "{{ q }}" | Sorong
 Raya{% endblock %} {% block content %}
 <section class="page-header">
-  <span class="motif-icon motif-icon--tr" aria-hidden="true"
-    ><i class="fa-solid fa-compass"></i
-  ></span>
+  <span class="motif-icon motif-icon--tr small" aria-hidden="true">
+    <img
+      src="{{ url_for('static', filename='assets/cendrawasih.png') }}"
+      alt=""
+    />
+  </span>
   <div class="section-inner">
     <span class="eyebrow"
       ><i class="fa-solid fa-magnifying-glass"></i>Hasil Pencarian</span
