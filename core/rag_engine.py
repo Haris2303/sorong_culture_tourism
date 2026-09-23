@@ -7,6 +7,7 @@ import html as html_lib
 import logging
 import re
 import time
+from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 from openai import RateLimitError
@@ -37,6 +38,18 @@ _embeddings = None
 _vectorstore = None
 _llm_by_model = {}
 
+# Model gratis OpenRouter dibatasi ketat per akun (bukan per-model — lihat
+# https://openrouter.ai/docs/api-reference/limits): 20 request/menit dan
+# 50 request/hari gabungan semua model `:free`. Pertanyaan yang identik
+# (mis. tombol saran cepat yang sama diklik banyak pengunjung berbeda, atau
+# pertanyaan FAQ yang sering berulang) tidak perlu memanggil LLM lagi selama
+# masih dalam TTL, supaya kuota harian yang kecil itu tidak cepat habis.
+# Hanya dipakai untuk pertanyaan TANPA riwayat percakapan (giliran pertama) —
+# jawaban lanjutan yang bergantung konteks personal tidak di-cache.
+_answer_cache: "OrderedDict[str, tuple[float, dict]]" = OrderedDict()
+_ANSWER_CACHE_TTL_SECONDS = 2 * 3600
+_ANSWER_CACHE_MAX_ENTRIES = 200
+
 FALLBACK_ANSWER = (
     "🙏 Maaf, informasi mengenai hal tersebut belum tersedia dalam basis pengetahuan "
     "budaya dan wisata Sorong Raya kami. Silakan ajukan pertanyaan lain seputar "
@@ -46,6 +59,15 @@ FALLBACK_ANSWER = (
 ERROR_ANSWER = (
     "⚠️ Maaf, asisten virtual sedang mengalami kendala teknis sesaat (mis. layanan AI "
     "sedang sibuk). Silakan coba lagi dalam beberapa saat."
+)
+
+# Dipakai khusus saat SEMUA model fallback gagal karena rate-limit (bukan error
+# lain seperti timeout) — kondisi ini nyaris selalu berarti kuota harian akun
+# OpenRouter untuk model gratis sudah habis (reset tiap 24 jam), jadi "coba lagi
+# sebentar lagi" menyesatkan; kita jujur bilang perlu menunggu sampai besok.
+QUOTA_EXHAUSTED_ANSWER = (
+    "🙏 Maaf, kuota harian asisten AI kami untuk hari ini sudah habis. Silakan coba "
+    "lagi besok, atau jelajahi langsung katalog Budaya dan Wisata kami lewat menu di atas."
 )
 
 GREETING_ANSWER = (
@@ -235,9 +257,34 @@ def _candidate_models(current_app) -> list[str]:
 
 
 def reset_engine_cache():
-    """Dipanggil setelah re-sync agar vectorstore dimuat ulang dari disk."""
+    """Dipanggil setelah re-sync agar vectorstore dimuat ulang dari disk, dan cache
+    jawaban lama (yang mungkin memuat data wisata/budaya yang sudah berubah) tidak
+    dipakai lagi."""
     global _vectorstore
     _vectorstore = None
+    _answer_cache.clear()
+
+
+def _cache_key(question: str) -> str:
+    return re.sub(r"\s+", " ", question.strip().lower())
+
+
+def _cache_get(question: str) -> dict | None:
+    entry = _answer_cache.get(_cache_key(question))
+    if entry is None:
+        return None
+    cached_at, result = entry
+    if time.time() - cached_at > _ANSWER_CACHE_TTL_SECONDS:
+        return None
+    return result
+
+
+def _cache_set(question: str, result: dict) -> None:
+    key = _cache_key(question)
+    _answer_cache[key] = (time.time(), result)
+    _answer_cache.move_to_end(key)
+    while len(_answer_cache) > _ANSWER_CACHE_MAX_ENTRIES:
+        _answer_cache.popitem(last=False)
 
 
 # Kata rujukan penanda pertanyaan lanjutan ("berapa tiketnya?", "di sana aman?").
@@ -286,6 +333,11 @@ def answer_query(question: str, history: list | None = None) -> dict:
     if _is_greeting(question):
         return {"answer": _render_rich_answer(GREETING_ANSWER), "sources": [], "grounded": False}
 
+    if not history:
+        cached = _cache_get(question)
+        if cached is not None:
+            return cached
+
     vectorstore = get_vectorstore()
     top_k = current_app.config["RAG_TOP_K"]
     threshold = current_app.config["RAG_SIMILARITY_THRESHOLD"]
@@ -314,6 +366,9 @@ def answer_query(question: str, history: list | None = None) -> dict:
     base_messages.append(HumanMessage(content=question))
 
     answer_text = None
+    # Tetap True hanya jika SEMUA percobaan di SEMUA model gagal karena RateLimitError
+    # — dipakai untuk membedakan pesan "kuota harian habis" dari kendala teknis lain.
+    only_rate_limited = True
     for model in _candidate_models(current_app):
         llm = get_llm(model)
         for attempt in range(_QUOTA_RETRIES_PER_MODEL + 1):
@@ -324,6 +379,7 @@ def answer_query(question: str, history: list | None = None) -> dict:
                 answer_text = _render_rich_answer(raw_answer)
                 break
             except FutureTimeoutError:
+                only_rate_limited = False
                 logger.warning(
                     "RAG generation timeout (>%ss) model=%s untuk pertanyaan: %r",
                     _LLM_CALL_TIMEOUT_SECONDS, model, question,
@@ -339,6 +395,7 @@ def answer_query(question: str, history: list | None = None) -> dict:
                     continue
                 logger.warning("Model %s tetap rate-limited, pindah ke model fallback berikutnya.", model)
             except Exception:
+                only_rate_limited = False
                 logger.warning(
                     "RAG generation gagal model=%s untuk pertanyaan: %r, coba model fallback berikutnya.",
                     model, question, exc_info=True,
@@ -348,11 +405,15 @@ def answer_query(question: str, history: list | None = None) -> dict:
             break
 
     if answer_text is None:
-        return {"answer": _render_rich_answer(ERROR_ANSWER), "sources": [], "grounded": False}
+        fallback = QUOTA_EXHAUSTED_ANSWER if only_rate_limited else ERROR_ANSWER
+        return {"answer": _render_rich_answer(fallback), "sources": [], "grounded": False}
 
     sources = _build_sources(relevant, raw_answer)
 
-    return {"answer": answer_text, "sources": sources, "grounded": bool(relevant)}
+    result = {"answer": answer_text, "sources": sources, "grounded": bool(relevant)}
+    if not history:
+        _cache_set(question, result)
+    return result
 
 
 def _normalize_for_match(text: str) -> str:
