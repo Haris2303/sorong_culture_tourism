@@ -782,7 +782,33 @@ h4 {
   background-size: 200px 200px;
 }
 .page-header--wisata {
-  background-color: var(--accent-wisata-soft);
+  background: #04222f url("../assets/wisata-header.png") center / cover
+    no-repeat;
+}
+.page-header--wisata::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 37, 64, 0.82) 0%,
+    rgba(10, 37, 64, 0.5) 45%,
+    rgba(10, 37, 64, 0.88) 100%
+  );
+}
+.page-header--wisata .section-inner {
+  position: relative;
+  z-index: 1;
+}
+.page-header--wisata .eyebrow--wisata {
+  color: #7dd3fc;
+}
+.page-header--wisata .page-title {
+  color: #ffffff;
+}
+.page-header--wisata .section-subtitle {
+  color: rgba(255, 255, 255, 0.82);
 }
 .page-header--budaya {
   background: #1a0f05 url("../assets/budaya-header.png") center / cover
