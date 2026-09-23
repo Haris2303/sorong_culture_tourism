@@ -296,7 +296,8 @@ def _build_sources(relevant: list) -> list[dict]:
     kalau record-nya sudah dihapus sejak terakhir sinkronisasi.
     """
     from flask import url_for
-    from core import db as dbcore
+    from models import budaya as budaya_model
+    from models import wisata as wisata_model
 
     sources = []
     seen = set()
@@ -310,14 +311,14 @@ def _build_sources(relevant: list) -> list[dict]:
         seen.add(key)
 
         if table == "wisata" and record_id:
-            row = dbcore.query_one("SELECT nama_wisata FROM wisata WHERE id = %s", (record_id,))
+            row = wisata_model.get_nama(record_id)
             if row:
                 sources.append({
                     "title": row["nama_wisata"],
                     "url": url_for("wisata_detail", wisata_id=record_id),
                 })
         elif table == "budaya" and record_id:
-            row = dbcore.query_one("SELECT judul FROM budaya WHERE id = %s", (record_id,))
+            row = budaya_model.get_title(record_id)
             if row:
                 sources.append({
                     "title": row["judul"],

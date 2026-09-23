@@ -14,10 +14,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from pypdf import PdfReader
 
-from core import db as dbcore
 from core.content import html_to_plain_text
 from core.rag_engine import get_embeddings, reset_engine_cache
 from langchain_community.vectorstores import Chroma
+from models import budaya as budaya_model
+from models import knowledge as knowledge_model
+from models import wisata as wisata_model
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +84,7 @@ def _load_txt(path: str) -> str:
 def _load_knowledge_docs() -> list[Document]:
     """Muat seluruh dokumen di tabel knowledge_docs dari direktori lokal."""
     docs = []
-    rows = dbcore.query_all("SELECT id, nama_file, tipe_file, path_file FROM knowledge_docs")
+    rows = knowledge_model.list_for_sync()
     for row in rows:
         full_path = row["path_file"]
         if not os.path.isabs(full_path):
@@ -106,7 +108,7 @@ def _load_mysql_articles() -> list[Document]:
     """Muat artikel budaya & wisata dari MySQL sebagai dokumen pengetahuan tambahan."""
     docs = []
 
-    for row in dbcore.query_all("SELECT id, judul, kategori, ringkasan, konten_lengkap FROM budaya"):
+    for row in budaya_model.list_for_sync():
         content = (
             f"Judul Budaya: {row['judul']}\n"
             f"Kategori: {row['kategori']}\n"
@@ -118,9 +120,7 @@ def _load_mysql_articles() -> list[Document]:
             metadata={"source": f"budaya:{row['judul']}", "table": "budaya", "record_id": row["id"]},
         ))
 
-    for row in dbcore.query_all(
-        "SELECT id, nama_wisata, wilayah, deskripsi, fasilitas, alamat, tiket_masuk, jam_operasional FROM wisata"
-    ):
+    for row in wisata_model.list_for_sync():
         content = (
             f"Nama Wisata: {row['nama_wisata']}\n"
             f"Wilayah: {row['wilayah']}\n"
@@ -174,7 +174,7 @@ def run_sync() -> dict:
         _add_documents_with_retry(vectorstore, batch)
 
     # Tandai semua dokumen pengetahuan sebagai sudah ter-index.
-    dbcore.execute("UPDATE knowledge_docs SET status_indexed = TRUE")
+    knowledge_model.mark_all_indexed()
 
     reset_engine_cache()
 
