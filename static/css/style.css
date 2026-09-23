@@ -785,7 +785,33 @@ h4 {
   background-color: var(--accent-wisata-soft);
 }
 .page-header--budaya {
-  background-color: var(--accent-budaya-soft);
+  background: #1a0f05 url("../assets/budaya-header.png") center / cover
+    no-repeat;
+}
+.page-header--budaya::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 37, 64, 0.82) 0%,
+    rgba(10, 37, 64, 0.5) 45%,
+    rgba(10, 37, 64, 0.88) 100%
+  );
+}
+.page-header--budaya .section-inner {
+  position: relative;
+  z-index: 1;
+}
+.page-header--budaya .eyebrow--budaya {
+  color: #fbbf6d;
+}
+.page-header--budaya .page-title {
+  color: #ffffff;
+}
+.page-header--budaya .section-subtitle {
+  color: rgba(255, 255, 255, 0.82);
 }
 .page-title {
   margin: var(--space-sm) 0 var(--space-xs);
@@ -819,10 +845,26 @@ h4 {
   padding-top: var(--space-md);
   border-top: 1px solid var(--hairline);
 }
-.pagination-info { color: var(--ink-tertiary); font-size: var(--caption-size); }
-.pagination-controls { display: flex; align-items: center; gap: var(--space-sm); }
-.pagination-pages { color: var(--ink-subtle); font-size: var(--body-sm-size); font-weight: 500; white-space: nowrap; }
-.pagination-btn-disabled { opacity: 0.45; pointer-events: none; cursor: default; }
+.pagination-info {
+  color: var(--ink-tertiary);
+  font-size: var(--caption-size);
+}
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.pagination-pages {
+  color: var(--ink-subtle);
+  font-size: var(--body-sm-size);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.pagination-btn-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: default;
+}
 
 .card {
   display: flex;
@@ -1066,23 +1108,39 @@ h4 {
   font-size: var(--body-lg-size);
   line-height: 1.65;
 }
-.detail-content p { margin: 0 0 var(--space-md); }
-.detail-content p:last-child { margin-bottom: 0; }
-.detail-content strong, .detail-content b { color: var(--ink); font-weight: 600; }
-.detail-content h2, .detail-content h3 {
+.detail-content p {
+  margin: 0 0 var(--space-md);
+}
+.detail-content p:last-child {
+  margin-bottom: 0;
+}
+.detail-content strong,
+.detail-content b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.detail-content h2,
+.detail-content h3 {
   margin: var(--space-lg) 0 var(--space-sm);
   color: var(--ink);
   font-weight: 600;
   letter-spacing: -0.3px;
   line-height: 1.3;
 }
-.detail-content h2 { font-size: var(--headline-size); }
-.detail-content h3 { font-size: var(--subhead-size); }
-.detail-content ol, .detail-content ul {
+.detail-content h2 {
+  font-size: var(--headline-size);
+}
+.detail-content h3 {
+  font-size: var(--subhead-size);
+}
+.detail-content ol,
+.detail-content ul {
   margin: 0 0 var(--space-md);
   padding-left: 1.4em;
 }
-.detail-content li { margin-bottom: 6px; }
+.detail-content li {
+  margin-bottom: 6px;
+}
 .detail-content blockquote {
   margin: 0 0 var(--space-md);
   padding: var(--space-sm) var(--space-md);
@@ -1090,8 +1148,14 @@ h4 {
   color: var(--ink-subtle);
   font-style: italic;
 }
-.detail-content a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
-.detail-content a:hover { color: var(--ink); }
+.detail-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.detail-content a:hover {
+  color: var(--ink);
+}
 
 .detail-meta-grid {
   display: grid;
@@ -1185,7 +1249,9 @@ h4 {
   font-weight: 500;
   transition: color var(--transition);
 }
-.map-link:hover { color: var(--ink); }
+.map-link:hover {
+  color: var(--ink);
+}
 
 /* ============================================================
    KONTAK & MEDIA SOSIAL (detail wisata)
@@ -1202,7 +1268,11 @@ h4 {
   font-size: var(--headline-size);
   letter-spacing: -0.6px;
 }
-.social-links { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
 .social-link {
   display: inline-flex;
   align-items: center;
@@ -1214,13 +1284,32 @@ h4 {
   color: var(--ink-muted);
   font-size: var(--body-sm-size);
   font-weight: 500;
-  transition: border-color var(--transition), background var(--transition), color var(--transition);
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    color var(--transition);
 }
-.social-link:hover { border-color: var(--hairline-strong); background: var(--surface-2); color: var(--ink); }
-.social-link--email:hover { border-color: var(--accent-wisata-line); color: var(--accent-wisata); }
-.social-link--facebook:hover { border-color: #1877F2; color: #1877F2; }
-.social-link--instagram:hover { border-color: #E1306C; color: #E1306C; }
-.social-link--youtube:hover { border-color: #FF0000; color: #FF0000; }
+.social-link:hover {
+  border-color: var(--hairline-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.social-link--email:hover {
+  border-color: var(--accent-wisata-line);
+  color: var(--accent-wisata);
+}
+.social-link--facebook:hover {
+  border-color: #1877f2;
+  color: #1877f2;
+}
+.social-link--instagram:hover {
+  border-color: #e1306c;
+  color: #e1306c;
+}
+.social-link--youtube:hover {
+  border-color: #ff0000;
+  color: #ff0000;
+}
 
 /* ============================================================
    RATING FORM & REVIEWS
