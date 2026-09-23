@@ -3,8 +3,7 @@ from flask import flash, redirect, render_template, request, url_for
 
 from core.auth import admin_required
 from models import wisata as wisata_model
-from services.pagination import PAGE_SIZE, paginate
-from services.wisata_service import delete_galeri_photo, delete_gambar_utama, save_from_form
+from utils.pagination import PAGE_SIZE, paginate
 
 TIKET_OPTIONS = ["Gratis / Menyesuaikan", "Rp 5.000", "Rp 10.000", "Rp 15.000", "Rp 20.000"]
 
@@ -13,7 +12,7 @@ TIKET_OPTIONS = ["Gratis / Menyesuaikan", "Rp 5.000", "Rp 10.000", "Rp 15.000", 
 def admin_wisata_manage():
     if request.method == "POST":
         edit_id = request.form.get("id")
-        _, warnings = save_from_form(request.form, request.files, edit_id=edit_id)
+        _, warnings = wisata_model.save_from_form(request.form, request.files, edit_id=edit_id)
         for warning in warnings:
             flash(warning, "error")
         flash(
@@ -45,14 +44,14 @@ def admin_wisata_delete(wisata_id):
 
 @admin_required
 def admin_wisata_galeri_delete(galeri_id):
-    if delete_galeri_photo(galeri_id):
+    if wisata_model.delete_galeri_photo(galeri_id):
         flash("Foto galeri dihapus.", "success")
     return redirect(url_for("admin_wisata_manage"))
 
 
 @admin_required
 def admin_wisata_gambar_delete(wisata_id):
-    if delete_gambar_utama(wisata_id):
+    if wisata_model.delete_gambar_utama(wisata_id):
         flash("Gambar utama dihapus.", "success")
     return redirect(url_for("admin_wisata_manage"))
 

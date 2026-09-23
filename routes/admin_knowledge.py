@@ -4,7 +4,7 @@ from flask import flash, jsonify, redirect, render_template, request, url_for
 from core.auth import admin_required
 from core.sync_engine import run_sync
 from models import knowledge as knowledge_model
-from services.uploads import delete_knowledge_file, save_uploaded_doc
+from utils.uploads import delete_knowledge_file, save_uploaded_doc
 
 
 @admin_required

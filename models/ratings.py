@@ -1,6 +1,15 @@
-"""Data access layer untuk entitas rating/ulasan wisata."""
+"""Semua yang berhubungan dengan data rating/ulasan wisata.
+
+Bagian 1 (QUERY): fungsi baca/tulis langsung ke tabel `ratings`.
+Bagian 2 (ATURAN BISNIS): hitung ringkasan rating (trimmed mean) yang dipakai
+halaman publik & detail wisata.
+"""
 from core import db as dbcore
 
+
+# ============================================================
+# QUERY: baca & tulis tabel ratings
+# ============================================================
 
 def list_approved_by_wisata(wisata_id):
     return dbcore.query_all(
@@ -58,3 +67,24 @@ def count_pending():
 def average_approved_score():
     row = dbcore.query_one("SELECT AVG(skor_bintang) AS avg_score FROM ratings WHERE status_tampil = 'approved'")
     return row["avg_score"]
+
+
+# ============================================================
+# ATURAN BISNIS: dipanggil oleh routes/public.py
+# ============================================================
+
+def trimmed_average(scores: list[int]) -> float:
+    """Rata-rata dengan pemotongan nilai ekstrem (trimmed mean) agar tahan outlier."""
+    if not scores:
+        return 0.0
+    if len(scores) < 5:
+        return round(sum(scores) / len(scores), 1)
+    ordered = sorted(scores)
+    trim_count = max(1, len(ordered) // 10)
+    trimmed = ordered[trim_count:-trim_count] or ordered
+    return round(sum(trimmed) / len(trimmed), 1)
+
+
+def get_wisata_rating_summary(wisata_id: int) -> dict:
+    scores = scores_approved_by_wisata(wisata_id)
+    return {"average": trimmed_average(scores), "count": len(scores)}

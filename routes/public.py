@@ -4,15 +4,14 @@ from flask import render_template, request
 from models import budaya as budaya_model
 from models import ratings as ratings_model
 from models import wisata as wisata_model
-from services.pagination import PAGE_SIZE, paginate
-from services.ratings_stats import get_wisata_rating_summary
+from utils.pagination import PAGE_SIZE, paginate
 
 
 def index():
     highlight_budaya = budaya_model.list_highlight(limit=3)
     highlight_wisata = wisata_model.list_highlight(limit=3)
     for w in highlight_wisata:
-        w["rating"] = get_wisata_rating_summary(w["id"])
+        w["rating"] = ratings_model.get_wisata_rating_summary(w["id"])
 
     stats = {
         "total_budaya": budaya_model.count_public(),
@@ -61,7 +60,7 @@ def wisata_list():
     pagination = paginate(total, page, PAGE_SIZE)
     rows = wisata_model.list_public(wilayah, pagination["per_page"], pagination["offset"])
     for r in rows:
-        r["rating"] = get_wisata_rating_summary(r["id"])
+        r["rating"] = ratings_model.get_wisata_rating_summary(r["id"])
 
     return render_template("public/wisata.html", items=rows, active_wilayah=wilayah, pagination=pagination)
 
@@ -71,7 +70,7 @@ def wisata_detail(wisata_id):
     if not item:
         return render_template("public/404.html"), 404
     ratings = ratings_model.list_approved_by_wisata(wisata_id)
-    summary = get_wisata_rating_summary(wisata_id)
+    summary = ratings_model.get_wisata_rating_summary(wisata_id)
 
     galeri_images = [item["gambar"]] if item["gambar"] else []
     galeri_images += [g["gambar"] for g in wisata_model.list_galeri(wisata_id)]

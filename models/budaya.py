@@ -1,8 +1,20 @@
-"""Data access layer untuk entitas budaya & galeri fotonya."""
+"""Semua yang berhubungan dengan data budaya & galeri fotonya.
+
+Bagian 1 (QUERY): fungsi baca/tulis langsung ke tabel `budaya` & `budaya_galeri`.
+Bagian 2 (ATURAN BISNIS): fungsi tingkat lebih tinggi yang dipanggil router,
+menggabungkan beberapa query + aturan (mis. "kalau upload gambar baru gagal,
+gambar lama tetap dipakai") jadi satu langkah saja.
+"""
 from core import db as dbcore
+from core.content import sanitize_content_html
+from utils.uploads import delete_upload_file, save_uploaded_image, save_uploaded_images
 
 LIST_FIELDS = "id, judul, kategori, ringkasan, gambar"
 
+
+# ============================================================
+# QUERY: baca & tulis tabel budaya + budaya_galeri
+# ============================================================
 
 def count_public(kategori=None):
     if kategori:
@@ -131,3 +143,53 @@ def delete_galeri(galeri_id):
 def list_for_sync():
     """Semua artikel budaya untuk dijadikan dokumen pengetahuan RAG."""
     return dbcore.query_all("SELECT id, judul, kategori, ringkasan, konten_lengkap FROM budaya")
+
+
+# ============================================================
+# ATURAN BISNIS: dipanggil langsung oleh routes/admin_budaya.py
+# ============================================================
+
+def save_from_form(form, files, edit_id=None):
+    """Simpan (insert/update) artikel budaya beserta galerinya dari form admin.
+
+    Konten HTML disaring dulu lewat `sanitize_content_html` (cegah stored XSS)
+    sebelum disimpan — JANGAN pernah simpan `konten_lengkap` mentah dari form.
+    Return budaya_id (hasil insert, atau edit_id yang diteruskan).
+    """
+    judul = form.get("judul", "").strip()
+    kategori = form.get("kategori", "").strip()
+    ringkasan = form.get("ringkasan", "").strip()
+    konten = sanitize_content_html(form.get("konten_lengkap", "").strip())
+    gambar = save_uploaded_image(files.get("gambar"))
+    galeri_filenames = save_uploaded_images(files.getlist("galeri"))
+
+    if edit_id:
+        update(edit_id, judul, kategori, ringkasan, konten, gambar)
+        budaya_id = edit_id
+    else:
+        budaya_id = create(judul, kategori, ringkasan, konten, gambar)
+
+    for filename in galeri_filenames:
+        add_galeri(budaya_id, filename)
+
+    return budaya_id
+
+
+def delete_galeri_photo(galeri_id) -> bool:
+    """Hapus satu foto galeri (record + berkas). Return True jika ada yang dihapus."""
+    foto = get_galeri(galeri_id)
+    if not foto:
+        return False
+    delete_upload_file(foto["gambar"])
+    delete_galeri(galeri_id)
+    return True
+
+
+def delete_gambar_utama(budaya_id) -> bool:
+    """Hapus gambar utama artikel (record + berkas). Return True jika ada yang dihapus."""
+    budaya = get_gambar(budaya_id)
+    if not budaya or not budaya["gambar"]:
+        return False
+    delete_upload_file(budaya["gambar"])
+    clear_gambar(budaya_id)
+    return True

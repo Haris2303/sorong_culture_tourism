@@ -3,8 +3,7 @@ from flask import flash, redirect, render_template, request, url_for
 
 from core.auth import admin_required
 from models import budaya as budaya_model
-from services.budaya_service import delete_galeri_photo, delete_gambar_utama, save_from_form
-from services.pagination import PAGE_SIZE, paginate
+from utils.pagination import PAGE_SIZE, paginate
 
 KATEGORI_OPTIONS = ["Tarian Tradisional", "Alat Musik", "Seni Ukir", "Upacara Adat"]
 
@@ -13,7 +12,7 @@ KATEGORI_OPTIONS = ["Tarian Tradisional", "Alat Musik", "Seni Ukir", "Upacara Ad
 def admin_budaya_manage():
     if request.method == "POST":
         edit_id = request.form.get("id")
-        save_from_form(request.form, request.files, edit_id=edit_id)
+        budaya_model.save_from_form(request.form, request.files, edit_id=edit_id)
         flash(
             "Artikel budaya berhasil diperbarui." if edit_id else "Artikel budaya berhasil ditambahkan.",
             "success",
@@ -43,14 +42,14 @@ def admin_budaya_delete(budaya_id):
 
 @admin_required
 def admin_budaya_galeri_delete(galeri_id):
-    if delete_galeri_photo(galeri_id):
+    if budaya_model.delete_galeri_photo(galeri_id):
         flash("Foto galeri dihapus.", "success")
     return redirect(url_for("admin_budaya_manage"))
 
 
 @admin_required
 def admin_budaya_gambar_delete(budaya_id):
-    if delete_gambar_utama(budaya_id):
+    if budaya_model.delete_gambar_utama(budaya_id):
         flash("Gambar utama dihapus.", "success")
     return redirect(url_for("admin_budaya_manage"))
 
