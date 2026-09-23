@@ -6,6 +6,7 @@
   const form = document.getElementById('chat-form');
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send-btn');
+  const quickReplies = document.getElementById('chat-quick-replies');
 
   if (!widget) return;
 
@@ -125,6 +126,14 @@
     }
   }
 
+  // Saran pertanyaan cepat cuma berguna sebelum obrolan dimulai — begitu pengguna
+  // sudah mengirim pertanyaan apa pun (lewat chip ataupun ketik manual), baris ini
+  // disembunyikan permanen untuk sesi tab ini supaya tidak menumpuk di setiap pesan.
+  function hideQuickReplies() {
+    if (quickReplies) quickReplies.hidden = true;
+  }
+  if (history.length > 1) hideQuickReplies();
+
   try {
     if (sessionStorage.getItem(OPEN_STATE_KEY) === 'true') {
       widget.classList.remove('closed');
@@ -210,6 +219,7 @@
     const previousTurns = historyPayload();
 
     appendMessage(message, 'user');
+    hideQuickReplies();
     input.value = '';
     sendBtn.disabled = true;
     showTypingBubble();

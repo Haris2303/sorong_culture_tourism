@@ -14,9 +14,9 @@ Sorong Raya{% endblock %} {% block content %}
   </div>
 </section>
 
-<section class="section">
+<section class="section section-tint">
   <div class="section-inner">
-    <div class="filter-bar">
+    <div class="filter-bar" data-aos="fade-up">
       <a
         href="{{ url_for('budaya_list') }}"
         class="filter-chip {{ 'active' if not active_kategori }}"
@@ -33,7 +33,8 @@ Sorong Raya{% endblock %} {% block content %}
 
     <div class="grid-3">
       {% for item in items %}
-      <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
+      <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card"
+         data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 80 }}">
         <div class="card-image">
           {% if item.gambar %}
           <img

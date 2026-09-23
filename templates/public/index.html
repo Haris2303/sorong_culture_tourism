@@ -10,14 +10,8 @@
     aria-hidden="true"
     data-src="{{ url_for('static', filename='video/hero.webm') }}"
   ></video>
-  <span class="motif-icon motif-icon--bl on-dark" aria-hidden="true">
-    <img
-      src="{{ url_for('static', filename='assets/cendrawasih.png') }}"
-      alt=""
-    />
-  </span>
   <div class="hero-inner">
-    <div class="hero-card">
+    <div class="hero-card" data-aos="fade-up" data-aos-duration="700">
       <span class="eyebrow eyebrow--wisata">
         <i class="fa-solid fa-location-dot"></i>Kota &amp; Kabupaten Sorong
       </span>
@@ -53,12 +47,70 @@
   </div>
 </section>
 
-<section id="budaya" class="section">
-  <span class="motif-icon motif-icon--tr" aria-hidden="true">
+<section id="about" class="section section-tint">
+  <div class="section-inner narrow">
+    <div class="section-heading center" data-aos="fade-up">
+      <span class="eyebrow eyebrow--primary">
+        <i class="fa-solid fa-circle-info"></i>Tentang Kami
+      </span>
+      <h2 class="section-title">
+        Satu Portal untuk Budaya &amp; Wisata Sorong Raya
+      </h2>
+      <p class="section-subtitle">
+        Sorong Raya menghimpun kekayaan adat Suku Moi dan destinasi bahari Kota
+        &amp; Kabupaten Sorong dalam satu portal edukasi digital — lengkap
+        dengan asisten virtual yang menjawab berdasarkan sumber terverifikasi,
+        bukan sekadar tebakan.
+      </p>
+    </div>
+
+    <div class="about-grid">
+      <div class="about-item about-item--budaya" data-aos="fade-up" data-aos-delay="0">
+        <span class="about-item-icon"
+          ><i class="fa-solid fa-book-open"></i
+        ></span>
+        <h3>Edukasi Terstruktur</h3>
+        <p>
+          Katalog budaya Suku Moi dan direktori wisata Kota &amp; Kabupaten
+          Sorong yang tersusun rapi dan mudah dijelajahi.
+        </p>
+      </div>
+      <div class="about-item about-item--wisata" data-aos="fade-up" data-aos-delay="80">
+        <span class="about-item-icon"><i class="fa-solid fa-robot"></i></span>
+        <h3>Asisten Virtual AI</h3>
+        <p>
+          Chatbot berbasis RAG menjawab pertanyaan seputar budaya &amp; wisata
+          dari dokumen terverifikasi, bukan hasil karangan.
+        </p>
+      </div>
+      <div class="about-item about-item--rating" data-aos="fade-up" data-aos-delay="160">
+        <span class="about-item-icon"><i class="fa-solid fa-star"></i></span>
+        <h3>Rating &amp; Ulasan Terpercaya</h3>
+        <p>
+          Penilaian pengunjung dilindungi proteksi anti-spam berlapis, sehingga
+          skor tiap destinasi tetap akurat.
+        </p>
+      </div>
+      <div class="about-item about-item--primary" data-aos="fade-up" data-aos-delay="240">
+        <span class="about-item-icon"
+          ><i class="fa-solid fa-door-open"></i
+        ></span>
+        <h3>Akses Tanpa Hambatan</h3>
+        <p>
+          Seluruh konten dan chatbot dapat dinikmati publik tanpa perlu
+          mendaftar atau login.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="budaya" class="section section-photo">
+  <span class="motif-icon motif-icon--tr on-dark" aria-hidden="true">
     <img src="{{ url_for('static', filename='assets/tifa.png') }}" alt="" />
   </span>
   <div class="section-inner">
-    <div class="section-heading">
+    <div class="section-heading" data-aos="fade-up">
       <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
       <h2 class="section-title">Budaya Suku Moi</h2>
       <p class="section-subtitle">
@@ -69,7 +121,8 @@
 
     <div class="grid-3">
       {% for item in highlight_budaya %}
-      <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card">
+      <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card"
+         data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 80 }}">
         <div class="card-image">
           {% if item.gambar %}
           <img
@@ -119,15 +172,9 @@
   </div>
 </section>
 
-<section id="wisata" class="section section-photo">
-  <span class="motif-icon motif-icon--tr on-dark" aria-hidden="true">
-    <img
-      src="{{ url_for('static', filename='assets/cendrawasih.png') }}"
-      alt=""
-    />
-  </span>
+<section id="wisata" class="section section-tint">
   <div class="section-inner">
-    <div class="section-heading">
+    <div class="section-heading" data-aos="fade-up">
       <span class="eyebrow eyebrow--wisata"
         >02 / Destinasi Bahari &amp; Alam</span
       >
@@ -140,7 +187,8 @@
 
     <div class="grid-3">
       {% for item in highlight_wisata %}
-      <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card">
+      <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card"
+         data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 80 }}">
         <div class="card-image">
           {% if item.gambar %}
           <img

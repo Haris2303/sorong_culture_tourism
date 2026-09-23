@@ -619,7 +619,7 @@ body.modal-open { overflow: hidden; }
     linear-gradient(180deg, #f2f8fd 0%, #e3eef9 45%, #cfe4f6 100%),
     var(--motif-tile);
   background-repeat: no-repeat, repeat;
-  background-size: cover, 220px 220px;
+  background-size: cover, 120px 120px;
 }
 .login-box {
   position: relative;

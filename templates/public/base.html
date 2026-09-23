@@ -17,6 +17,10 @@
     />
     <link
       rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"
+    />
+    <link
+      rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
     {% block extra_css %}{% endblock %}
@@ -93,6 +97,16 @@
     {% include "public/_chat_widget.html" %}
 
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+      AOS.init({
+        once: true,
+        duration: 600,
+        easing: 'ease-out',
+        offset: 80,
+        disable: () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      });
+    </script>
     {% block extra_js %}{% endblock %}
   </body>
 </html>
