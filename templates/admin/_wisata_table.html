@@ -1,0 +1,67 @@
+  <div class="admin-table-wrap">
+  <table class="admin-table">
+    <thead>
+      <tr><th>Nama</th><th>Wilayah</th><th>Diperbarui</th><th>Aksi</th></tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.nama_wisata }}</td>
+        <td>{{ item.wilayah }}</td>
+        <td>{{ item.updated_at.strftime('%d %b %Y') }}</td>
+        <td class="table-actions">
+          <button type="button" class="btn btn-small btn-outline edit-wisata-btn"
+            data-id="{{ item.id }}" data-nama="{{ item.nama_wisata }}" data-wilayah="{{ item.wilayah }}"
+            data-deskripsi="{{ item.deskripsi }}" data-fasilitas="{{ item.fasilitas }}"
+            data-alamat="{{ item.alamat }}" data-tiket="{{ item.tiket_masuk }}" data-jam="{{ item.jam_operasional }}"
+            data-gambar="{{ item.gambar or '' }}"
+            data-lat="{{ item.latitude if item.latitude is not none else '' }}"
+            data-lon="{{ item.longitude if item.longitude is not none else '' }}"
+            data-sosmed-email="{{ item.sosmed_email or '' }}"
+            data-sosmed-facebook="{{ item.sosmed_facebook or '' }}"
+            data-sosmed-instagram="{{ item.sosmed_instagram or '' }}"
+            data-sosmed-youtube="{{ item.sosmed_youtube or '' }}"
+            data-galeri="{{ item.galeri | tojson | forceescape }}">Edit</button>
+          <form method="post" action="{{ url_for('admin_wisata_delete', wisata_id=item.id) }}" class="inline-form"
+                onsubmit="return confirm('Hapus destinasi ini?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-small btn-danger">Hapus</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="empty-state">
+        {% if q %}Tidak ada destinasi yang cocok dengan "{{ q }}".{% else %}Belum ada data.{% endif %}
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if pagination.total > 0 %}
+  <div class="pagination">
+    <span class="pagination-info">Menampilkan {{ items|length }} dari {{ pagination.total }} data</span>
+    {% if pagination.total_pages > 1 %}
+    <div class="pagination-controls">
+      {% if pagination.has_prev %}
+      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page - 1) }}" class="btn btn-small btn-outline">
+        <i class="fa-solid fa-chevron-left"></i>Sebelumnya
+      </a>
+      {% else %}
+      <span class="btn btn-small btn-outline pagination-btn-disabled">
+        <i class="fa-solid fa-chevron-left"></i>Sebelumnya
+      </span>
+      {% endif %}
+      <span class="pagination-pages">Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span>
+      {% if pagination.has_next %}
+      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page + 1) }}" class="btn btn-small btn-outline">
+        Berikutnya<i class="fa-solid fa-chevron-right"></i>
+      </a>
+      {% else %}
+      <span class="btn btn-small btn-outline pagination-btn-disabled">
+        Berikutnya<i class="fa-solid fa-chevron-right"></i>
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}

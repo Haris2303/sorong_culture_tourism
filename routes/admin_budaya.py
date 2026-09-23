@@ -28,6 +28,9 @@ def admin_budaya_manage():
     for item in items:
         item["galeri"] = budaya_model.list_galeri_full(item["id"])
 
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template("admin/_budaya_table.html", items=items, q=q, pagination=pagination)
+
     return render_template(
         "admin/budaya_manage.html", items=items, q=q, kategori_options=KATEGORI_OPTIONS, pagination=pagination
     )

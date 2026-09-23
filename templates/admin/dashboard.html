@@ -43,17 +43,6 @@
     </div>
   </div>
 
-  <div class="stat-card stat-card--alert {{ 'is-active' if stats.pending_ratings > 0 }}">
-    <div class="stat-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6"/><path d="M12 16.5v.01"/></svg>
-    </div>
-    <div class="stat-info">
-      <span class="stat-label">Menunggu Moderasi</span>
-      <span class="stat-value">{{ stats.pending_ratings }}</span>
-    </div>
-    {% if stats.pending_ratings > 0 %}<span class="stat-ping"></span>{% endif %}
-  </div>
-
   <div class="stat-card stat-card--wisata">
     <div class="stat-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5V12c0 1.55 3.58 2.8 8 2.8s8-1.25 8-2.8V5.5"/><path d="M4 12v6.5C4 20.05 7.58 21.3 12 21.3s8-1.25 8-2.8V12"/></svg>

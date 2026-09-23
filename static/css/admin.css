@@ -132,25 +132,6 @@
 .stat-card--rating { --stat-accent: var(--accent-rating); }
 .stat-card--rating .stat-icon { background: rgba(245, 158, 11, 0.1); }
 .stat-card--neutral { --stat-accent: var(--ink); }
-.stat-card--alert { --stat-accent: var(--ink-tertiary); }
-.stat-card--alert.is-active { --stat-accent: var(--semantic-danger); border-color: rgba(220, 38, 38, 0.25); }
-.stat-card--alert.is-active .stat-icon { background: var(--semantic-danger-soft); }
-
-.stat-ping {
-  position: absolute;
-  top: var(--space-sm);
-  right: var(--space-sm);
-  width: 8px;
-  height: 8px;
-  border-radius: var(--r-pill);
-  background: var(--semantic-danger);
-  animation: stat-ping 1.8s infinite;
-}
-@keyframes stat-ping {
-  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-  70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-}
 
 /* ---------- Quick actions ---------- */
 .quick-actions-card {
@@ -579,6 +560,51 @@ body.modal-open { overflow: hidden; }
 .sync-status { margin-top: var(--space-sm); font-size: var(--body-sm-size); font-weight: 500; }
 .sync-status.sync-success { color: var(--semantic-success); }
 .sync-status.sync-error { color: var(--semantic-danger); }
+
+.sync-progress {
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+.sync-progress:not([hidden]) { display: flex; }
+.sync-progress-bar-track {
+  flex: 1;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.sync-progress-bar-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--brand-vivid);
+  transition: width 240ms ease;
+}
+.sync-progress-percent {
+  min-width: 3.5ch;
+  text-align: right;
+  font-size: var(--body-sm-size);
+  font-weight: 600;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sync-log {
+  margin-top: var(--space-sm);
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--primary-deep);
+  color: #d7e6f5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--caption-size);
+  line-height: 1.6;
+  border-radius: var(--r-md);
+  padding: var(--space-sm) var(--space-md);
+}
+.sync-log-line { white-space: pre-wrap; word-break: break-word; }
+.sync-log-line .sync-log-time { color: #7fa9c9; margin-right: 6px; }
+.sync-log-line.sync-log-warn { color: #fbbf24; }
+.sync-log-line.sync-log-error { color: #fca5a5; }
 
 /* ---------- Login ---------- */
 .login-body {

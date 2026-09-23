@@ -30,6 +30,9 @@ def admin_wisata_manage():
     for item in items:
         item["galeri"] = wisata_model.list_galeri_full(item["id"])
 
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template("admin/_wisata_table.html", items=items, q=q, pagination=pagination)
+
     return render_template(
         "admin/wisata_manage.html", items=items, q=q, tiket_options=TIKET_OPTIONS, pagination=pagination
     )

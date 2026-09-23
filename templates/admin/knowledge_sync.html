@@ -8,7 +8,11 @@
   <form method="post" action="{{ url_for('admin_knowledge_upload') }}" enctype="multipart/form-data" class="admin-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label>Berkas (PDF / TXT / MD)</label>
-    <input type="file" name="dokumen" accept=".pdf,.txt,.md" required>
+    <div class="file-input-wrap">
+      <input type="file" name="dokumen" id="f-dokumen" accept=".pdf,.txt,.md" required class="file-input-native">
+      <label for="f-dokumen" class="file-input-btn"><i class="fa-solid fa-upload"></i>Pilih Berkas</label>
+      <span class="file-input-name" id="f-dokumen-name">Belum ada file dipilih</span>
+    </div>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Unggah Dokumen</button>
     </div>
@@ -21,6 +25,15 @@
      dan wisata dari database, memecahnya menjadi potongan teks (<em>chunking</em>), menghitung
      ulang vektor embedding, lalu memperbarui koleksi ChromaDB.</p>
   <button type="button" id="sync-btn" class="btn btn-primary btn-lg">Sinkronkan &amp; Latih Ulang Vector DB</button>
+
+  <div class="sync-progress" id="sync-progress" hidden>
+    <div class="sync-progress-bar-track">
+      <div class="sync-progress-bar-fill" id="sync-progress-fill" style="width: 0%"></div>
+    </div>
+    <span class="sync-progress-percent" id="sync-progress-percent">0%</span>
+  </div>
+  <div class="sync-log" id="sync-log" hidden></div>
+
   <p id="sync-status" class="sync-status"></p>
 </div>
 
@@ -43,6 +56,8 @@
           </span>
         </td>
         <td class="table-actions">
+          <a href="{{ url_for('admin_knowledge_view', doc_id=doc.id) }}" target="_blank" rel="noopener"
+             class="btn btn-small btn-outline">Lihat</a>
           <form method="post" action="{{ url_for('admin_knowledge_delete', doc_id=doc.id) }}" class="inline-form"
                 onsubmit="return confirm('Hapus dokumen ini?');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -60,37 +75,154 @@
 {% endblock %}
 {% block extra_js %}
 <script>
-document.getElementById('sync-btn').addEventListener('click', async () => {
-  const btn = document.getElementById('sync-btn');
-  const status = document.getElementById('sync-status');
-  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
-    || document.querySelector('input[name="csrf_token"]').value;
+// ---------- Nama file yang dipilih pada input unggah dokumen ----------
+function bindFileInputName(inputId, nameId) {
+  const input = document.getElementById(inputId);
+  const nameEl = document.getElementById(nameId);
+  input.addEventListener('change', () => {
+    if (!input.files || input.files.length === 0) {
+      nameEl.textContent = 'Belum ada file dipilih';
+    } else {
+      nameEl.textContent = input.files[0].name;
+    }
+  });
+}
+bindFileInputName('f-dokumen', 'f-dokumen-name');
 
-  btn.disabled = true;
-  btn.textContent = 'Sedang memproses...';
-  status.textContent = '';
-  status.className = 'sync-status';
+const syncBtn = document.getElementById('sync-btn');
+const syncStatus = document.getElementById('sync-status');
+const syncProgressWrap = document.getElementById('sync-progress');
+const syncProgressFill = document.getElementById('sync-progress-fill');
+const syncProgressPercent = document.getElementById('sync-progress-percent');
+const syncLog = document.getElementById('sync-log');
+const SYNC_DEFAULT_LABEL = 'Sinkronkan & Latih Ulang Vector DB';
+
+let syncPollTimer = null;
+let renderedLogCount = 0;
+
+function syncCsrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.content
+    || document.querySelector('input[name="csrf_token"]').value;
+}
+
+function appendSyncLogLine(entry) {
+  const line = document.createElement('div');
+  line.className = 'sync-log-line';
+  if (/gagal|error/i.test(entry.message)) {
+    line.classList.add('sync-log-error');
+  } else if (/kuota|menunggu/i.test(entry.message)) {
+    line.classList.add('sync-log-warn');
+  }
+  const time = document.createElement('span');
+  time.className = 'sync-log-time';
+  time.textContent = `[${entry.time}]`;
+  line.appendChild(time);
+  line.appendChild(document.createTextNode(entry.message));
+  syncLog.appendChild(line);
+}
+
+function renderSyncProgress(data) {
+  syncProgressWrap.hidden = false;
+  syncLog.hidden = false;
+  syncProgressFill.style.width = `${data.percent}%`;
+  syncProgressPercent.textContent = `${data.percent}%`;
+
+  const logs = data.logs || [];
+  for (let i = renderedLogCount; i < logs.length; i++) {
+    appendSyncLogLine(logs[i]);
+  }
+  renderedLogCount = logs.length;
+  syncLog.scrollTop = syncLog.scrollHeight;
+}
+
+function resetSyncProgressUI() {
+  renderedLogCount = 0;
+  syncLog.innerHTML = '';
+  syncProgressFill.style.width = '0%';
+  syncProgressPercent.textContent = '0%';
+}
+
+function finishSyncUI(result) {
+  syncBtn.disabled = false;
+  syncBtn.textContent = SYNC_DEFAULT_LABEL;
+  syncProgressWrap.hidden = true;
+  syncLog.hidden = true;
+  if (!result) return;
+  syncStatus.className = 'sync-status';
+  if (result.success) {
+    syncStatus.textContent = `${result.message} (${result.documents} dokumen, ${result.chunks} chunk).`;
+    syncStatus.classList.add('sync-success');
+  } else {
+    syncStatus.textContent = result.message || 'Sinkronisasi gagal.';
+    syncStatus.classList.add('sync-error');
+  }
+}
+
+async function pollSyncStatus() {
+  try {
+    const res = await fetch("{{ url_for('admin_sync_knowledge_status') }}");
+    const data = await res.json();
+    renderSyncProgress(data);
+
+    if (data.status === 'running') {
+      syncPollTimer = setTimeout(pollSyncStatus, 800);
+      return;
+    }
+    finishSyncUI(data.result);
+  } catch (err) {
+    finishSyncUI(null);
+    syncStatus.textContent = 'Gagal memantau status sinkronisasi.';
+    syncStatus.classList.add('sync-error');
+  }
+}
+
+syncBtn.addEventListener('click', async () => {
+  syncBtn.disabled = true;
+  syncBtn.textContent = 'Sedang memproses...';
+  syncStatus.textContent = '';
+  syncStatus.className = 'sync-status';
+  resetSyncProgressUI();
+  syncProgressWrap.hidden = false;
+  syncLog.hidden = false;
 
   try {
     const res = await fetch("{{ url_for('admin_sync_knowledge') }}", {
       method: 'POST',
-      headers: { 'X-CSRFToken': csrfToken }
+      headers: { 'X-CSRFToken': syncCsrfToken() }
     });
-    const data = await res.json();
-    if (res.ok && data.success) {
-      status.textContent = `${data.message} (${data.documents} dokumen, ${data.chunks} chunk).`;
-      status.classList.add('sync-success');
-    } else {
-      status.textContent = data.message || 'Sinkronisasi gagal.';
-      status.classList.add('sync-error');
+    if (res.status !== 202 && res.status !== 409) {
+      const data = await res.json();
+      finishSyncUI(null);
+      syncStatus.textContent = data.message || 'Gagal memulai sinkronisasi.';
+      syncStatus.classList.add('sync-error');
+      return;
     }
+    clearTimeout(syncPollTimer);
+    pollSyncStatus();
   } catch (err) {
-    status.textContent = 'Gagal menghubungi server.';
-    status.classList.add('sync-error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Sinkronkan & Latih Ulang Vector DB';
+    finishSyncUI(null);
+    syncStatus.textContent = 'Gagal menghubungi server.';
+    syncStatus.classList.add('sync-error');
   }
 });
+
+// Jika halaman dibuka/direfresh saat sinkronisasi sedang berjalan (mis. dari tab lain),
+// lanjutkan menampilkan progres yang sudah berjalan alih-alih diam saja.
+(async () => {
+  try {
+    const res = await fetch("{{ url_for('admin_sync_knowledge_status') }}");
+    const data = await res.json();
+    if (data.status === 'running') {
+      syncBtn.disabled = true;
+      syncBtn.textContent = 'Sedang memproses...';
+      syncProgressWrap.hidden = false;
+      syncLog.hidden = false;
+      renderSyncProgress(data);
+      pollSyncStatus();
+    }
+  } catch (err) {
+    // Abaikan; tombol tetap dalam keadaan siap dipakai.
+  }
+})();
 </script>
 {% endblock %}
