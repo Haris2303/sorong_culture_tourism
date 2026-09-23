@@ -16,6 +16,7 @@
   // memuat ulang JS dari nol). sessionStorage otomatis bersih saat tab ditutup.
   const HISTORY_KEY = 'sorongRayaChatHistory';
   const OPEN_STATE_KEY = 'sorongRayaChatOpen';
+  const SCROLL_KEY = 'sorongRayaChatScroll';
 
   function loadHistory() {
     try {
@@ -35,6 +36,43 @@
   }
 
   let history = loadHistory();
+
+  // Posisi scroll disimpan terpisah dari riwayat supaya saat pindah halaman (situs
+  // ini multi-halaman) chat tidak selalu lompat ke pesan paling awal. Elemen dengan
+  // display:none (kondisi panel saat masih tertutup) selalu melaporkan scrollTop/
+  // scrollHeight sebagai 0, jadi posisi scroll HANYA bisa diterapkan setelah panel
+  // benar-benar terlihat — lihat pemanggilan restoreScrollPosition() di bawah.
+  function loadScrollPosition() {
+    try {
+      const raw = sessionStorage.getItem(SCROLL_KEY);
+      return raw === null ? null : Number(raw);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function saveScrollPosition() {
+    try {
+      sessionStorage.setItem(SCROLL_KEY, String(messagesEl.scrollTop));
+    } catch (err) {
+      // abaikan jika sessionStorage tidak tersedia
+    }
+  }
+
+  function restoreScrollPosition() {
+    const saved = loadScrollPosition();
+    messagesEl.scrollTop = saved === null ? messagesEl.scrollHeight : saved;
+  }
+
+  let scrollSaveQueued = false;
+  messagesEl.addEventListener('scroll', () => {
+    if (scrollSaveQueued) return;
+    scrollSaveQueued = true;
+    requestAnimationFrame(() => {
+      saveScrollPosition();
+      scrollSaveQueued = false;
+    });
+  });
 
   function renderMessage(text, sender, sources, isHtml) {
     const wrapper = document.createElement('div');
@@ -90,6 +128,7 @@
   try {
     if (sessionStorage.getItem(OPEN_STATE_KEY) === 'true') {
       widget.classList.remove('closed');
+      restoreScrollPosition();
     }
   } catch (err) {
     // abaikan jika sessionStorage tidak tersedia
@@ -107,6 +146,7 @@
     widget.classList.toggle('closed');
     persistOpenState();
     if (!widget.classList.contains('closed')) {
+      restoreScrollPosition();
       input.focus();
     }
   });
