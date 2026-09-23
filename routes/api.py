@@ -8,6 +8,28 @@ from models import ratings as ratings_model
 from models import wisata as wisata_model
 
 
+# Riwayat percakapan dikirim ulang oleh klien tiap request (chatbot-nya stateless).
+# Dibatasi supaya prompt ke LLM tidak membengkak & tidak bisa dijejali kiriman besar.
+MAX_HISTORY_MESSAGES = 6
+MAX_HISTORY_CHARS = 600
+
+
+def _clean_history(raw):
+    if not isinstance(raw, list):
+        return []
+    cleaned = []
+    for item in raw[-MAX_HISTORY_MESSAGES:]:
+        if not isinstance(item, dict):
+            continue
+        text = (item.get("text") or "").strip()[:MAX_HISTORY_CHARS]
+        if text:
+            cleaned.append({
+                "role": "user" if item.get("role") == "user" else "bot",
+                "text": text,
+            })
+    return cleaned
+
+
 def api_chat():
     payload = request.get_json(silent=True) or {}
     question = (payload.get("message") or "").strip()
@@ -17,7 +39,7 @@ def api_chat():
         return jsonify({"error": "Pesan terlalu panjang (maks 500 karakter)."}), 400
 
     try:
-        result = answer_query(question)
+        result = answer_query(question, _clean_history(payload.get("history")))
     except Exception:
         return jsonify({
             "answer": "⚠️ Maaf, terjadi kendala teknis pada asisten virtual kami. Silakan coba lagi sebentar lagi.",

@@ -13,14 +13,18 @@ from openai import RateLimitError
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 logger = logging.getLogger(__name__)
 
 # Batas waktu keras untuk panggilan LLM. Parameter `timeout=` bawaan LangChain
 # tidak selalu ditegakkan saat API sedang macet (hang), jadi kita paksa
 # lewat thread terpisah agar pengguna tidak menunggu tanpa batas.
-_LLM_CALL_TIMEOUT_SECONDS = 15
+# Model gratis OpenRouter biasanya menjawab 7-12 detik, dan lebih lambat lagi saat
+# providernya ramai. Ambang 15 detik membuat jawaban yang sebenarnya hampir jadi
+# ikut dibuang jadi pesan "kendala teknis" (berikut tombol link-nya), jadi diberi
+# kelonggaran. Kegagalan yang benar-benar fatal (429/503) tetap kembali cepat.
+_LLM_CALL_TIMEOUT_SECONDS = 25
 _llm_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="rag-llm")
 
 # Model gratis OpenRouter kadang kena rate-limit sesaat di provider upstream-nya
@@ -126,16 +130,28 @@ def _render_rich_answer(text: str) -> str:
 
 
 SYSTEM_PROMPT = """Anda adalah asisten virtual "Sorong Raya" yang ramah dan sopan.
-Tugas Anda HANYA menjawab pertanyaan seputar budaya Suku Moi dan tempat wisata di
-Kota Sorong maupun Kabupaten Sorong, murni berdasarkan KONTEKS yang diberikan di bawah ini.
+Cakupan Anda HANYA budaya Suku Moi dan tempat wisata di Kota Sorong maupun
+Kabupaten Sorong.
 
 ATURAN KETAT:
-1. Jawab HANYA berdasarkan informasi pada KONTEKS. Jangan mengarang (berhalusinasi).
-2. Jika KONTEKS tidak relevan atau tidak memuat jawaban, katakan dengan sopan bahwa
-   informasi tersebut belum tersedia dalam basis pengetahuan.
-3. Gunakan Bahasa Indonesia yang santun, ringkas, dan mudah dipahami wisatawan.
-4. Jangan menjawab pertanyaan di luar topik budaya & wisata Sorong Raya.
-5. Format jawaban HANYA dengan gaya berikut (jangan pakai heading #, tabel, atau blok kode):
+1. FAKTA SPESIFIK — nama tempat, harga tiket, jam operasional, alamat/lokasi,
+   fasilitas, serta isi adat/tradisi — HANYA boleh diambil dari KONTEKS di bawah.
+   Jangan pernah mengarang atau menebak angka maupun nama. Kalau KONTEKS tidak
+   memuatnya, katakan dengan sopan bahwa detail itu belum tersedia di basis
+   pengetahuan kami.
+2. Untuk pertanyaan ringan yang masih seputar wisata/budaya Sorong Raya tetapi
+   bukan soal data spesifik — misalnya tips bepergian sendiri dengan aman, barang
+   yang perlu dibawa, etiket saat berkunjung ke kampung adat, atau waktu terbaik
+   berkunjung — Anda BOLEH menjawab memakai pengetahuan umum yang masuk akal dan
+   berhati-hati, walaupun tidak ada di KONTEKS. Sampaikan sebagai saran umum.
+3. Jika pertanyaannya benar-benar di luar topik budaya & wisata Sorong Raya
+   (mis. politik, pemrograman, hal pribadi), tolak dengan sopan lalu arahkan
+   kembali ke topik budaya & wisata Sorong Raya.
+4. Perhatikan riwayat percakapan sebelumnya. Kalau pengguna memakai kata rujukan
+   seperti "di sana", "tempat itu", "wisata tersebut", atau "tiketnya", pahami
+   maksudnya dari percakapan sebelumnya tanpa perlu bertanya ulang.
+5. Gunakan Bahasa Indonesia yang santun, ringkas, dan mudah dipahami wisatawan.
+6. Format jawaban HANYA dengan gaya berikut (jangan pakai heading #, tabel, atau blok kode):
    - Tebalkan (pakai **teks**) nama setiap destinasi/budaya yang Anda sebutkan, supaya
      mudah dikenali wisatawan. Jangan menebalkan kata lain selain nama destinasi/budaya
      dan istilah penting (mis. harga tiket).
@@ -144,10 +160,10 @@ ATURAN KETAT:
    - Selipkan emoji yang relevan dan secukupnya (maksimal 1 per kalimat/poin) supaya
      jawaban terasa hangat, misalnya 📍 lokasi, 🎟️ tiket, ⏰ jam operasional,
      🏖️ pantai, 🌊 pulau, 🌿 alam, 🏛️ budaya/sejarah. Jangan berlebihan.
-6. Sebutkan nama destinasi/budaya persis seperti pada KONTEKS (jangan disingkat atau
+7. Sebutkan nama destinasi/budaya persis seperti pada KONTEKS (jangan disingkat atau
    diganti nama lain) — sistem akan otomatis menampilkan tombol link menuju halaman
-   detailnya di bawah jawaban Anda berdasarkan nama yang Anda tebalkan tersebut.
-7. JANGAN menuliskan URL/tautan apapun sendiri di dalam jawaban. JANGAN PERNAH
+   detailnya di bawah jawaban Anda berdasarkan nama yang Anda sebutkan itu.
+8. JANGAN menuliskan URL/tautan apapun sendiri di dalam jawaban. JANGAN PERNAH
    menyebutkan, menjelaskan, atau mengomentari kepada pengguna bahwa jawaban Anda
    ditebalkan supaya sistem menampilkan tombol/link — itu instruksi internal untuk
    Anda saja, bukan sesuatu yang boleh dibaca atau diketahui pengguna.
@@ -155,6 +171,12 @@ ATURAN KETAT:
 KONTEKS:
 {context}
 """
+
+EMPTY_CONTEXT = (
+    "(Tidak ada dokumen yang cocok untuk pertanyaan ini. Jangan menyebutkan fakta "
+    "spesifik apa pun tentang destinasi/budaya tertentu. Anda tetap boleh memberi "
+    "saran umum sesuai aturan 2, atau menolak sopan sesuai aturan 3.)"
+)
 
 
 def get_embeddings():
@@ -218,7 +240,42 @@ def reset_engine_cache():
     _vectorstore = None
 
 
-def answer_query(question: str) -> dict:
+# Kata rujukan penanda pertanyaan lanjutan ("berapa tiketnya?", "di sana aman?").
+# Pertanyaan seperti ini tidak menyebut subjeknya, jadi kueri retrieval-nya perlu
+# digabung dengan pertanyaan pengguna sebelumnya agar dokumennya tetap ketemu.
+_REFERENTIAL_WORDS = {"tersebut", "itu", "sana", "situ", "ini", "tadi", "sebelumnya"}
+
+
+def _is_follow_up(question: str) -> bool:
+    words = re.findall(r"\w+", question.lower())
+    return any(w in _REFERENTIAL_WORDS or w.endswith("nya") for w in words)
+
+
+def _retrieval_query(question: str, history: list) -> str:
+    if not history or not _is_follow_up(question):
+        return question
+    last_user = next(
+        (h["text"] for h in reversed(history) if h.get("role") == "user" and h.get("text")),
+        None,
+    )
+    return f"{last_user} {question}" if last_user else question
+
+
+def _history_messages(history: list) -> list:
+    """Ubah riwayat percakapan dari klien menjadi pesan LangChain agar chatbot
+    ingat jawaban sebelumnya. Isi riwayat sudah dibatasi jumlah & panjangnya di
+    routes/api.py sebelum sampai ke sini."""
+    messages = []
+    for item in history or []:
+        text = (item.get("text") or "").strip()
+        if not text:
+            continue
+        role = item.get("role")
+        messages.append(HumanMessage(content=text) if role == "user" else AIMessage(content=text))
+    return messages
+
+
+def answer_query(question: str, history: list | None = None) -> dict:
     """Jalankan retrieval + generation. Return dict {answer, sources, grounded}."""
     from flask import current_app
 
@@ -234,28 +291,34 @@ def answer_query(question: str) -> dict:
     threshold = current_app.config["RAG_SIMILARITY_THRESHOLD"]
 
     try:
-        results = vectorstore.similarity_search_with_relevance_scores(question, k=top_k)
+        results = vectorstore.similarity_search_with_relevance_scores(
+            _retrieval_query(question, history), k=top_k
+        )
     except Exception:
         logger.exception("RAG retrieval gagal untuk pertanyaan: %r", question)
         results = []
 
     relevant = [(doc, score) for doc, score in results if score >= threshold]
 
-    if not relevant:
-        return {"answer": _render_rich_answer(FALLBACK_ANSWER), "sources": [], "grounded": False}
-
-    context_text = "\n\n---\n\n".join(doc.page_content for doc, _ in relevant)
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT.format(context=context_text)),
-        ("human", "{question}"),
-    ])
+    # Tanpa dokumen yang cocok, pertanyaan TIDAK langsung ditolak: LLM tetap
+    # dipanggil dengan konteks kosong supaya pertanyaan ringan yang masih seputar
+    # wisata/budaya (mis. "aman tidak kalau ke sana sendirian?") tetap terjawab,
+    # sementara pertanyaan di luar topik ditolak oleh aturan 3 pada prompt.
+    context_text = (
+        "\n\n---\n\n".join(doc.page_content for doc, _ in relevant) if relevant else EMPTY_CONTEXT
+    )
+    # Konten sistem & riwayat dikirim sebagai objek pesan (bukan string template)
+    # supaya tanda kurung kurawal di dokumen/percakapan tidak dianggap placeholder.
+    base_messages = [SystemMessage(content=SYSTEM_PROMPT.format(context=context_text))]
+    base_messages += _history_messages(history)
+    base_messages.append(HumanMessage(content=question))
 
     answer_text = None
     for model in _candidate_models(current_app):
-        chain = prompt | get_llm(model)
+        llm = get_llm(model)
         for attempt in range(_QUOTA_RETRIES_PER_MODEL + 1):
             try:
-                future = _llm_executor.submit(chain.invoke, {"question": question})
+                future = _llm_executor.submit(llm.invoke, base_messages)
                 response = future.result(timeout=_LLM_CALL_TIMEOUT_SECONDS)
                 raw_answer = response.content.strip()
                 answer_text = _render_rich_answer(raw_answer)
@@ -289,7 +352,23 @@ def answer_query(question: str) -> dict:
 
     sources = _build_sources(relevant, raw_answer)
 
-    return {"answer": answer_text, "sources": sources, "grounded": True}
+    return {"answer": answer_text, "sources": sources, "grounded": bool(relevant)}
+
+
+def _normalize_for_match(text: str) -> str:
+    """Samakan bentuk teks sebelum dicocokkan: huruf kecil, tanda baca & emoji
+    (mis. markdown **, tanda kurung, titik) jadi spasi."""
+    return re.sub(r"\s+", " ", re.sub(r"[^\w\s]+", " ", (text or "").lower())).strip()
+
+
+def _is_mentioned(haystack: str, name: str) -> bool:
+    """True kalau nama dari DB benar-benar disebut di jawaban. Nama bertanda kurung
+    seperti "Pulau Raam (Pulau Buaya)" juga cocok saat LLM hanya menulis bagian
+    depannya. Pencocokan dibatasi batas kata supaya "Pulau Um" tidak ikut cocok
+    pada "Pulau Umbrella"."""
+    padded = f" {haystack} "
+    variants = {_normalize_for_match(name), _normalize_for_match(name.split("(")[0])}
+    return any(len(v) >= 4 and f" {v} " in padded for v in variants)
 
 
 def _build_sources(relevant: list, answer_text: str = "") -> list[dict]:
@@ -302,10 +381,10 @@ def _build_sources(relevant: list, answer_text: str = "") -> list[dict]:
 
     Dua tahap:
     1. Dari dokumen yang lolos ambang batas relevansi retrieval (`relevant`).
-    2. Dari SEMUA nama yang ditebalkan (**...**) di jawaban LLM tapi belum tercakup
-       tahap 1 — supaya pertanyaan rekomendasi yang menyebut banyak destinasi tetap
-       dapat tombol untuk tiap destinasi yang benar-benar ada di DB, bukan cuma yang
-       kebetulan lolos top-k retrieval.
+    2. Dari pemindaian teks jawaban terhadap seluruh nama wisata/budaya di DB.
+       Tahap ini yang membuat pertanyaan rekomendasi dapat tombol untuk SETIAP
+       destinasi yang disebut, bukan cuma yang kebetulan lolos top-k retrieval —
+       dan tidak bergantung pada LLM menebalkan namanya dengan benar.
     """
     from flask import url_for
     from models import budaya as budaya_model
@@ -343,19 +422,19 @@ def _build_sources(relevant: list, answer_text: str = "") -> list[dict]:
             source_name = meta.get("source")
             add_source(("doc", source_name), source_name or "Dokumen tidak diketahui", None)
 
-    known_titles = {s["title"] for s in sources}
-    bold_names = {m.strip() for m in _BOLD_RE.findall(answer_text) if m.strip()}
-    bold_names -= known_titles
-    if bold_names:
-        for row in wisata_model.find_ids_by_names(bold_names):
-            add_source(
-                ("wisata", row["id"]), row["nama_wisata"],
-                url_for("wisata_detail", wisata_id=row["id"]),
-            )
-        for row in budaya_model.find_ids_by_names(bold_names):
-            add_source(
-                ("budaya", row["id"]), row["judul"],
-                url_for("budaya_detail", budaya_id=row["id"]),
-            )
+    haystack = _normalize_for_match(answer_text)
+    if haystack:
+        for row in wisata_model.list_names():
+            if _is_mentioned(haystack, row["nama_wisata"]):
+                add_source(
+                    ("wisata", row["id"]), row["nama_wisata"],
+                    url_for("wisata_detail", wisata_id=row["id"]),
+                )
+        for row in budaya_model.list_names():
+            if _is_mentioned(haystack, row["judul"]):
+                add_source(
+                    ("budaya", row["id"]), row["judul"],
+                    url_for("budaya_detail", budaya_id=row["id"]),
+                )
 
     return sources

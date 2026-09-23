@@ -123,6 +123,28 @@
     });
   });
 
+  // Beberapa giliran terakhir dikirim ke server tiap request supaya chatbot paham
+  // pertanyaan lanjutan ("berapa tiketnya?") tanpa pengguna mengulang nama tempatnya.
+  // Jawaban bot disimpan sebagai HTML, jadi tag-nya dilucuti dulu jadi teks polos.
+  const HISTORY_TURNS_SENT = 6;
+
+  function toPlainText(msg) {
+    if (!msg.isHtml) return msg.text || '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = msg.text || '';
+    return (tmp.textContent || '').trim();
+  }
+
+  function historyPayload() {
+    return history
+      .slice(-HISTORY_TURNS_SENT)
+      .map((msg) => ({
+        role: msg.sender === 'user' ? 'user' : 'bot',
+        text: toPlainText(msg).slice(0, 600),
+      }))
+      .filter((msg) => msg.text);
+  }
+
   function showTypingBubble() {
     const wrapper = document.createElement('div');
     wrapper.className = 'chat-message bot';
@@ -144,6 +166,9 @@
     const message = input.value.trim();
     if (!message) return;
 
+    // Diambil sebelum pesan ini masuk riwayat, supaya tidak terkirim dua kali.
+    const previousTurns = historyPayload();
+
     appendMessage(message, 'user');
     input.value = '';
     sendBtn.disabled = true;
@@ -156,7 +181,7 @@
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, history: previousTurns }),
       });
       const data = await res.json();
       hideTypingBubble();

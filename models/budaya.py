@@ -145,19 +145,10 @@ def list_for_sync():
     return dbcore.query_all("SELECT id, judul, kategori, ringkasan, konten_lengkap FROM budaya")
 
 
-def find_ids_by_names(names):
-    """Cocokkan sekumpulan nama (mis. hasil ekstraksi teks tebal jawaban chatbot)
-    dengan judul persis di DB, tanpa peduli huruf besar/kecil. Dipakai agar
-    chatbot bisa menautkan SEMUA budaya yang disebutkannya, bukan hanya yang
-    lolos ambang batas relevansi retrieval RAG."""
-    names = [n for n in names if n]
-    if not names:
-        return []
-    placeholders = ",".join(["%s"] * len(names))
-    return dbcore.query_all(
-        f"SELECT id, judul FROM budaya WHERE LOWER(judul) IN ({placeholders})",
-        tuple(n.lower() for n in names),
-    )
+def list_names():
+    """Id + judul seluruh artikel budaya, untuk mendeteksi budaya mana saja yang
+    disebut di dalam jawaban chatbot sehingga bisa diberi tombol link detail."""
+    return dbcore.query_all("SELECT id, judul FROM budaya")
 
 
 # ============================================================
