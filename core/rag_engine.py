@@ -145,9 +145,12 @@ ATURAN KETAT:
      jawaban terasa hangat, misalnya 📍 lokasi, 🎟️ tiket, ⏰ jam operasional,
      🏖️ pantai, 🌊 pulau, 🌿 alam, 🏛️ budaya/sejarah. Jangan berlebihan.
 6. Sebutkan nama destinasi/budaya persis seperti pada KONTEKS (jangan disingkat atau
-   diganti nama lain), karena sistem akan otomatis menampilkan tombol link menuju
-   halaman detailnya di bawah jawaban Anda berdasarkan nama tersebut. JANGAN menuliskan
-   URL/tautan apapun sendiri di dalam jawaban.
+   diganti nama lain) — sistem akan otomatis menampilkan tombol link menuju halaman
+   detailnya di bawah jawaban Anda berdasarkan nama yang Anda tebalkan tersebut.
+7. JANGAN menuliskan URL/tautan apapun sendiri di dalam jawaban. JANGAN PERNAH
+   menyebutkan, menjelaskan, atau mengomentari kepada pengguna bahwa jawaban Anda
+   ditebalkan supaya sistem menampilkan tombol/link — itu instruksi internal untuk
+   Anda saja, bukan sesuatu yang boleh dibaca atau diketahui pengguna.
 
 KONTEKS:
 {context}
@@ -254,7 +257,8 @@ def answer_query(question: str) -> dict:
             try:
                 future = _llm_executor.submit(chain.invoke, {"question": question})
                 response = future.result(timeout=_LLM_CALL_TIMEOUT_SECONDS)
-                answer_text = _render_rich_answer(response.content.strip())
+                raw_answer = response.content.strip()
+                answer_text = _render_rich_answer(raw_answer)
                 break
             except FutureTimeoutError:
                 logger.warning(
@@ -283,17 +287,25 @@ def answer_query(question: str) -> dict:
     if answer_text is None:
         return {"answer": _render_rich_answer(ERROR_ANSWER), "sources": [], "grounded": False}
 
-    sources = _build_sources(relevant)
+    sources = _build_sources(relevant, raw_answer)
 
     return {"answer": answer_text, "sources": sources, "grounded": True}
 
 
-def _build_sources(relevant: list) -> list[dict]:
-    """Bangun daftar sumber {title, url} dari metadata dokumen relevan.
+def _build_sources(relevant: list, answer_text: str = "") -> list[dict]:
+    """Bangun daftar sumber {title, url} agar chatbot bisa menampilkan tombol link
+    menuju halaman detail wisata/budaya.
 
     Judul & link diambil langsung dari MySQL (bukan dari teks vector yang ter-cache)
     supaya selalu mencerminkan data wisata/budaya terkini, dan otomatis hilang
     kalau record-nya sudah dihapus sejak terakhir sinkronisasi.
+
+    Dua tahap:
+    1. Dari dokumen yang lolos ambang batas relevansi retrieval (`relevant`).
+    2. Dari SEMUA nama yang ditebalkan (**...**) di jawaban LLM tapi belum tercakup
+       tahap 1 — supaya pertanyaan rekomendasi yang menyebut banyak destinasi tetap
+       dapat tombol untuk tiap destinasi yang benar-benar ada di DB, bukan cuma yang
+       kebetulan lolos top-k retrieval.
     """
     from flask import url_for
     from models import budaya as budaya_model
@@ -301,30 +313,49 @@ def _build_sources(relevant: list) -> list[dict]:
 
     sources = []
     seen = set()
+
+    def add_source(key, title, url):
+        if key in seen:
+            return
+        seen.add(key)
+        sources.append({"title": title, "url": url})
+
     for doc, _ in relevant:
         meta = doc.metadata
         table = meta.get("table")
         record_id = meta.get("record_id")
-        key = (table, record_id) if table and record_id else meta.get("source")
-        if key in seen:
-            continue
-        seen.add(key)
 
         if table == "wisata" and record_id:
             row = wisata_model.get_nama(record_id)
             if row:
-                sources.append({
-                    "title": row["nama_wisata"],
-                    "url": url_for("wisata_detail", wisata_id=record_id),
-                })
+                add_source(
+                    ("wisata", record_id), row["nama_wisata"],
+                    url_for("wisata_detail", wisata_id=record_id),
+                )
         elif table == "budaya" and record_id:
             row = budaya_model.get_title(record_id)
             if row:
-                sources.append({
-                    "title": row["judul"],
-                    "url": url_for("budaya_detail", budaya_id=record_id),
-                })
+                add_source(
+                    ("budaya", record_id), row["judul"],
+                    url_for("budaya_detail", budaya_id=record_id),
+                )
         else:
-            sources.append({"title": meta.get("source", "Dokumen tidak diketahui"), "url": None})
+            source_name = meta.get("source")
+            add_source(("doc", source_name), source_name or "Dokumen tidak diketahui", None)
+
+    known_titles = {s["title"] for s in sources}
+    bold_names = {m.strip() for m in _BOLD_RE.findall(answer_text) if m.strip()}
+    bold_names -= known_titles
+    if bold_names:
+        for row in wisata_model.find_ids_by_names(bold_names):
+            add_source(
+                ("wisata", row["id"]), row["nama_wisata"],
+                url_for("wisata_detail", wisata_id=row["id"]),
+            )
+        for row in budaya_model.find_ids_by_names(bold_names):
+            add_source(
+                ("budaya", row["id"]), row["judul"],
+                url_for("budaya_detail", budaya_id=row["id"]),
+            )
 
     return sources

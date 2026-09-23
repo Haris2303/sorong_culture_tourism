@@ -180,6 +180,21 @@ def list_for_sync():
     )
 
 
+def find_ids_by_names(names):
+    """Cocokkan sekumpulan nama (mis. hasil ekstraksi teks tebal jawaban chatbot)
+    dengan nama_wisata persis di DB, tanpa peduli huruf besar/kecil. Dipakai agar
+    chatbot bisa menautkan SEMUA destinasi yang disebutkannya, bukan hanya yang
+    lolos ambang batas relevansi retrieval RAG."""
+    names = [n for n in names if n]
+    if not names:
+        return []
+    placeholders = ",".join(["%s"] * len(names))
+    return dbcore.query_all(
+        f"SELECT id, nama_wisata FROM wisata WHERE LOWER(nama_wisata) IN ({placeholders})",
+        tuple(n.lower() for n in names),
+    )
+
+
 # ============================================================
 # ATURAN BISNIS: dipanggil langsung oleh routes/admin_wisata.py
 # ============================================================
