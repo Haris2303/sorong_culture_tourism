@@ -7,10 +7,13 @@
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send-btn');
   const quickReplies = document.getElementById('chat-quick-replies');
+  const unreadBadge = document.getElementById('chat-unread-badge');
 
   if (!widget) return;
 
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  const prefersReducedMotion =
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Riwayat & status buka/tutup disimpan di sessionStorage supaya tidak hilang
   // saat pengguna berpindah halaman (situs ini multi-halaman, tiap navigasi
@@ -18,6 +21,10 @@
   const HISTORY_KEY = 'sorongRayaChatHistory';
   const OPEN_STATE_KEY = 'sorongRayaChatOpen';
   const SCROLL_KEY = 'sorongRayaChatScroll';
+  // job_id jawaban yang masih diproses server (lihat catatan di bagian polling
+  // di bawah) — disimpan terpisah dari riwayat supaya bisa dilanjutkan dari
+  // halaman manapun, bukan cuma dipulihkan saat kembali ke halaman yang sama.
+  const PENDING_JOB_KEY = 'sorongRayaChatPendingJob';
 
   function loadHistory() {
     try {
@@ -75,22 +82,87 @@
     });
   });
 
-  function renderMessage(text, sender, sources, isHtml) {
+  // Mengetik ulang HTML jawaban bot tanpa merusak tag: struktur DOM final
+  // dibangun sekaligus (link & formatting langsung valid), lalu tiap text
+  // node-nya dikosongkan dan diisi berangsur dari node pertama ke terakhir.
+  // Durasi total dibatasi (bukan kecepatan per-karakter tetap) supaya jawaban
+  // panjang tidak butuh waktu lama untuk selesai tampil — ini murni animasi
+  // tampilan setelah jawaban lengkap diterima, jadi tidak menunda respons.
+  function typeIntoBubble(bubble, text, isHtml, onDone) {
+    const template = document.createElement('template');
+    if (isHtml) {
+      // Aman: HTML ini dirender & di-escape di server (core/rag_engine.py _render_rich_answer),
+      // hanya berisi tag terbatas (p/ul/ol/li/strong), bukan HTML mentah dari input pengguna.
+      template.innerHTML = text;
+    } else {
+      template.content.appendChild(document.createTextNode(text));
+    }
+
+    const textQueue = [];
+    function cloneEmpty(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const liveNode = document.createTextNode('');
+        textQueue.push({ node: liveNode, full: node.textContent });
+        return liveNode;
+      }
+      const clone = node.cloneNode(false);
+      node.childNodes.forEach((child) => clone.appendChild(cloneEmpty(child)));
+      return clone;
+    }
+
+    const liveFragment = document.createDocumentFragment();
+    template.content.childNodes.forEach((child) => liveFragment.appendChild(cloneEmpty(child)));
+    bubble.appendChild(liveFragment);
+
+    const totalChars = textQueue.reduce((sum, item) => sum + item.full.length, 0);
+    if (totalChars === 0) {
+      onDone();
+      return;
+    }
+
+    const TARGET_DURATION_MS = 700;
+    const FRAME_MS = 16;
+    const targetFrames = Math.max(1, Math.round(TARGET_DURATION_MS / FRAME_MS));
+    const charsPerTick = Math.max(2, Math.ceil(totalChars / targetFrames));
+
+    let qi = 0;
+    let ci = 0;
+
+    function tick() {
+      let remaining = charsPerTick;
+      while (remaining > 0 && qi < textQueue.length) {
+        const item = textQueue[qi];
+        const take = Math.min(remaining, item.full.length - ci);
+        item.node.textContent += item.full.slice(ci, ci + take);
+        ci += take;
+        remaining -= take;
+        if (ci >= item.full.length) {
+          qi += 1;
+          ci = 0;
+        }
+      }
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      if (qi < textQueue.length) {
+        requestAnimationFrame(tick);
+      } else {
+        onDone();
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function renderMessage(text, sender, sources, isHtml, options) {
+    const animate = !!(options && options.animate);
     const wrapper = document.createElement('div');
     wrapper.className = `chat-message ${sender}`;
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
-    if (isHtml) {
-      // Aman: HTML ini dirender & di-escape di server (core/rag_engine.py _render_rich_answer),
-      // hanya berisi tag terbatas (p/ul/ol/li/strong), bukan HTML mentah dari input pengguna.
-      bubble.innerHTML = text;
-    } else {
-      bubble.textContent = text;
-    }
     wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
 
     const links = (sources || []).filter((s) => s && s.url);
-    if (links.length) {
+    function appendSources() {
+      if (!links.length) return;
       const linksEl = document.createElement('div');
       linksEl.className = 'chat-sources';
       links.forEach((s) => {
@@ -101,14 +173,29 @@
         linksEl.appendChild(a);
       });
       wrapper.appendChild(linksEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    messagesEl.appendChild(wrapper);
+    if (animate && sender === 'bot' && !prefersReducedMotion) {
+      bubble.classList.add('is-typing');
+      typeIntoBubble(bubble, text, isHtml, () => {
+        bubble.classList.remove('is-typing');
+        appendSources();
+      });
+    } else {
+      if (isHtml) {
+        bubble.innerHTML = text;
+      } else {
+        bubble.textContent = text;
+      }
+      appendSources();
+    }
+
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  function appendMessage(text, sender, sources, isHtml) {
-    renderMessage(text, sender, sources, isHtml);
+  function appendMessage(text, sender, sources, isHtml, options) {
+    renderMessage(text, sender, sources, isHtml, options);
     history.push({ text, sender, sources: sources || [], isHtml: !!isHtml });
     saveHistory();
   }
@@ -155,6 +242,7 @@
     widget.classList.toggle('closed');
     persistOpenState();
     if (!widget.classList.contains('closed')) {
+      if (unreadBadge) unreadBadge.hidden = true;
       restoreScrollPosition();
       input.focus();
     }
@@ -221,6 +309,81 @@
     document.getElementById('chat-typing-bubble')?.remove();
   }
 
+  // --- Job jawaban di background (lihat core/chat_jobs.py) -----------------
+  // /api/chat cuma memulai job & langsung membalas job_id (tidak menunggu LLM
+  // selesai), supaya request-nya sendiri tidak sempat terputus saat pengguna
+  // pindah halaman. job_id disimpan di sessionStorage; begitu ada halaman baru
+  // dimuat, polling dilanjutkan dari situ — jawabannya tetap sampai walau
+  // pengguna sudah berpindah beberapa kali sebelum LLM selesai memproses.
+  const JOB_POLL_INTERVAL_MS = 1200;
+
+  function savePendingJob(jobId) {
+    try {
+      sessionStorage.setItem(PENDING_JOB_KEY, jobId);
+    } catch (err) {
+      // abaikan jika sessionStorage tidak tersedia
+    }
+  }
+
+  function loadPendingJob() {
+    try {
+      return sessionStorage.getItem(PENDING_JOB_KEY);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function clearPendingJob() {
+    try {
+      sessionStorage.removeItem(PENDING_JOB_KEY);
+    } catch (err) {
+      // abaikan jika sessionStorage tidak tersedia
+    }
+  }
+
+  function pollJob(jobId) {
+    return new Promise((resolve) => {
+      async function tick() {
+        try {
+          const res = await fetch(`/api/chat/status/${jobId}`);
+          if (res.status === 404) {
+            resolve({
+              answer: 'Maaf, sesi jawaban sebelumnya sudah kedaluwarsa. Silakan tanyakan kembali.',
+              sources: [],
+            });
+            return;
+          }
+          const data = await res.json();
+          if (data.status === 'done') {
+            resolve(data.result);
+            return;
+          }
+        } catch (err) {
+          // gangguan jaringan sesaat — coba lagi di tick berikutnya, jangan menyerah.
+        }
+        setTimeout(tick, JOB_POLL_INTERVAL_MS);
+      }
+      tick();
+    });
+  }
+
+  function showUnreadBadge() {
+    if (widget.classList.contains('closed') && unreadBadge) {
+      unreadBadge.hidden = false;
+    }
+  }
+
+  async function resolveJob(jobId) {
+    sendBtn.disabled = true;
+    showTypingBubble();
+    const result = await pollJob(jobId);
+    clearPendingJob();
+    hideTypingBubble();
+    appendMessage(result.answer, 'bot', result.sources, true, { animate: true });
+    sendBtn.disabled = false;
+    showUnreadBadge();
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const message = input.value.trim();
@@ -233,7 +396,6 @@
     hideQuickReplies();
     input.value = '';
     sendBtn.disabled = true;
-    showTypingBubble();
 
     try {
       const res = await fetch('/api/chat', {
@@ -244,20 +406,26 @@
         },
         body: JSON.stringify({ message, history: previousTurns }),
       });
+      if (!res.ok) throw new Error('Gagal memulai permintaan jawaban.');
       const data = await res.json();
-      hideTypingBubble();
-
-      if (res.ok) {
-        appendMessage(data.answer, 'bot', data.sources, true);
-      } else {
-        appendMessage(data.error || 'Maaf, terjadi kesalahan. Silakan coba lagi.', 'bot');
-      }
+      savePendingJob(data.job_id);
+      await resolveJob(data.job_id);
     } catch (err) {
-      hideTypingBubble();
-      appendMessage('Tidak dapat terhubung ke server. Periksa koneksi Anda.', 'bot');
-    } finally {
+      clearPendingJob();
       sendBtn.disabled = false;
+      appendMessage('Tidak dapat terhubung ke server. Periksa koneksi Anda.', 'bot', null, false, {
+        animate: true,
+      });
+    } finally {
       input.focus();
     }
   });
+
+  // Kalau ada job yang belum selesai saat halaman ini dimuat (mis. pengguna
+  // bertanya di halaman lain lalu berpindah ke sini sebelum jawabannya
+  // datang), lanjutkan polling-nya di sini alih-alih membiarkannya hilang.
+  const pendingJobId = loadPendingJob();
+  if (pendingJobId) {
+    resolveJob(pendingJobId);
+  }
 })();

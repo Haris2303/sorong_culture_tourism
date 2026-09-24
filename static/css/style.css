@@ -1458,10 +1458,6 @@ h4 {
   color: var(--hairline-strong);
   cursor: pointer;
 }
-.star-input.disabled {
-  pointer-events: none;
-  opacity: 0.5;
-}
 .star-input .star {
   transition:
     color var(--transition),
@@ -1503,7 +1499,14 @@ h4 {
   color: var(--semantic-danger);
 }
 .rating-feedback.rating-locked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
   color: var(--ink-subtle);
+}
+.rating-feedback.rating-locked i {
+  color: var(--semantic-success);
 }
 
 .review-list {
@@ -1603,6 +1606,7 @@ h4 {
 }
 
 .chat-toggle-btn {
+  position: relative;
   display: grid;
   place-items: center;
   width: 52px;
@@ -1621,6 +1625,19 @@ h4 {
 .chat-toggle-btn:hover {
   filter: brightness(1.06);
   transform: translateY(-2px);
+}
+/* Muncul kalau jawaban bot selesai diproses di background (lihat
+   static/js/chat.js) selagi panel tertutup, supaya pengunjung tahu ada
+   balasan menunggu walau mereka sudah pindah ke halaman lain. */
+.chat-unread-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--r-pill);
+  background: var(--semantic-danger);
+  border: 2px solid var(--canvas);
 }
 .chat-widget.closed .chat-panel {
   display: none;
@@ -1759,6 +1776,23 @@ h4 {
 }
 .chat-message.bot .bubble li:last-child {
   margin-bottom: 0;
+}
+/* Kursor berkedip selama jawaban bot sedang "diketik" (lihat typeIntoBubble
+   di static/js/chat.js) — dilepas otomatis begitu pengetikan selesai. */
+.chat-message.bot .bubble.is-typing::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: chat-caret-blink 0.9s steps(1) infinite;
+}
+@keyframes chat-caret-blink {
+  50% {
+    opacity: 0;
+  }
 }
 .chat-highlight {
   background: var(--accent-wisata-soft);

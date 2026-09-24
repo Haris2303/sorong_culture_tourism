@@ -15,10 +15,16 @@
   let selectedScore = 0;
 
   function lockForm(message) {
-    starInput.classList.add('disabled');
-    komentarEl.disabled = true;
-    submitBtn.disabled = true;
-    feedbackEl.textContent = message;
+    // Input dihapus dari tampilan (bukan cuma dinonaktifkan) supaya pengunjung
+    // yang sudah memberi ulasan tidak melihat form abu-abu yang tidak bisa dipakai.
+    starInput.style.display = 'none';
+    komentarEl.style.display = 'none';
+    submitBtn.style.display = 'none';
+    feedbackEl.textContent = '';
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid fa-circle-check';
+    feedbackEl.appendChild(icon);
+    feedbackEl.append(' ' + message);
     feedbackEl.className = 'rating-feedback rating-locked';
   }
 

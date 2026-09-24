@@ -104,6 +104,11 @@ def _is_greeting(question: str) -> bool:
 _BULLET_RE = re.compile(r"^[\-\*]\s+(.*)")
 _NUMBERED_RE = re.compile(r"^\d+[.)]\s+(.*)")
 _BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+# Dijalankan setelah _BOLD_RE (yang sudah melahap semua pasangan **), jadi tanda
+# bintang tunggal yang tersisa dianggap juga sebagai penekanan LLM (mis. *Open
+# Trip*) dan ditampilkan bold — bukan italic terpisah, biar konsisten dengan
+# satu-satunya gaya highlight yang dipakai bubble chat.
+_ITALIC_RE = re.compile(r"\*(.+?)\*")
 
 
 def _render_rich_answer(text: str) -> str:
@@ -148,6 +153,7 @@ def _render_rich_answer(text: str) -> str:
 
     html_out = "".join(parts) if parts else f"<p>{html_lib.escape(text, quote=False)}</p>"
     html_out = _BOLD_RE.sub(r'<strong class="chat-highlight">\1</strong>', html_out)
+    html_out = _ITALIC_RE.sub(r'<strong class="chat-highlight">\1</strong>', html_out)
     return html_out
 
 

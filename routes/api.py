@@ -1,7 +1,7 @@
 """Router API: chatbot RAG & pengiriman rating wisata (anti-spam)."""
-from flask import jsonify, request
+from flask import current_app, jsonify, request
 
-from core.rag_engine import answer_query
+from core.chat_jobs import get_job, start_job
 from core.security import contains_badword, generate_fingerprint, get_client_ip
 from extensions import limiter
 from models import ratings as ratings_model
@@ -38,15 +38,19 @@ def api_chat():
     if len(question) > 500:
         return jsonify({"error": "Pesan terlalu panjang (maks 500 karakter)."}), 400
 
-    try:
-        result = answer_query(question, _clean_history(payload.get("history")))
-    except Exception:
-        return jsonify({
-            "answer": "⚠️ Maaf, terjadi kendala teknis pada asisten virtual kami. Silakan coba lagi sebentar lagi.",
-            "sources": [],
-        }), 200
+    # Diproses di background thread (bukan ditunggu di sini) supaya jawabannya
+    # tidak ikut terputus kalau pengunjung pindah halaman sebelum LLM selesai —
+    # klien menyimpan job_id dan melanjutkan polling dari halaman manapun.
+    app = current_app._get_current_object()
+    job_id = start_job(app, question, _clean_history(payload.get("history")))
+    return jsonify({"job_id": job_id}), 202
 
-    return jsonify({"answer": result["answer"], "sources": result["sources"]})
+
+def api_chat_status(job_id):
+    job = get_job(job_id)
+    if job is None:
+        return jsonify({"status": "not_found"}), 404
+    return jsonify(job)
 
 
 def api_rating():
@@ -84,6 +88,13 @@ def register(app):
     app.add_url_rule(
         "/api/chat", endpoint="api_chat",
         view_func=limiter.limit("20 per minute")(api_chat), methods=["POST"],
+    )
+    app.add_url_rule(
+        "/api/chat/status/<job_id>", endpoint="api_chat_status",
+        # Endpoint ini di-poll tiap ~1.2 detik selama menunggu jawaban LLM
+        # (bisa 15-20+ kali per pertanyaan) — dibebaskan dari RATELIMIT_DEFAULT
+        # global di config.py karena cuma baca dict in-memory, bukan aksi mahal.
+        view_func=limiter.exempt(api_chat_status), methods=["GET"],
     )
     app.add_url_rule(
         "/api/rating", endpoint="api_rating",
