@@ -255,6 +255,17 @@ components:
     padding: 64px 32px
 ---
 
+> **Catatan pemakaian (antislop R-30):** File ini adalah analisis sistem
+> desain Linear.app (lihat `name: Linear-design-analysis` di frontmatter),
+> dipakai sebagai **referensi struktural saja** — tangga surface (canvas →
+> surface-1..4), skala spacing, skala radius, dan filosofi elevation tanpa
+> shadow. Palet warna, tipografi, dan motif dekoratif di dokumen ini (dark
+> mode, lavender-blue, "Linear Display") **tidak** dipakai apa adanya.
+> Implementasi aktual Sorong Raya (lihat `static/css/style.css`) memakai
+> identitas visualnya sendiri: light mode biru laut Papua Barat Daya, font
+> Plus Jakarta Sans, dan motif budaya (batik/tifa) — bukan tiruan visual
+> Linear. Lihat `anti-slop/audit-001-2026-09-24.md` temuan #8.
+
 ## Overview
 
 Linear's marketing canvas is the deepest dark surface in this collection — `{colors.canvas}` is #010102, essentially pure black with a faint blue tint. On top sits a four-step surface ladder (`{colors.surface-1}` through `{colors.surface-4}`) for cards, panels, and lifted tiles, with hairline borders running from `{colors.hairline}` (#23252a) up through `{colors.hairline-strong}` and `{colors.hairline-tertiary}`. Light gray text (`{colors.ink}` #f7f8f8) carries the body and headlines.

@@ -879,7 +879,7 @@ h4 {
   border-top: 1px solid var(--hairline);
 }
 .pagination-info {
-  color: var(--ink-tertiary);
+  color: var(--ink-muted);
   font-size: var(--caption-size);
 }
 .pagination-controls {
@@ -997,35 +997,21 @@ h4 {
   color: var(--accent-rating);
 }
 .meta-rating small {
-  color: var(--ink-tertiary);
+  color: var(--ink-muted);
   font-weight: 400;
 }
 
-/* ---------- Section tint (latar biru muda-keputihan bertekstur) ----------
-   Dipakai di About/konten halaman daftar Budaya & Wisata/detail/search/404 —
-   satu treatment yang sama di mana-mana (tanpa aksen kuning/warna topik) supaya
-   section yang berdempetan menyatu. Motif batik tipis + cahaya lembut di dua
-   sudut dipakai untuk kedalaman, bukan gumpalan warna keras/blur ala template. */
+/* ---------- Section tint ----------
+   Gradasi tonal tunggal dari tangga surface yang sudah ada, dipakai di section
+   non-foto (About, konten daftar Budaya/Wisata, detail, search, 404) supaya
+   menyatu dengan section berlatar foto di sekitarnya tanpa dekorasi tambahan. */
 .section-tint {
-  background-color: var(--canvas);
-  background-image:
-    radial-gradient(
-      ellipse 1100px 620px at 6% -22%,
-      rgba(34, 211, 238, 0.24),
-      transparent 58%
-    ),
-    radial-gradient(
-      ellipse 1200px 680px at 94% 118%,
-      rgba(4, 148, 237, 0.32),
-      transparent 58%
-    ),
-    linear-gradient(160deg, var(--surface-1) 0%, var(--canvas) 45%, var(--surface-3) 100%);
-  background-repeat: no-repeat, no-repeat, no-repeat;
+  background: linear-gradient(180deg, var(--surface-1) 0%, var(--canvas) 50%, var(--surface-1) 100%);
 }
 
 .about-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-lg);
 }
 .about-item {
@@ -1051,9 +1037,6 @@ h4 {
 }
 .about-item--budaya::before {
   background: var(--accent-budaya);
-}
-.about-item--wisata::before {
-  background: var(--accent-wisata);
 }
 .about-item--rating::before {
   background: var(--accent-rating);
@@ -1085,10 +1068,6 @@ h4 {
 .about-item--budaya .about-item-icon {
   background: var(--accent-budaya-soft);
   color: var(--accent-budaya);
-}
-.about-item--wisata .about-item-icon {
-  background: var(--accent-wisata-soft);
-  color: var(--accent-wisata);
 }
 .about-item--rating .about-item-icon {
   background: rgba(245, 158, 11, 0.1);
@@ -1550,7 +1529,7 @@ h4 {
   font-size: var(--body-sm-size);
 }
 .review-date {
-  color: var(--ink-tertiary);
+  color: var(--ink-muted);
   font-size: var(--caption-size);
 }
 

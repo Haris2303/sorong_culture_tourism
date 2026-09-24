@@ -160,9 +160,20 @@
     }
   });
 
-  closeBtn.addEventListener('click', () => {
+  function closeWidget() {
     widget.classList.add('closed');
     persistOpenState();
+  }
+
+  closeBtn.addEventListener('click', closeWidget);
+
+  // Panel chat berlaku seperti dialog, jadi harus bisa ditutup lewat Escape
+  // sama seperti modal admin (lihat static/js/admin.js).
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !widget.classList.contains('closed')) {
+      closeWidget();
+      toggleBtn.focus();
+    }
   });
 
   document.querySelectorAll('#chat-quick-replies .chip').forEach((chip) => {

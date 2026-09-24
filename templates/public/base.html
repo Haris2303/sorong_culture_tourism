@@ -99,6 +99,10 @@
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     <script>
+      // Jenis animasi dibedakan per peran elemen, bukan fade-up untuk semuanya:
+      // heading section pakai "fade" polos (pengantar teks, tidak perlu gerak),
+      // kartu grid & hero pakai "fade-up" + stagger (menuntun urutan baca),
+      // filter-bar & elemen fungsional lain sengaja tidak dianimasikan.
       AOS.init({
         once: true,
         duration: 600,
