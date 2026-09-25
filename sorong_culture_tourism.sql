@@ -149,7 +149,7 @@ CREATE TABLE `wisata` (
   `deskripsi` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `fasilitas` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `alamat` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `tiket_masuk` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT 'Gratis / Menyesuaikan',
+  `tiket_masuk` text COLLATE utf8mb4_unicode_ci,
   `jam_operasional` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT 'Setiap Hari',
   `gambar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `latitude` decimal(10,7) DEFAULT NULL,
