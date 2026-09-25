@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS wisata (
     deskripsi LONGTEXT NOT NULL,
     fasilitas TEXT NOT NULL,
     alamat VARCHAR(255) NOT NULL,
-    tiket_masuk VARCHAR(100) DEFAULT 'Gratis / Menyesuaikan',
+    tiket_masuk TEXT NULL,
     jam_operasional VARCHAR(100) DEFAULT 'Setiap Hari',
     gambar VARCHAR(255) NULL,
     latitude DECIMAL(10,7) NULL,
