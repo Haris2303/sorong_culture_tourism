@@ -12,7 +12,9 @@ KATEGORI_OPTIONS = ["Tarian Tradisional", "Alat Musik", "Seni Ukir", "Upacara Ad
 def admin_budaya_manage():
     if request.method == "POST":
         edit_id = request.form.get("id")
-        budaya_model.save_from_form(request.form, request.files, edit_id=edit_id)
+        _, warnings = budaya_model.save_from_form(request.form, request.files, edit_id=edit_id)
+        for warning in warnings:
+            flash(warning, "error")
         flash(
             "Artikel budaya berhasil diperbarui." if edit_id else "Artikel budaya berhasil ditambahkan.",
             "success",

@@ -57,9 +57,17 @@ class Config:
 
     # --- Upload ---
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
-    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH_MB", 5)) * 1024 * 1024
+    # Batas ukuran request dinaikkan dari 5MB -> 15MB sebagai jaring pengaman server;
+    # gambar tetap dikompres otomatis di browser (lihat static/js/image-optimizer.js)
+    # sebelum diunggah, jadi request normal jauh di bawah batas ini.
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH_MB", 15)) * 1024 * 1024
     ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
     ALLOWED_DOC_EXT = {"pdf", "txt", "md"}
+    # Semua gambar unggahan otomatis di-resize & dikonversi ke WebP di server
+    # (lihat utils/uploads.py) supaya konsisten ringan walau JS di browser dilewati.
+    IMAGE_MAX_DIMENSION = int(os.getenv("IMAGE_MAX_DIMENSION", 1920))
+    IMAGE_WEBP_QUALITY = int(os.getenv("IMAGE_WEBP_QUALITY", 82))
+    MAX_GALERI_FILES = int(os.getenv("MAX_GALERI_FILES", 12))
 
     # --- Rate Limiter ---
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
