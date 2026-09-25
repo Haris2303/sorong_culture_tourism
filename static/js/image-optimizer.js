@@ -100,6 +100,40 @@
     return { files: optimized, rejected, truncated };
   }
 
+  // Hitung berapa banyak kompresi yang sedang berjalan per <form> (gambar
+  // utama & galeri bisa dikompres bersamaan), supaya tombol submit cuma
+  // aktif lagi setelah SEMUA proses kompresi pada form itu selesai.
+  const pendingByForm = new WeakMap();
+
+  function beginCompressing(form, submitBtn) {
+    if (!form || !submitBtn) return;
+    const count = (pendingByForm.get(form) || 0) + 1;
+    pendingByForm.set(form, count);
+    if (count === 1) {
+      if (submitBtn.dataset.idleHtml === undefined) {
+        submitBtn.dataset.idleHtml = submitBtn.innerHTML;
+      }
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>Mengompres gambar...';
+    }
+  }
+
+  function endCompressing(form, submitBtn) {
+    if (!form || !submitBtn) return;
+    const count = Math.max(0, (pendingByForm.get(form) || 1) - 1);
+    pendingByForm.set(form, count);
+    if (count === 0) {
+      submitBtn.disabled = false;
+      if (submitBtn.dataset.idleHtml !== undefined) {
+        submitBtn.innerHTML = submitBtn.dataset.idleHtml;
+      }
+    }
+  }
+
+  function isCompressing(form) {
+    return !!form && (pendingByForm.get(form) || 0) > 0;
+  }
+
   // Pasang optimisasi otomatis pada satu <input type="file">: begitu admin
   // memilih gambar, langsung dikompres+dikonversi ke WebP, lalu ditampilkan
   // alert kalau ada berkas yang ditolak/terpotong karena melewati batas.
@@ -120,13 +154,13 @@
       }
 
       nameEl.textContent = 'Mengompres gambar...';
-      if (submitBtn) submitBtn.disabled = true;
+      beginCompressing(form, submitBtn);
 
       let result;
       try {
         result = await optimizeFileList(input.files, { maxCount });
       } finally {
-        if (submitBtn) submitBtn.disabled = false;
+        endCompressing(form, submitBtn);
       }
 
       const dt = new DataTransfer();
@@ -158,5 +192,5 @@
     return total;
   }
 
-  window.ImageOptimizer = { attachImageOptimizer, optimizeFileList, totalFileSize, config: cfg };
+  window.ImageOptimizer = { attachImageOptimizer, optimizeFileList, totalFileSize, isCompressing, config: cfg };
 })();

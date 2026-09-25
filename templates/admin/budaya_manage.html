@@ -308,6 +308,11 @@ budayaSearchInput.addEventListener('input', () => {
 });
 
 document.querySelector('.admin-form').addEventListener('submit', (e) => {
+  if (ImageOptimizer.isCompressing(e.target)) {
+    e.preventDefault();
+    alert('Gambar masih diproses (resize & kompres). Tunggu sebentar lalu klik Simpan lagi.');
+    return;
+  }
   const totalBytes = ImageOptimizer.totalFileSize(
     document.getElementById('f-gambar').files,
     document.getElementById('f-galeri').files,
