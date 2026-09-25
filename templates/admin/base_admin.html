@@ -80,6 +80,15 @@
       </div>
     </main>
   </div>
+  <script>
+    window.ADMIN_UPLOAD_CONFIG = {
+      maxContentBytes: {{ config.MAX_CONTENT_LENGTH }},
+      maxDimension: {{ config.IMAGE_MAX_DIMENSION }},
+      quality: {{ config.IMAGE_WEBP_QUALITY / 100 }},
+      maxGaleriFiles: {{ config.MAX_GALERI_FILES }}
+    };
+  </script>
+  <script src="{{ url_for('static', filename='js/image-optimizer.js') }}"></script>
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
   {% block extra_js %}{% endblock %}
 </body>

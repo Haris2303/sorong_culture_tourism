@@ -190,22 +190,9 @@ tiketGroup.querySelectorAll('input[type="radio"]').forEach(r => {
   r.addEventListener('change', syncTiketCustomInput);
 });
 
-// ---------- Nama file yang dipilih pada input gambar & galeri ----------
-function bindFileInputName(inputId, nameId) {
-  const input = document.getElementById(inputId);
-  const nameEl = document.getElementById(nameId);
-  input.addEventListener('change', () => {
-    if (!input.files || input.files.length === 0) {
-      nameEl.textContent = 'Belum ada file dipilih';
-    } else if (input.files.length === 1) {
-      nameEl.textContent = input.files[0].name;
-    } else {
-      nameEl.textContent = `${input.files.length} file dipilih`;
-    }
-  });
-}
-bindFileInputName('f-gambar', 'f-gambar-name');
-bindFileInputName('f-galeri', 'f-galeri-name');
+// ---------- Nama file + optimasi otomatis (resize & convert ke WebP) ----------
+ImageOptimizer.attachImageOptimizer('f-gambar', 'f-gambar-name');
+ImageOptimizer.attachImageOptimizer('f-galeri', 'f-galeri-name', { multiple: true });
 
 // ---------- Preview galeri foto saat ini (muncul saat Edit) ----------
 const galleryPreview = document.getElementById('gallery-preview');
@@ -406,6 +393,19 @@ wisataSearchInput.addEventListener('input', () => {
 });
 
 document.querySelector('.admin-form').addEventListener('submit', (e) => {
+  const totalBytes = ImageOptimizer.totalFileSize(
+    document.getElementById('f-gambar').files,
+    document.getElementById('f-galeri').files,
+  );
+  const maxBytes = ImageOptimizer.config.maxContentBytes || Infinity;
+  if (totalBytes > maxBytes * 0.9) {
+    e.preventDefault();
+    alert(
+      `Total ukuran gambar (${(totalBytes / 1024 / 1024).toFixed(1)} MB) masih terlalu besar. ` +
+      'Kurangi jumlah foto galeri, lalu coba lagi.'
+    );
+    return;
+  }
   if (isDeskripsiEmpty()) {
     e.preventDefault();
     alert('Deskripsi wajib diisi.');

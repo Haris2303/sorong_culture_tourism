@@ -160,14 +160,22 @@ def save_from_form(form, files, edit_id=None):
 
     Konten HTML disaring dulu lewat `sanitize_content_html` (cegah stored XSS)
     sebelum disimpan — JANGAN pernah simpan `konten_lengkap` mentah dari form.
-    Return budaya_id (hasil insert, atau edit_id yang diteruskan).
+
+    Return (budaya_id, warnings) - warnings berisi pesan non-fatal (mis. ada
+    berkas gambar yang ditolak karena bukan gambar valid) yang perlu
+    ditampilkan ke admin tapi tidak membatalkan penyimpanan data lain.
     """
+    warnings = []
+
     judul = form.get("judul", "").strip()
     kategori = form.get("kategori", "").strip()
     ringkasan = form.get("ringkasan", "").strip()
     konten = sanitize_content_html(form.get("konten_lengkap", "").strip())
-    gambar = save_uploaded_image(files.get("gambar"))
-    galeri_filenames = save_uploaded_images(files.getlist("galeri"))
+    gambar, gambar_warning = save_uploaded_image(files.get("gambar"))
+    if gambar_warning:
+        warnings.append(gambar_warning)
+    galeri_filenames, galeri_warnings = save_uploaded_images(files.getlist("galeri"))
+    warnings.extend(galeri_warnings)
 
     if edit_id:
         update(edit_id, judul, kategori, ringkasan, konten, gambar)
@@ -178,7 +186,7 @@ def save_from_form(form, files, edit_id=None):
     for filename in galeri_filenames:
         add_galeri(budaya_id, filename)
 
-    return budaya_id
+    return budaya_id, warnings
 
 
 def delete_galeri_photo(galeri_id) -> bool:

@@ -213,8 +213,11 @@ def save_from_form(form, files, edit_id=None):
     else:
         tiket_masuk = tiket_choice or DEFAULT_TIKET
     jam_operasional = form.get("jam_operasional", "Setiap Hari").strip()
-    gambar = save_uploaded_image(files.get("gambar"))
-    galeri_filenames = save_uploaded_images(files.getlist("galeri"))
+    gambar, gambar_warning = save_uploaded_image(files.get("gambar"))
+    if gambar_warning:
+        warnings.append(gambar_warning)
+    galeri_filenames, galeri_warnings = save_uploaded_images(files.getlist("galeri"))
+    warnings.extend(galeri_warnings)
 
     latitude, longitude = None, None
     koordinat_input = form.get("koordinat", "").strip()
