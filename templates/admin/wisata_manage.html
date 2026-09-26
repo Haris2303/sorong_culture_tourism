@@ -199,6 +199,25 @@ const galleryPreview = document.getElementById('gallery-preview');
 const galleryPreviewThumbs = document.getElementById('gallery-preview-thumbs');
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
+async function deleteViaAjax(form) {
+  const resp = await fetch(form.action, {
+    method: 'POST',
+    body: new FormData(form),
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+  });
+  if (!resp.ok) throw new Error('Gagal menghapus.');
+}
+
+function removeGaleriFromEditButton(galeriId) {
+  const editId = document.getElementById('edit-id').value;
+  const btn = editId && document.querySelector(`.edit-wisata-btn[data-id="${editId}"]`);
+  if (!btn) return;
+  try {
+    const galeri = JSON.parse(btn.dataset.galeri || '[]').filter(g => g.id !== galeriId);
+    btn.dataset.galeri = JSON.stringify(galeri);
+  } catch (e) { /* dataset tetap seperti semula jika gagal parse */ }
+}
+
 function renderGalleryPreview(galeri) {
   galleryPreviewThumbs.innerHTML = '';
   if (!galeri || galeri.length === 0) {
@@ -217,9 +236,6 @@ function renderGalleryPreview(galeri) {
     const form = document.createElement('form');
     form.method = 'post';
     form.action = `/admin/wisata/galeri/${g.id}/delete`;
-    form.addEventListener('submit', (e) => {
-      if (!confirm('Hapus foto ini?')) e.preventDefault();
-    });
 
     const csrfInput = document.createElement('input');
     csrfInput.type = 'hidden';
@@ -233,6 +249,21 @@ function renderGalleryPreview(galeri) {
     delBtn.title = 'Hapus foto';
     delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
     form.appendChild(delBtn);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!confirm('Hapus foto ini?')) return;
+      delBtn.disabled = true;
+      try {
+        await deleteViaAjax(form);
+        thumb.remove();
+        removeGaleriFromEditButton(g.id);
+        if (!galleryPreviewThumbs.children.length) galleryPreview.hidden = true;
+      } catch (err) {
+        alert('Gagal menghapus foto. Coba lagi.');
+        delBtn.disabled = false;
+      }
+    });
 
     thumb.appendChild(form);
     galleryPreviewThumbs.appendChild(thumb);
@@ -259,9 +290,6 @@ function renderGambarPreview(filename, wisataId) {
   const form = document.createElement('form');
   form.method = 'post';
   form.action = `/admin/wisata/${wisataId}/gambar/delete`;
-  form.addEventListener('submit', (e) => {
-    if (!confirm('Hapus gambar utama ini?')) e.preventDefault();
-  });
 
   const csrfInput = document.createElement('input');
   csrfInput.type = 'hidden';
@@ -275,6 +303,23 @@ function renderGambarPreview(filename, wisataId) {
   delBtn.title = 'Hapus gambar utama';
   delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
   form.appendChild(delBtn);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!confirm('Hapus gambar utama ini?')) return;
+    delBtn.disabled = true;
+    try {
+      await deleteViaAjax(form);
+      gambarPreviewImg.src = '';
+      gambarPreview.hidden = true;
+      form.remove();
+      const btn = document.querySelector(`.edit-wisata-btn[data-id="${wisataId}"]`);
+      if (btn) btn.dataset.gambar = '';
+    } catch (err) {
+      alert('Gagal menghapus gambar. Coba lagi.');
+      delBtn.disabled = false;
+    }
+  });
 
   gambarPreviewThumb.appendChild(form);
   gambarPreview.hidden = false;

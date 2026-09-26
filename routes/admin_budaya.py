@@ -47,14 +47,20 @@ def admin_budaya_delete(budaya_id):
 
 @admin_required
 def admin_budaya_galeri_delete(galeri_id):
-    if budaya_model.delete_galeri_photo(galeri_id):
+    deleted = budaya_model.delete_galeri_photo(galeri_id)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return ("", 204) if deleted else ("", 404)
+    if deleted:
         flash("Foto galeri dihapus.", "success")
     return redirect(url_for("admin_budaya_manage"))
 
 
 @admin_required
 def admin_budaya_gambar_delete(budaya_id):
-    if budaya_model.delete_gambar_utama(budaya_id):
+    deleted = budaya_model.delete_gambar_utama(budaya_id)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return ("", 204) if deleted else ("", 404)
+    if deleted:
         flash("Gambar utama dihapus.", "success")
     return redirect(url_for("admin_budaya_manage"))
 
