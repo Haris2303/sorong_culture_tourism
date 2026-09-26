@@ -12,14 +12,31 @@ def _bool(value, default=False):
     return str(value).strip().lower() in ("1", "true", "yes", "on")
 
 
+# Set FLASK_ENV=production di server produksi. Ini memaksa DEBUG mati (apa pun nilai
+# FLASK_DEBUG) dan mengaktifkan cookie session HTTPS-only, terlepas dari lupa/tidaknya
+# variabel lain diset dengan benar.
+FLASK_ENV = os.getenv("FLASK_ENV", "development").strip().lower()
+IS_PRODUCTION = FLASK_ENV == "production"
+
+# Nilai contekan dari kode & dari .env.example -- kalau salah satu ini yang kepakai
+# di production berarti SECRET_KEY belum benar-benar diganti.
+DEFAULT_SECRET_KEY = "dev-secret-key-change-me"
+INSECURE_SECRET_KEYS = {DEFAULT_SECRET_KEY, "ganti-dengan-random-secret-key-yang-panjang"}
+
+
 class Config:
     # --- Flask core ---
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
-    DEBUG = _bool(os.getenv("FLASK_DEBUG"), True)
+    ENV = FLASK_ENV
+    IS_PRODUCTION = IS_PRODUCTION
+    SECRET_KEY = os.getenv("SECRET_KEY", DEFAULT_SECRET_KEY)
+    DEBUG = False if IS_PRODUCTION else _bool(os.getenv("FLASK_DEBUG"), True)
 
     # --- Session ---
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    # Default ikut mode produksi, tapi tetap bisa dipaksa manual lewat env (mis. server
+    # produksi yang belum pasang HTTPS).
+    SESSION_COOKIE_SECURE = _bool(os.getenv("SESSION_COOKIE_SECURE"), IS_PRODUCTION)
     PERMANENT_SESSION_LIFETIME = 60 * 60 * 4  # 4 jam
 
     # --- MySQL ---

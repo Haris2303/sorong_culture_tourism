@@ -9,7 +9,7 @@ import os
 from flask import Flask
 from flask_wtf import CSRFProtect
 
-from config import Config
+from config import INSECURE_SECRET_KEYS, Config
 from core import db as dbcore
 from core.template_helpers import register as register_template_helpers
 from extensions import limiter
@@ -17,6 +17,12 @@ from routes import register_routes
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+if app.config["IS_PRODUCTION"] and app.config["SECRET_KEY"] in INSECURE_SECRET_KEYS:
+    raise RuntimeError(
+        "FLASK_ENV=production tapi SECRET_KEY masih memakai nilai default/contoh. "
+        "Set SECRET_KEY yang aman & unik di file .env sebelum menjalankan mode produksi."
+    )
 
 dbcore.init_app(app)
 CSRFProtect(app)
