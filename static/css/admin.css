@@ -265,6 +265,29 @@
   transition: background var(--transition), color var(--transition);
 }
 .table-search-clear:hover { background: var(--surface-2); color: var(--ink); }
+.per-page-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-muted);
+  font-size: var(--body-sm-size);
+}
+.per-page-select select {
+  height: 36px;
+  padding: 0 var(--space-sm);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--body-sm-size);
+  cursor: pointer;
+}
+.per-page-select select:focus {
+  outline: none;
+  border-color: var(--hairline-tertiary);
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+}
 
 /* ---------- Modal tambah/sunting ---------- */
 body.modal-open { overflow: hidden; }

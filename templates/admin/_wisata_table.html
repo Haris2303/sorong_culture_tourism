@@ -43,7 +43,7 @@
     {% if pagination.total_pages > 1 %}
     <div class="pagination-controls">
       {% if pagination.has_prev %}
-      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page - 1) }}" class="btn btn-small btn-outline">
+      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page - 1, per_page=per_page) }}" class="btn btn-small btn-outline">
         <i class="fa-solid fa-chevron-left"></i>Sebelumnya
       </a>
       {% else %}
@@ -53,7 +53,7 @@
       {% endif %}
       <span class="pagination-pages">Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span>
       {% if pagination.has_next %}
-      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page + 1) }}" class="btn btn-small btn-outline">
+      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page + 1, per_page=per_page) }}" class="btn btn-small btn-outline">
         Berikutnya<i class="fa-solid fa-chevron-right"></i>
       </a>
       {% else %}

@@ -18,6 +18,15 @@
           </a>
         {% endif %}
       </form>
+      <label class="per-page-select">
+        <span>Tampilkan</span>
+        <select id="wisata-per-page">
+          <option value="5" {{ 'selected' if per_page == '5' }}>5</option>
+          <option value="10" {{ 'selected' if per_page == '10' }}>10</option>
+          <option value="15" {{ 'selected' if per_page == '15' }}>15</option>
+          <option value="all" {{ 'selected' if per_page == 'all' }}>Semua</option>
+        </select>
+      </label>
       <button type="button" id="add-wisata-btn" class="btn btn-primary">
         <i class="fa-solid fa-plus"></i>Tambah Wisata
       </button>
@@ -398,6 +407,7 @@ document.getElementById('reset-form-btn').addEventListener('click', () => {
 // ---------- Pencarian realtime (tanpa perlu tekan Enter) ----------
 const wisataSearchForm = document.querySelector('.table-search');
 const wisataSearchInput = wisataSearchForm.querySelector('input[name="q"]');
+const wisataPerPageSelect = document.getElementById('wisata-per-page');
 const wisataResults = document.getElementById('wisata-results');
 const wisataListUrl = "{{ url_for('admin_wisata_manage') }}";
 let wisataSearchTimer = null;
@@ -409,6 +419,7 @@ async function runWisataSearch(query) {
 
   const url = new URL(wisataListUrl, window.location.origin);
   if (query) url.searchParams.set('q', query);
+  url.searchParams.set('per_page', wisataPerPageSelect.value);
 
   try {
     const resp = await fetch(url, {
@@ -435,6 +446,10 @@ wisataSearchInput.addEventListener('input', () => {
   wisataSearchTimer = setTimeout(() => {
     runWisataSearch(wisataSearchInput.value.trim());
   }, 300);
+});
+
+wisataPerPageSelect.addEventListener('change', () => {
+  runWisataSearch(wisataSearchInput.value.trim());
 });
 
 document.querySelector('.admin-form').addEventListener('submit', (e) => {

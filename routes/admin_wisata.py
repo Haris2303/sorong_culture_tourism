@@ -3,7 +3,7 @@ from flask import flash, redirect, render_template, request, url_for
 
 from core.auth import admin_required
 from models import wisata as wisata_model
-from utils.pagination import PAGE_SIZE, paginate
+from utils.pagination import paginate, parse_per_page
 
 TIKET_OPTIONS = ["Gratis / Menyesuaikan", "Rp 5.000", "Rp 10.000", "Rp 15.000", "Rp 20.000"]
 
@@ -23,18 +23,22 @@ def admin_wisata_manage():
 
     q = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int) or 1
+    per_page_choice, per_page = parse_per_page(request.args.get("per_page"))
 
     total = wisata_model.count_admin(q)
-    pagination = paginate(total, page, PAGE_SIZE)
+    pagination = paginate(total, page, per_page)
     items = wisata_model.list_admin(q, pagination["per_page"], pagination["offset"])
     for item in items:
         item["galeri"] = wisata_model.list_galeri_full(item["id"])
 
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return render_template("admin/_wisata_table.html", items=items, q=q, pagination=pagination)
+        return render_template(
+            "admin/_wisata_table.html", items=items, q=q, pagination=pagination, per_page=per_page_choice
+        )
 
     return render_template(
-        "admin/wisata_manage.html", items=items, q=q, tiket_options=TIKET_OPTIONS, pagination=pagination
+        "admin/wisata_manage.html", items=items, q=q, tiket_options=TIKET_OPTIONS,
+        pagination=pagination, per_page=per_page_choice,
     )
 
 

@@ -18,6 +18,15 @@
           </a>
         {% endif %}
       </form>
+      <label class="per-page-select">
+        <span>Tampilkan</span>
+        <select id="budaya-per-page">
+          <option value="5" {{ 'selected' if per_page == '5' }}>5</option>
+          <option value="10" {{ 'selected' if per_page == '10' }}>10</option>
+          <option value="15" {{ 'selected' if per_page == '15' }}>15</option>
+          <option value="all" {{ 'selected' if per_page == 'all' }}>Semua</option>
+        </select>
+      </label>
       <button type="button" id="add-budaya-btn" class="btn btn-primary">
         <i class="fa-solid fa-plus"></i>Tambah Budaya
       </button>
@@ -313,6 +322,7 @@ document.getElementById('reset-form-btn').addEventListener('click', () => {
 // ---------- Pencarian realtime (tanpa perlu tekan Enter) ----------
 const budayaSearchForm = document.querySelector('.table-search');
 const budayaSearchInput = budayaSearchForm.querySelector('input[name="q"]');
+const budayaPerPageSelect = document.getElementById('budaya-per-page');
 const budayaResults = document.getElementById('budaya-results');
 const budayaListUrl = "{{ url_for('admin_budaya_manage') }}";
 let budayaSearchTimer = null;
@@ -324,6 +334,7 @@ async function runBudayaSearch(query) {
 
   const url = new URL(budayaListUrl, window.location.origin);
   if (query) url.searchParams.set('q', query);
+  url.searchParams.set('per_page', budayaPerPageSelect.value);
 
   try {
     const resp = await fetch(url, {
@@ -350,6 +361,10 @@ budayaSearchInput.addEventListener('input', () => {
   budayaSearchTimer = setTimeout(() => {
     runBudayaSearch(budayaSearchInput.value.trim());
   }, 300);
+});
+
+budayaPerPageSelect.addEventListener('change', () => {
+  runBudayaSearch(budayaSearchInput.value.trim());
 });
 
 document.querySelector('.admin-form').addEventListener('submit', (e) => {

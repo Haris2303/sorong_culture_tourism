@@ -3,7 +3,7 @@ from flask import flash, redirect, render_template, request, url_for
 
 from core.auth import admin_required
 from models import budaya as budaya_model
-from utils.pagination import PAGE_SIZE, paginate
+from utils.pagination import paginate, parse_per_page
 
 KATEGORI_OPTIONS = [
     "Sejarah & Identitas",
@@ -30,18 +30,22 @@ def admin_budaya_manage():
 
     q = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int) or 1
+    per_page_choice, per_page = parse_per_page(request.args.get("per_page"))
 
     total = budaya_model.count_admin(q)
-    pagination = paginate(total, page, PAGE_SIZE)
+    pagination = paginate(total, page, per_page)
     items = budaya_model.list_admin(q, pagination["per_page"], pagination["offset"])
     for item in items:
         item["galeri"] = budaya_model.list_galeri_full(item["id"])
 
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return render_template("admin/_budaya_table.html", items=items, q=q, pagination=pagination)
+        return render_template(
+            "admin/_budaya_table.html", items=items, q=q, pagination=pagination, per_page=per_page_choice
+        )
 
     return render_template(
-        "admin/budaya_manage.html", items=items, q=q, kategori_options=KATEGORI_OPTIONS, pagination=pagination
+        "admin/budaya_manage.html", items=items, q=q, kategori_options=KATEGORI_OPTIONS,
+        pagination=pagination, per_page=per_page_choice,
     )
 
 
