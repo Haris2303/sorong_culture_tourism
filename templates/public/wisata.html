@@ -10,12 +10,7 @@ Raya{% endblock %} {% block content %}
       Direktori destinasi alam, pantai, dan kawasan konservasi di Kota dan
       Kabupaten Sorong.
     </p>
-  </div>
-</section>
-
-<section class="section section-tint">
-  <div class="section-inner">
-    <div class="filter-bar">
+    <nav class="filter-bar filter-bar--glass" aria-label="Filter wilayah">
       <a
         href="{{ url_for('wisata_list') }}"
         class="filter-chip {{ 'active' if not active_wilayah }}"
@@ -33,8 +28,12 @@ Raya{% endblock %} {% block content %}
       >
         <i class="fa-solid fa-tree"></i>Kabupaten Sorong
       </a>
-    </div>
+    </nav>
+  </div>
+</section>
 
+<section class="section section-tint">
+  <div class="section-inner">
     <div class="grid-3">
       {% for item in items %}
       <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card"

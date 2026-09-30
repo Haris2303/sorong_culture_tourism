@@ -8,15 +8,10 @@ Sorong Raya{% endblock %} {% block content %}
     <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
     <h1 class="page-title">Budaya Suku Moi</h1>
     <p class="section-subtitle">
-      Katalog adat istiadat, tarian, seni ukir, dan upacara adat masyarakat
-      Sorong Raya.
+      Katalog sejarah, hukum adat, upacara, kesenian, dan kearifan lokal
+      masyarakat Suku Moi di Sorong Raya.
     </p>
-  </div>
-</section>
-
-<section class="section section-tint">
-  <div class="section-inner">
-    <div class="filter-bar">
+    <nav class="filter-bar filter-bar--glass" aria-label="Filter kategori">
       <a
         href="{{ url_for('budaya_list') }}"
         class="filter-chip {{ 'active' if not active_kategori }}"
@@ -29,8 +24,12 @@ Sorong Raya{% endblock %} {% block content %}
         >{{ k.kategori }}</a
       >
       {% endfor %}
-    </div>
+    </nav>
+  </div>
+</section>
 
+<section class="section section-tint">
+  <div class="section-inner">
     <div class="grid-3">
       {% for item in items %}
       <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card"

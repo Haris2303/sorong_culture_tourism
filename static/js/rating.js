@@ -81,7 +81,9 @@
     star.addEventListener('click', () => {
       selectedScore = parseInt(star.dataset.value, 10);
       stars.forEach((s) => {
-        s.classList.toggle('active', parseInt(s.dataset.value, 10) <= selectedScore);
+        const value = parseInt(s.dataset.value, 10);
+        s.classList.toggle('active', value <= selectedScore);
+        s.setAttribute('aria-pressed', String(value === selectedScore));
       });
     });
   });

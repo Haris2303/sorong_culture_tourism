@@ -95,6 +95,34 @@
   --container: 1280px;
   --transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* ---------- Glass ----------
+     Dua lapis, dipakai dengan takaran berbeda (antislop R-10):
+     1. "Frosted tile" (--glass-fill + --glass-line + --glass-edge): isian putih
+        tembus pandang di atas kanvas biru bermotif, TANPA backdrop-filter.
+        Dipakai untuk kartu, panel, tabel. Blur di atas kanvas polos tidak
+        menghasilkan apa-apa selain beban GPU, jadi sengaja tidak dipakai.
+     2. Blur sungguhan (--glass-blur): hanya untuk permukaan yang benar-benar
+        melayang di atas foto/konten yang bergerak (navbar, kartu hero, filter
+        bar di header foto, panel chat, latar modal admin, kartu login).
+        Maksimal 2 permukaan ber-blur per layar. */
+  --glass-fill: rgba(255, 255, 255, 0.6);
+  --glass-fill-strong: rgba(255, 255, 255, 0.84);
+  --glass-line: rgba(255, 255, 255, 0.78);
+  --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --glass-lift:
+    0 0 0 1px rgba(11, 41, 71, 0.05), 0 1px 2px rgba(11, 41, 71, 0.05),
+    0 12px 28px -16px rgba(11, 41, 71, 0.28);
+  --glass-lift-hover:
+    0 0 0 1px rgba(11, 41, 71, 0.07), 0 2px 4px rgba(11, 41, 71, 0.06),
+    0 20px 40px -18px rgba(11, 41, 71, 0.36);
+  --glass-blur: blur(18px) saturate(170%);
+  --glass-dark-fill: rgba(7, 24, 42, 0.52);
+  --glass-dark-line: rgba(255, 255, 255, 0.16);
+
+  /* Cincin fokus pakai biru laut brand (aksen tunggal) supaya jelas terlihat
+     saat navigasi keyboard (antislop R-32). */
+  --focus-ring: 0 0 0 3px rgba(4, 148, 237, 0.3);
+
   /* ---------- Motif Papua ---------- */
   /* Tekstur latar bertekanan rendah, ditarik dari batik/ukiran Malamoi asli
      (static/assets/motif-papua.jpg → dipra-proses jadi PNG alpha rendah,
@@ -117,11 +145,19 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Kanvas: gradasi "air dangkal ke dalam" + motif batik Malamoi tipis. Kartu
+   frosted di atasnya tembus pandang, jadi motif samar terlihat di balik kaca,
+   itulah yang membuat kacanya terbaca sebagai kaca tanpa perlu blur. */
 body {
   margin: 0;
   background-color: var(--canvas);
   background-image:
-    linear-gradient(180deg, #f2f8fd 0%, #e3eef9 45%, #cfe4f6 100%),
+    linear-gradient(
+      180deg,
+      rgba(236, 244, 251, 0.9) 0%,
+      rgba(222, 235, 247, 0.9) 50%,
+      rgba(205, 225, 243, 0.92) 100%
+    ),
     var(--motif-tile);
   background-repeat: no-repeat, repeat;
   background-size:
@@ -226,21 +262,29 @@ h4 {
   text-align: center;
   color: var(--ink-subtle);
   font-size: var(--body-sm-size);
-  background: var(--surface-1);
+  background: var(--glass-fill);
   border: 1px dashed var(--hairline-strong);
   border-radius: var(--r-lg);
 }
 
 /* ============================================================
-   TOP NAV  (Linear top-nav: 56px, canvas bg, hairline bottom)
+   TOP NAV  (56px) — blur sungguhan #1: konten (foto hero, kartu)
+   benar-benar menggulir di bawahnya.
    ============================================================ */
 .navbar {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(233, 242, 251, 0.85);
-  backdrop-filter: saturate(180%) blur(12px);
-  border-bottom: 1px solid var(--hairline);
+  background: rgba(238, 245, 252, 0.72);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-line);
+  box-shadow: 0 1px 0 rgba(11, 41, 71, 0.06);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .navbar {
+    background: rgba(238, 245, 252, 0.97);
+  }
 }
 .navbar-inner {
   display: flex;
@@ -317,17 +361,19 @@ h4 {
   pointer-events: none;
 }
 .nav-search input {
-  width: 180px;
-  height: 34px;
+  width: 200px;
+  height: 36px;
   padding: var(--space-xs) var(--space-sm) var(--space-xs) 32px;
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--glass-line);
   border-radius: var(--r-md);
+  box-shadow: 0 0 0 1px rgba(11, 41, 71, 0.06);
   color: var(--ink);
   font-family: inherit;
   font-size: var(--body-sm-size);
   transition:
     border-color var(--transition),
+    background var(--transition),
     box-shadow var(--transition);
 }
 .nav-search input::placeholder {
@@ -335,8 +381,9 @@ h4 {
 }
 .nav-search input:focus {
   outline: none;
-  border-color: var(--hairline-tertiary);
-  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--brand-vivid);
+  box-shadow: var(--focus-ring);
 }
 
 /* ============================================================
@@ -366,13 +413,20 @@ h4 {
   font-size: 12px;
 }
 
+/* Primary tetap solid navy (bukan kaca): aksi utama harus paling tegas di
+   layar. Garis terang tipis di tepi atas menyamakan bahasanya dengan kaca. */
 .btn-primary {
   background: var(--primary);
   color: var(--on-primary);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 1px 2px rgba(10, 37, 64, 0.2);
 }
 .btn-primary:hover {
   background: var(--primary-hover);
-  box-shadow: var(--elev-2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 6px 16px -6px rgba(10, 37, 64, 0.45);
 }
 .btn-primary:active {
   background: var(--primary);
@@ -382,17 +436,26 @@ h4 {
   cursor: not-allowed;
   pointer-events: none;
 }
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 
 .btn-secondary,
 .btn-outline {
-  background: var(--surface-1);
-  border-color: var(--hairline);
+  background: var(--glass-fill-strong);
+  border-color: var(--glass-line);
+  box-shadow:
+    0 0 0 1px rgba(11, 41, 71, 0.08),
+    0 1px 2px rgba(11, 41, 71, 0.05);
   color: var(--ink);
 }
 .btn-secondary:hover,
 .btn-outline:hover {
-  border-color: var(--hairline-strong);
-  background: var(--surface-2);
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(11, 41, 71, 0.14),
+    0 4px 12px -6px rgba(11, 41, 71, 0.25);
 }
 
 .btn-danger {
@@ -437,14 +500,14 @@ h4 {
   transition: opacity 400ms;
 }
 .flash-success {
-  background: var(--semantic-success-soft);
-  border-color: rgba(5, 150, 105, 0.2);
-  color: var(--semantic-success);
+  background: rgba(236, 253, 245, 0.88);
+  border-color: rgba(5, 150, 105, 0.24);
+  color: #047857;
 }
 .flash-error {
-  background: var(--semantic-danger-soft);
-  border-color: rgba(220, 38, 38, 0.2);
-  color: var(--semantic-danger);
+  background: rgba(254, 242, 242, 0.9);
+  border-color: rgba(220, 38, 38, 0.24);
+  color: #b91c1c;
 }
 
 /* ============================================================
@@ -518,23 +581,28 @@ h4 {
   padding-inline: var(--space-lg);
 }
 
-/* Kartu kaca (glassmorphism) — foto latar tembus samar di baliknya */
+/* Blur sungguhan #2 di beranda: kartu kaca gelap di atas foto/video hero.
+   Satu-satunya fokus di layar pertama, jadi boleh paling "berat". */
 .hero-card {
   position: relative;
   padding: var(--space-xxl);
   background: linear-gradient(
     160deg,
-    rgba(255, 255, 255, 0.16),
-    rgba(255, 255, 255, 0.06)
+    rgba(255, 255, 255, 0.15),
+    rgba(255, 255, 255, 0.05)
   );
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: var(--r-lg);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: var(--r-xl);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    0 24px 60px rgba(5, 10, 20, 0.45),
-    0 2px 8px rgba(5, 10, 20, 0.25);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 30px 60px -24px rgba(3, 12, 24, 0.6);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hero-card {
+    background: rgba(8, 26, 46, 0.82);
+  }
 }
 .hero-card h1 {
   margin: var(--space-md) 0 var(--space-md);
@@ -674,25 +742,23 @@ h4 {
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-/* Kartu kaca (glassmorphism) — hanya di dalam section berlatar foto */
+/* Kartu kaca gelap di section berlatar foto. Sengaja TANPA backdrop-filter:
+   foto di belakangnya sudah diredam scrim gelap, jadi isian gelap tembus
+   pandang sudah cukup terbaca sebagai kaca, dan tidak ada 3+ permukaan
+   ber-blur sekaligus di satu layar (antislop R-10). */
 .section-photo .card {
-  background: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.14),
-    rgba(255, 255, 255, 0.05)
-  );
-  border-color: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  background: var(--glass-dark-fill);
+  border-color: var(--glass-dark-line);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 20px 45px rgba(5, 10, 20, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 24px 48px -24px rgba(3, 12, 24, 0.7);
 }
 .section-photo .card:hover {
-  border-color: rgba(255, 255, 255, 0.36);
+  background: rgba(9, 30, 52, 0.62);
+  border-color: rgba(255, 255, 255, 0.28);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    0 26px 56px rgba(5, 10, 20, 0.45);
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 28px 56px -24px rgba(3, 12, 24, 0.8);
 }
 .section-photo .card-image-placeholder {
   background: rgba(255, 255, 255, 0.08);
@@ -788,10 +854,8 @@ h4 {
   position: relative;
   overflow: hidden;
   padding: var(--space-xxl) 0 var(--space-xl);
-  border-bottom: 1px solid var(--hairline);
-  background-color: var(--surface-2);
-  background-image: var(--motif-tile);
-  background-size: 120px 120px;
+  border-bottom: 1px solid var(--glass-line);
+  background: rgba(255, 255, 255, 0.35);
 }
 .page-header--wisata {
   background: #04222f url("../assets/wisata-header.png") center / cover
@@ -881,7 +945,7 @@ h4 {
   gap: var(--space-sm);
   margin-top: var(--space-xl);
   padding-top: var(--space-md);
-  border-top: 1px solid var(--hairline);
+  border-top: 1px solid rgba(11, 41, 71, 0.1);
 }
 .pagination-info {
   color: var(--ink-muted);
@@ -904,22 +968,28 @@ h4 {
   cursor: default;
 }
 
+/* Frosted tile: kartu konten utama. Tanpa blur (lihat catatan --glass-*). */
 .card {
   display: flex;
   flex-direction: column;
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-line);
   border-radius: var(--r-lg);
+  box-shadow: var(--glass-edge), var(--glass-lift);
   overflow: hidden;
   transition:
-    border-color var(--transition),
+    background var(--transition),
     box-shadow var(--transition),
     transform var(--transition);
 }
 .card:hover {
-  border-color: var(--hairline-strong);
-  box-shadow: var(--elev-3);
+  background: var(--glass-fill-strong);
+  box-shadow: var(--glass-edge), var(--glass-lift-hover);
   transform: translateY(-2px);
+}
+.card:focus-visible {
+  outline: none;
+  box-shadow: var(--glass-edge), var(--glass-lift), var(--focus-ring);
 }
 
 .card-image {
@@ -927,6 +997,14 @@ h4 {
   aspect-ratio: 16 / 10;
   background: var(--surface-2);
   overflow: hidden;
+}
+/* Garis terang tipis di batas foto & isi kartu: tepi kaca bertemu foto. */
+.card-image::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.7);
 }
 .card-image img {
   width: 100%;
@@ -942,8 +1020,13 @@ h4 {
   place-items: center;
   width: 100%;
   height: 100%;
-  background: var(--surface-2);
-  color: var(--ink-tertiary);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.74), rgba(214, 230, 244, 0.8)),
+    var(--motif-tile);
+  background-size:
+    cover,
+    120px 120px;
+  color: var(--hairline-tertiary);
   font-size: 28px;
 }
 .card-image-placeholder.large {
@@ -977,7 +1060,7 @@ h4 {
   gap: var(--space-sm);
   margin-top: auto;
   padding-top: var(--space-md);
-  border-top: 1px solid var(--hairline);
+  border-top: 1px solid rgba(11, 41, 71, 0.08);
   font-size: var(--caption-size);
   color: var(--ink-subtle);
 }
@@ -1007,68 +1090,45 @@ h4 {
 }
 
 /* ---------- Section tint ----------
-   Gradasi tonal tunggal dari tangga surface yang sudah ada, dipakai di section
-   non-foto (About, konten daftar Budaya/Wisata, detail, search, 404) supaya
-   menyatu dengan section berlatar foto di sekitarnya tanpa dekorasi tambahan. */
+   Section non-foto tidak lagi punya latar sendiri: kanvas body (gradasi +
+   motif) dibiarkan tembus supaya kartu frosted di atasnya punya sesuatu
+   untuk "dikacakan". */
 .section-tint {
-  background: linear-gradient(180deg, var(--surface-1) 0%, var(--canvas) 50%, var(--surface-1) 100%);
+  background: transparent;
 }
 
+/* ---------- About: satu panel kaca, tiga kolom ----------
+   Bukan tiga kartu identik (antislop R-14): ketiga poin adalah satu
+   pernyataan "apa yang ditawarkan portal ini", jadi ditaruh dalam satu
+   panel dengan pemisah vertikal, dibaca sebagai satu kesatuan. */
 .about-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-lg);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--glass-edge), var(--glass-lift);
+  overflow: hidden;
 }
 .about-item {
   position: relative;
-  padding: var(--space-lg);
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-lg);
-  box-shadow: var(--elev-1);
-  text-align: center;
-  overflow: hidden;
-  transition:
-    border-color var(--transition),
-    box-shadow var(--transition),
-    transform var(--transition);
+  padding: var(--space-xl) var(--space-lg);
+  text-align: left;
 }
-.about-item::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: var(--ink-tertiary);
-}
-.about-item--budaya::before {
-  background: var(--accent-budaya);
-}
-.about-item--rating::before {
-  background: var(--accent-rating);
-}
-.about-item--primary::before {
-  background: var(--brand-vivid);
-}
-.about-item:hover {
-  border-color: var(--hairline-strong);
-  box-shadow: var(--elev-3);
-  transform: translateY(-4px);
+.about-item + .about-item {
+  border-left: 1px solid rgba(11, 41, 71, 0.08);
 }
 
 .about-item-icon {
   display: inline-grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   margin-bottom: var(--space-md);
   border-radius: var(--r-md);
   background: var(--surface-2);
   color: var(--ink-subtle);
-  font-size: 18px;
-  transition: transform var(--transition);
-}
-.about-item:hover .about-item-icon {
-  transform: scale(1.08);
+  font-size: 16px;
 }
 .about-item--budaya .about-item-icon {
   background: var(--accent-budaya-soft);
@@ -1131,8 +1191,8 @@ h4 {
   top: var(--space-sm);
   left: var(--space-sm);
   z-index: 2;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 2px 8px -2px rgba(3, 12, 24, 0.25);
 }
 .badge-overlay.badge-tag--budaya {
   color: var(--accent-budaya);
@@ -1179,6 +1239,54 @@ h4 {
   border-color: var(--primary);
   color: var(--on-primary);
 }
+.filter-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Filter bar yang "menempel" di dasar header berfoto (daftar Budaya &
+   Wisata). Blur sungguhan di sini beralasan: foto header ada tepat di
+   belakangnya. Dengan ini filter tampil sebagai alat navigasi header,
+   bukan baris chip lepas di atas grid. */
+.filter-bar--glass {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  max-width: 100%;
+  margin: var(--space-xl) 0 0;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  /* Konsentris dengan chip pill 36px di dalamnya (18px + padding 6px), tetap
+     rapi saat chip kategori budaya membungkus jadi dua baris. */
+  border-radius: 24px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.filter-bar--glass {
+  gap: 2px;
+}
+.filter-bar--glass .filter-chip {
+  padding-inline: 12px;
+  border-color: transparent;
+  color: rgba(255, 255, 255, 0.86);
+}
+.filter-bar--glass .filter-chip:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: transparent;
+  color: #ffffff;
+}
+.filter-bar--glass .filter-chip.active {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: var(--primary-deep);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .filter-bar--glass {
+    background: rgba(8, 26, 46, 0.7);
+  }
+}
 
 /* ============================================================
    DETAIL PAGE
@@ -1201,8 +1309,9 @@ h4 {
   aspect-ratio: 16 / 9;
   margin-bottom: var(--space-xl);
   background: var(--surface-2);
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--glass-line);
   border-radius: var(--r-xl);
+  box-shadow: var(--glass-lift);
   overflow: hidden;
 }
 .detail-image img {
@@ -1221,9 +1330,9 @@ h4 {
   width: 32px;
   height: 32px;
   margin-top: -16px;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(8, 26, 46, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--r-pill);
-  backdrop-filter: blur(4px);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   transition: background-color 0.2s ease, transform 0.2s ease;
 }
@@ -1304,9 +1413,10 @@ h4 {
 }
 .meta-box {
   padding: var(--space-md);
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-line);
   border-radius: var(--r-lg);
+  box-shadow: var(--glass-edge), var(--glass-lift);
 }
 .meta-box strong {
   display: flex;
@@ -1335,9 +1445,10 @@ h4 {
   gap: var(--space-xs);
   padding: 6px 12px;
   margin-bottom: var(--space-lg);
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-line);
   border-radius: var(--r-pill);
+  box-shadow: var(--glass-lift);
   color: var(--ink);
   font-size: var(--body-sm-size);
   font-weight: 600;
@@ -1354,12 +1465,17 @@ h4 {
 /* ============================================================
    PETA LOKASI (detail wisata)
    ============================================================ */
-.location-map-card {
+/* Panel besar di halaman detail (peta, kontak, form rating): frosted tile
+   dengan radius xl, satu tingkat lebih "lapang" dari kartu grid. */
+.location-map-card,
+.social-links-card,
+.rating-section {
   padding: var(--space-xl);
   margin-bottom: var(--space-xxl);
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-lg);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--glass-edge), var(--glass-lift);
 }
 .location-map-card h2 {
   margin-bottom: var(--space-md);
@@ -1395,13 +1511,6 @@ h4 {
 /* ============================================================
    KONTAK & MEDIA SOSIAL (detail wisata)
    ============================================================ */
-.social-links-card {
-  padding: var(--space-xl);
-  margin-bottom: var(--space-xxl);
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-lg);
-}
 .social-links-card h2 {
   margin-bottom: var(--space-md);
   font-size: var(--headline-size);
@@ -1417,9 +1526,10 @@ h4 {
   align-items: center;
   gap: 8px;
   padding: 9px 16px;
-  background: var(--canvas);
-  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--glass-line);
   border-radius: var(--r-pill);
+  box-shadow: 0 0 0 1px rgba(11, 41, 71, 0.07);
   color: var(--ink-muted);
   font-size: var(--body-sm-size);
   font-weight: 500;
@@ -1429,8 +1539,7 @@ h4 {
     color var(--transition);
 }
 .social-link:hover {
-  border-color: var(--hairline-strong);
-  background: var(--surface-2);
+  background: #ffffff;
   color: var(--ink);
 }
 .social-link--email:hover {
@@ -1453,13 +1562,6 @@ h4 {
 /* ============================================================
    RATING FORM & REVIEWS
    ============================================================ */
-.rating-section {
-  padding: var(--space-xl);
-  margin-bottom: var(--space-xxl);
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-lg);
-}
 .rating-section h2 {
   margin-bottom: var(--space-md);
   font-size: var(--headline-size);
@@ -1475,9 +1577,24 @@ h4 {
   cursor: pointer;
 }
 .star-input .star {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--r-md);
+  color: inherit;
+  font-size: inherit;
+  cursor: pointer;
   transition:
     color var(--transition),
     transform var(--transition);
+}
+.star-input .star:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 .star-input .star:hover {
   transform: scale(1.08);
@@ -1491,21 +1608,24 @@ h4 {
   min-height: 96px;
   padding: var(--space-sm);
   margin-bottom: var(--space-sm);
-  background: var(--canvas);
-  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--glass-line);
   border-radius: var(--r-md);
+  box-shadow: 0 0 0 1px rgba(11, 41, 71, 0.08);
   color: var(--ink);
   font-family: inherit;
   font-size: var(--body-sm-size);
   resize: vertical;
   transition:
     border-color var(--transition),
+    background var(--transition),
     box-shadow var(--transition);
 }
 .rating-form textarea:focus {
   outline: none;
-  border-color: var(--hairline-tertiary);
-  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--brand-vivid);
+  box-shadow: var(--focus-ring);
 }
 .rating-feedback {
   margin: var(--space-sm) 0 0;
@@ -1535,7 +1655,7 @@ h4 {
 }
 .review-item {
   padding: var(--space-md) 0;
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid rgba(11, 41, 71, 0.1);
 }
 .review-stars {
   margin-bottom: var(--space-xxs);
@@ -1662,6 +1782,9 @@ h4 {
   display: none;
 }
 
+/* Panel chat melayang di atas konten halaman apa pun, jadi blur sungguhan
+   di sini beralasan. Area pesan dibuat cukup pekat supaya teks jawaban
+   tetap terbaca walau ada foto ramai di belakangnya. */
 .chat-panel {
   position: absolute;
   right: 0;
@@ -1670,11 +1793,21 @@ h4 {
   flex-direction: column;
   width: 368px;
   max-height: 560px;
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-lg);
-  box-shadow: var(--elev-3);
+  background: rgba(240, 246, 252, 0.72);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--r-xl);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow:
+    var(--glass-edge),
+    0 0 0 1px rgba(11, 41, 71, 0.08),
+    0 28px 56px -20px rgba(11, 41, 71, 0.45);
   overflow: hidden;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .chat-panel {
+    background: rgba(240, 246, 252, 0.98);
+  }
 }
 
 .chat-header {
@@ -1738,7 +1871,7 @@ h4 {
   min-height: 220px;
   max-height: 320px;
   padding: var(--space-md);
-  background: var(--canvas);
+  background: rgba(255, 255, 255, 0.4);
   overflow-y: auto;
 }
 .chat-message {
@@ -1761,8 +1894,9 @@ h4 {
   word-break: break-word;
 }
 .chat-message.bot .bubble {
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--glass-line);
+  box-shadow: 0 0 0 1px rgba(11, 41, 71, 0.06);
   border-radius: var(--r-lg) var(--r-lg) var(--r-lg) var(--r-xs);
   color: var(--ink-muted);
 }
@@ -1887,7 +2021,7 @@ h4 {
   flex-wrap: wrap;
   gap: 6px;
   padding: 0 var(--space-md) var(--space-sm);
-  background: var(--canvas);
+  background: rgba(255, 255, 255, 0.4);
 }
 .chat-quick-replies:not([hidden]) {
   display: flex;
@@ -1897,8 +2031,8 @@ h4 {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-line);
   border-radius: var(--r-pill);
   color: var(--ink-muted);
   font-family: inherit;
@@ -1936,16 +2070,17 @@ h4 {
   display: flex;
   gap: var(--space-xs);
   padding: var(--space-sm);
-  background: var(--surface-1);
-  border-top: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.6);
+  border-top: 1px solid var(--glass-line);
 }
 .chat-input-row input {
   flex: 1;
   min-height: 38px;
   padding: var(--space-xs) var(--space-sm);
-  background: var(--canvas);
-  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--glass-line);
   border-radius: var(--r-md);
+  box-shadow: 0 0 0 1px rgba(11, 41, 71, 0.08);
   color: var(--ink);
   font-family: inherit;
   font-size: var(--body-sm-size);
@@ -1958,8 +2093,8 @@ h4 {
 }
 .chat-input-row input:focus {
   outline: none;
-  border-color: var(--hairline-tertiary);
-  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+  border-color: var(--brand-vivid);
+  box-shadow: var(--focus-ring);
 }
 .chat-input-row button {
   display: grid;
@@ -1990,8 +2125,7 @@ h4 {
    RESPONSIVE  (breakpoint Linear: 1024 → 2-up, 768 → 1-up)
    ============================================================ */
 @media (max-width: 1024px) {
-  .grid-3,
-  .about-grid {
+  .grid-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .hero-inner {
@@ -2009,20 +2143,41 @@ h4 {
   .detail-meta-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+  .about-item + .about-item {
+    border-left: none;
+    border-top: 1px solid rgba(11, 41, 71, 0.08);
+  }
   .navbar-inner {
     flex-wrap: wrap;
     gap: var(--space-sm);
   }
   .nav-links {
-    gap: var(--space-md);
+    gap: 14px;
     width: 100%;
     justify-content: space-between;
   }
+  /* Ikon link hanya duplikat label teks; di ponsel ruangnya lebih berguna
+     untuk kolom pencarian supaya placeholder tidak terpotong jadi "Cari b". */
+  .nav-links a i {
+    display: none;
+  }
+  .nav-search {
+    flex: 1;
+    min-width: 0;
+  }
   .nav-search input {
     width: 100%;
+    min-height: 44px;
   }
   .hero-card {
     padding: var(--space-xl) var(--space-lg);
+  }
+  /* Target sentuh minimal 44px di ponsel (antislop R-03). */
+  .filter-chip {
+    min-height: 44px;
+  }
+  .filter-bar--glass {
+    width: 100%;
   }
   .chat-panel {
     width: calc(100vw - var(--space-xl));
