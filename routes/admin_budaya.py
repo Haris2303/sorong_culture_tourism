@@ -5,7 +5,14 @@ from core.auth import admin_required
 from models import budaya as budaya_model
 from utils.pagination import PAGE_SIZE, paginate
 
-KATEGORI_OPTIONS = ["Tarian Tradisional", "Alat Musik", "Seni Ukir", "Upacara Adat"]
+KATEGORI_OPTIONS = [
+    "Sejarah & Identitas",
+    "Struktur & Hukum Adat",
+    "Upacara & Ritual Adat",
+    "Tarian & Musik Tradisional",
+    "Pakaian & Kerajinan Adat",
+    "Kearifan Lokal & Lingkungan",
+]
 
 
 @admin_required
