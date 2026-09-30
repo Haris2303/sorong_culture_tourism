@@ -16,9 +16,13 @@ Wisata Sorong Raya{% endblock %} {% block extra_css %}
     </span>
     <h1 class="page-title">{{ item.nama_wisata }}</h1>
 
-    <div class="rating-summary">
-      <i class="fa-solid fa-star"></i>{{ summary.average }} / 5
-      <small>· {{ summary.count }} ulasan</small>
+    <div class="rating-summary" id="rating-summary">
+      <i class="fa-solid fa-star"></i
+      ><span id="rating-summary-average">{{ summary.average }}</span> / 5
+      <small
+        >· <span id="rating-summary-count">{{ summary.count }}</span>
+        ulasan</small
+      >
     </div>
 
     <div class="detail-image">
@@ -160,22 +164,24 @@ Wisata Sorong Raya{% endblock %} {% block extra_css %}
 
     <div class="review-list">
       <h2>Ulasan Pengunjung</h2>
-      {% for r in ratings %}
-      <div class="review-item">
-        <div class="review-stars">
-          {% for _ in range(r.skor_bintang) %}<i class="fa-solid fa-star"></i>{%
-          endfor %}
+      <div id="review-items">
+        {% for r in ratings %}
+        <div class="review-item">
+          <div class="review-stars">
+            {% for _ in range(r.skor_bintang) %}<i class="fa-solid fa-star"></i>{%
+            endfor %}
+          </div>
+          {% if r.komentar %}
+          <p>{{ r.komentar }}</p>
+          {% endif %}
+          <span class="review-date">{{ r.created_at.strftime('%d %B %Y') }}</span>
         </div>
-        {% if r.komentar %}
-        <p>{{ r.komentar }}</p>
-        {% endif %}
-        <span class="review-date">{{ r.created_at.strftime('%d %B %Y') }}</span>
+        {% else %}
+        <p class="empty-state" id="review-empty-state">
+          Belum ada ulasan yang disetujui untuk destinasi ini.
+        </p>
+        {% endfor %}
       </div>
-      {% else %}
-      <p class="empty-state">
-        Belum ada ulasan yang disetujui untuk destinasi ini.
-      </p>
-      {% endfor %}
     </div>
   </div>
 </section>

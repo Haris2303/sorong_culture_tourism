@@ -14,6 +14,49 @@
   const storageKey = `rated_wisata_${wisataId}`;
   let selectedScore = 0;
 
+  // Tambahkan ulasan baru ke daftar (tanpa reload) begitu server membalas
+  // rating yang langsung "approved". Dibangun lewat DOM API (bukan innerHTML)
+  // supaya komentar pengguna otomatis di-escape, sama seperti autoescape Jinja.
+  function prependReview(review) {
+    const list = document.getElementById('review-items');
+    if (!list) return;
+
+    const emptyState = document.getElementById('review-empty-state');
+    if (emptyState) emptyState.remove();
+
+    const item = document.createElement('div');
+    item.className = 'review-item';
+
+    const starsWrap = document.createElement('div');
+    starsWrap.className = 'review-stars';
+    for (let i = 0; i < review.skor_bintang; i++) {
+      const icon = document.createElement('i');
+      icon.className = 'fa-solid fa-star';
+      starsWrap.appendChild(icon);
+    }
+    item.appendChild(starsWrap);
+
+    if (review.komentar) {
+      const p = document.createElement('p');
+      p.textContent = review.komentar;
+      item.appendChild(p);
+    }
+
+    const dateEl = document.createElement('span');
+    dateEl.className = 'review-date';
+    dateEl.textContent = review.created_at;
+    item.appendChild(dateEl);
+
+    list.insertBefore(item, list.firstChild);
+  }
+
+  function updateRatingSummary(summary) {
+    const avgEl = document.getElementById('rating-summary-average');
+    const countEl = document.getElementById('rating-summary-count');
+    if (avgEl) avgEl.textContent = summary.average;
+    if (countEl) countEl.textContent = summary.count;
+  }
+
   function lockForm(message) {
     // Input dihapus dari tampilan (bukan cuma dinonaktifkan) supaya pengunjung
     // yang sudah memberi ulasan tidak melihat form abu-abu yang tidak bisa dipakai.
@@ -73,6 +116,12 @@
       if (res.status === 201) {
         localStorage.setItem(storageKey, '1');
         lockForm(data.message || 'Terima kasih atas ulasan Anda!');
+        // Ulasan "pending" (kena filter kata kasar) belum tampil ke publik,
+        // jadi cuma tambahkan ke daftar kalau server balas status "approved".
+        if (data.status === 'approved' && data.review && data.summary) {
+          prependReview(data.review);
+          updateRatingSummary(data.summary);
+        }
       } else if (res.status === 429) {
         feedbackEl.textContent = 'Terlalu banyak percobaan. Silakan coba lagi dalam 1 jam.';
         feedbackEl.className = 'rating-feedback rating-error';

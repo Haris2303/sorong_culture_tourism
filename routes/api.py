@@ -1,4 +1,6 @@
 """Router API: chatbot RAG & pengiriman rating wisata (anti-spam)."""
+from datetime import datetime
+
 from flask import current_app, jsonify, request
 
 from core.chat_jobs import get_job, start_job
@@ -81,7 +83,20 @@ def api_rating():
         if status == "pending"
         else "Terima kasih atas ulasan Anda!"
     )
-    return jsonify({"success": True, "status": status, "message": message}), 201
+    response = {"success": True, "status": status, "message": message}
+
+    # Ulasan "pending" belum tampil ke publik (masih nunggu moderasi admin),
+    # jadi cuma ulasan "approved" yang dikirim balik supaya frontend bisa
+    # langsung menambahkannya ke daftar ulasan tanpa reload halaman.
+    if status == "approved":
+        response["review"] = {
+            "skor_bintang": skor,
+            "komentar": komentar or None,
+            "created_at": datetime.now().strftime("%d %B %Y"),
+        }
+        response["summary"] = ratings_model.get_wisata_rating_summary(wisata_id)
+
+    return jsonify(response), 201
 
 
 def register(app):
