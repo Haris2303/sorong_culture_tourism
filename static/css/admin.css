@@ -637,23 +637,43 @@ body.modal-open { overflow: hidden; }
   min-height: 100vh;
   padding: var(--space-lg);
   overflow: hidden;
-  background-color: var(--surface-2);
-  background-image:
-    linear-gradient(180deg, #f2f8fd 0%, #e3eef9 45%, #cfe4f6 100%),
-    var(--motif-tile);
-  background-repeat: no-repeat, repeat;
-  background-size: cover, 120px 120px;
+  background: #04222f url("../assets/wisata-header.png") center / cover
+    no-repeat fixed;
 }
+.login-body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 37, 64, 0.55) 0%,
+    rgba(10, 37, 64, 0.32) 45%,
+    rgba(10, 37, 64, 0.6) 100%
+  );
+}
+/* Kartu login kaca buram (glassmorphism) mengambang di atas foto latar —
+   tetap terbaca di kombinasi terang/gelap manapun pada foto berkat lapisan
+   putih semi-transparan + blur, tanpa perlu ganti warna teks jadi putih. */
 .login-box {
   position: relative;
   z-index: 1;
   width: 100%;
   max-width: 392px;
   padding: var(--space-xl);
-  background: var(--surface-1);
-  border: 1px solid var(--hairline);
+  background: rgba(245, 249, 253, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: var(--r-lg);
   box-shadow: var(--elev-3);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+/* Browser tanpa dukungan backdrop-filter: naikkan opasitas supaya teks
+   tetap terbaca meski tanpa efek blur. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .login-box {
+    background: rgba(245, 249, 253, 0.94);
+  }
 }
 .login-brand {
   display: grid;
@@ -673,7 +693,7 @@ body.modal-open { overflow: hidden; }
 .login-box label { margin: var(--space-sm) 0 6px; color: var(--ink-muted); font-size: var(--body-sm-size); font-weight: 500; }
 .login-box input {
   padding: 10px var(--space-sm);
-  background: var(--canvas);
+  background: rgba(255, 255, 255, 0.55);
   border: 1px solid var(--hairline);
   border-radius: var(--r-md);
   color: var(--ink);
