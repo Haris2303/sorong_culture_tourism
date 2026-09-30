@@ -48,13 +48,37 @@
     item.appendChild(dateEl);
 
     list.insertBefore(item, list.firstChild);
+    bumpDistribution(review.skor_bintang);
+  }
+
+  // Tambah satu ulasan ke grafik sebaran bintang lalu hitung ulang lebar batang.
+  function bumpDistribution(score) {
+    const rows = document.querySelectorAll('#rating-bars [data-dist-star]');
+    if (!rows.length) return;
+    let total = 0;
+    rows.forEach((row) => {
+      let n = parseInt(row.dataset.count, 10) || 0;
+      if (parseInt(row.dataset.distStar, 10) === score) n += 1;
+      row.dataset.count = String(n);
+      total += n;
+    });
+    rows.forEach((row) => {
+      const n = parseInt(row.dataset.count, 10) || 0;
+      row.querySelector('.rating-bar-count').textContent = n;
+      row.querySelector('.rating-bar-fill').style.width = `${total ? (n * 100) / total : 0}%`;
+    });
   }
 
   function updateRatingSummary(summary) {
-    const avgEl = document.getElementById('rating-summary-average');
-    const countEl = document.getElementById('rating-summary-count');
-    if (avgEl) avgEl.textContent = summary.average;
-    if (countEl) countEl.textContent = summary.count;
+    // Kartu rata-rata baru tampil setelah ada minimal satu ulasan.
+    document.querySelectorAll('.rating-card').forEach((el) => { el.hidden = !summary.count; });
+    // Angka rating tampil di beberapa tempat (hero & daftar ulasan): perbarui semuanya.
+    document.querySelectorAll('.js-rating-avg').forEach((el) => { el.textContent = summary.average; });
+    document.querySelectorAll('.js-rating-count').forEach((el) => { el.textContent = summary.count; });
+    // Bintang terisi proporsional terhadap rata-rata (0-5 -> 0-100%).
+    document.querySelectorAll('.js-rating-stars').forEach((el) => {
+      el.style.setProperty('--pct', `${Math.max(0, Math.min(100, (summary.average / 5) * 100))}%`);
+    });
   }
 
   function lockForm(message) {

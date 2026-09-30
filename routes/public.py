@@ -53,7 +53,16 @@ def budaya_detail(budaya_id):
     galeri_images = [item["gambar"]] if item["gambar"] else []
     galeri_images += [g["gambar"] for g in budaya_model.list_galeri(budaya_id)]
 
-    return render_template("public/budaya_detail.html", item=item, galeri_images=galeri_images)
+    # Artikel lain di kategori yang sama (kalau kurang, lengkapi dari kategori lain).
+    related = [r for r in budaya_model.list_public(item["kategori"], 6, 0) if r["id"] != budaya_id]
+    if len(related) < 3:
+        extra = [r for r in budaya_model.list_public("", 6, 0) if r["id"] != budaya_id and r not in related]
+        related += extra
+    related = related[:3]
+
+    return render_template(
+        "public/budaya_detail.html", item=item, galeri_images=galeri_images, related=related
+    )
 
 
 def wisata_list():
@@ -79,8 +88,18 @@ def wisata_detail(wisata_id):
     galeri_images = [item["gambar"]] if item["gambar"] else []
     galeri_images += [g["gambar"] for g in wisata_model.list_galeri(wisata_id)]
 
+    # Destinasi lain di wilayah yang sama (kalau kurang, lengkapi dari wilayah lain).
+    related = [r for r in wisata_model.list_public(item["wilayah"], 6, 0) if r["id"] != wisata_id]
+    if len(related) < 3:
+        extra = [r for r in wisata_model.list_public("", 6, 0) if r["id"] != wisata_id and r not in related]
+        related += extra
+    related = related[:3]
+    for r in related:
+        r["rating"] = ratings_model.get_wisata_rating_summary(r["id"])
+
     return render_template(
-        "public/wisata_detail.html", item=item, ratings=ratings, summary=summary, galeri_images=galeri_images
+        "public/wisata_detail.html",
+        item=item, ratings=ratings, summary=summary, galeri_images=galeri_images, related=related,
     )
 
 

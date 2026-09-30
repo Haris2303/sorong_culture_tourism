@@ -26,22 +26,48 @@
     {% block extra_css %}{% endblock %}
   </head>
   <body>
-    <header class="navbar">
+    <header class="navbar" id="site-navbar">
       <div class="navbar-inner">
-        <a href="{{ url_for('index') }}" class="brand">
+        <a href="{{ url_for('index') }}" class="brand" aria-label="Sorong Raya - Beranda">
           <span class="brand-icon">SR</span>
-          <span class="brand-text">Sorong Raya</span>
+          <span class="brand-text">
+            <strong>Sorong Raya</strong>
+            <small>Budaya &amp; Wisata</small>
+          </span>
         </a>
-        <nav class="nav-links">
-          <a href="{{ url_for('index') }}#about"
-            ><i class="fa-solid fa-circle-info"></i>About</a
-          >
-          <a href="{{ url_for('budaya_list') }}"
-            ><i class="fa-solid fa-feather"></i>Budaya</a
-          >
-          <a href="{{ url_for('wisata_list') }}"
-            ><i class="fa-solid fa-location-dot"></i>Wisata</a
-          >
+
+        <button
+          type="button"
+          class="nav-toggle"
+          id="nav-toggle"
+          aria-label="Buka menu"
+          aria-expanded="false"
+          aria-controls="site-nav"
+        >
+          <span class="nav-toggle-bars"><i></i><i></i><i></i></span>
+        </button>
+
+        <div class="nav-collapse" id="site-nav">
+          <nav class="nav-links" aria-label="Navigasi utama">
+            <a
+              href="{{ url_for('index') }}"
+              class="{{ 'active' if request.endpoint == 'index' }}"
+              {% if request.endpoint == 'index' %}aria-current="page"{% endif %}
+              ><i class="fa-solid fa-house"></i>Beranda</a
+            >
+            <a
+              href="{{ url_for('budaya_list') }}"
+              class="{{ 'active' if request.endpoint in ('budaya_list', 'budaya_detail') }}"
+              {% if request.endpoint in ('budaya_list', 'budaya_detail') %}aria-current="page"{% endif %}
+              ><i class="fa-solid fa-feather"></i>Budaya</a
+            >
+            <a
+              href="{{ url_for('wisata_list') }}"
+              class="{{ 'active' if request.endpoint in ('wisata_list', 'wisata_detail') }}"
+              {% if request.endpoint in ('wisata_list', 'wisata_detail') %}aria-current="page"{% endif %}
+              ><i class="fa-solid fa-location-dot"></i>Wisata</a
+            >
+          </nav>
           <form
             class="nav-search"
             action="{{ url_for('search') }}"
@@ -52,12 +78,15 @@
             <input
               type="text"
               name="q"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
               placeholder="Cari budaya atau wisata"
               value="{{ request.args.get('q','') }}"
               aria-label="Cari"
             />
           </form>
-        </nav>
+        </div>
       </div>
     </header>
 
@@ -110,6 +139,46 @@
         offset: 80,
         disable: () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
       });
+    </script>
+    <script>
+      // Navbar: bayangan setelah digulir + menu ponsel (buka/tutup).
+      (function () {
+        var navbar = document.getElementById("site-navbar");
+        var toggle = document.getElementById("nav-toggle");
+        if (!navbar) return;
+
+        function onScroll() {
+          navbar.classList.toggle("is-scrolled", window.scrollY > 8);
+        }
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+
+        if (!toggle) return;
+        function setOpen(open) {
+          navbar.classList.toggle("is-open", open);
+          toggle.setAttribute("aria-expanded", String(open));
+          toggle.setAttribute("aria-label", open ? "Tutup menu" : "Buka menu");
+        }
+        toggle.addEventListener("click", function () {
+          setOpen(!navbar.classList.contains("is-open"));
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && navbar.classList.contains("is-open")) {
+            setOpen(false);
+            toggle.focus();
+          }
+        });
+        // Klik tautan menu / di luar navbar menutup panel.
+        navbar.querySelectorAll(".nav-links a").forEach(function (a) {
+          a.addEventListener("click", function () { setOpen(false); });
+        });
+        document.addEventListener("click", function (e) {
+          if (navbar.classList.contains("is-open") && !navbar.contains(e.target)) setOpen(false);
+        });
+        window.addEventListener("resize", function () {
+          if (window.innerWidth > 860) setOpen(false);
+        });
+      })();
     </script>
     {% block extra_js %}{% endblock %}
   </body>

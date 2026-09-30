@@ -1,43 +1,63 @@
 <div id="chat-widget" class="chat-widget closed">
-  <button id="chat-toggle-btn" class="chat-toggle-btn" aria-label="Buka chatbot">
-    <i class="fa-solid fa-comment-dots"></i>
+  <button id="chat-toggle-btn" class="chat-toggle-btn" aria-label="Buka chatbot" aria-controls="chat-panel">
+    <span class="chat-toggle-icon"><i class="fa-solid fa-comment-dots"></i></span>
     <span id="chat-unread-badge" class="chat-unread-badge" hidden></span>
   </button>
 
-  <div id="chat-panel" class="chat-panel">
+  <div id="chat-panel" class="chat-panel" role="dialog" aria-label="Pemandu Pintar Sorong">
     <div class="chat-header">
       <div class="chat-header-info">
-        <span class="chat-online-dot"></span>
-        <div>
+        <span class="chat-avatar">
+          <i class="fa-solid fa-robot"></i>
+          <span class="chat-online-dot"></span>
+        </span>
+        <div class="chat-header-text">
           <div class="chat-title">Pemandu Pintar Sorong</div>
-          <div class="chat-subtitle">Edukasi & Informasi Terverifikasi</div>
+          <div class="chat-subtitle">Online &middot; siap membantu Anda</div>
         </div>
       </div>
-      <button id="chat-close-btn" class="chat-close-btn" aria-label="Tutup chatbot">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+      <div class="chat-header-actions">
+        <button id="chat-reset-btn" class="chat-icon-btn" type="button" aria-label="Mulai percakapan baru" title="Percakapan baru">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+        <button id="chat-close-btn" class="chat-icon-btn" type="button" aria-label="Tutup chatbot" title="Tutup">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
     </div>
 
-    <div id="chat-messages" class="chat-messages">
+    <div id="chat-messages" class="chat-messages" aria-live="polite">
       <div class="chat-message bot">
-        <div class="bubble">Selamat datang. Saya pemandu pintar Sorong Raya, silakan tanyakan seputar budaya Suku Moi atau destinasi wisata Kota/Kabupaten Sorong.</div>
+        <div class="bubble">Selamat datang! Saya pemandu pintar Sorong Raya. Silakan tanyakan seputar budaya Suku Moi atau destinasi wisata Kota/Kabupaten Sorong.</div>
       </div>
     </div>
 
     <div class="chat-quick-replies" id="chat-quick-replies">
-      <button type="button" class="chip chip--budaya" data-prompt="Ceritakan tentang budaya Suku Moi">
-        <i class="fa-solid fa-feather"></i>Budaya Suku Moi
-      </button>
-      <button type="button" class="chip chip--wisata" data-prompt="Rekomendasi wisata pantai di Sorong">
-        <i class="fa-solid fa-umbrella-beach"></i>Wisata Pantai
-      </button>
+      <span class="chat-quick-title">Coba tanyakan</span>
+      <div class="chat-quick-list">
+        <button type="button" class="chip chip--budaya" data-prompt="Ceritakan tentang budaya Suku Moi">
+          <i class="fa-solid fa-feather"></i>Budaya Suku Moi
+        </button>
+        <button type="button" class="chip chip--wisata" data-prompt="Rekomendasi wisata pantai di Sorong">
+          <i class="fa-solid fa-umbrella-beach"></i>Wisata Pantai
+        </button>
+        <button type="button" class="chip chip--wisata" data-prompt="Apa saja destinasi wisata di Kabupaten Sorong?">
+          <i class="fa-solid fa-map-location-dot"></i>Wisata Kabupaten
+        </button>
+        <button type="button" class="chip chip--budaya" data-prompt="Berapa harga tiket masuk wisata di Sorong?">
+          <i class="fa-solid fa-ticket"></i>Harga Tiket
+        </button>
+      </div>
     </div>
 
     <form id="chat-form" class="chat-input-row">
-      <input type="text" id="chat-input" placeholder="Tulis pertanyaan..." autocomplete="off" maxlength="500" required>
-      <button type="submit" id="chat-send-btn" aria-label="Kirim">
-        <i class="fa-solid fa-paper-plane"></i>
-      </button>
+      <div class="chat-input-wrap">
+        <input type="text" id="chat-input" placeholder="Tulis pertanyaan Anda..." autocomplete="off" maxlength="500" required>
+        <button type="submit" id="chat-send-btn" aria-label="Kirim">
+          <i class="fa-solid fa-arrow-up"></i>
+        </button>
+      </div>
+      <p class="chat-disclaimer"><i class="fa-solid fa-shield-halved"></i>Jawaban disusun AI dari data portal Sorong Raya.</p>
     </form>
   </div>
 </div>

@@ -1,0 +1,218 @@
+{# Komponen bersama halaman detail budaya & wisata. #}
+
+{# Galeri foto (Swiper) atau placeholder bila belum ada foto. #}
+{% macro gallery(images, alt, placeholder_icon) %}
+<div class="dp-gallery">
+  {% if images %}
+  <div class="swiper detail-swiper">
+    <div class="swiper-wrapper">
+      {% for gambar in images %}
+      <div class="swiper-slide">
+        <img
+          src="{{ url_for('static', filename='uploads/' ~ gambar) }}"
+          alt="{{ alt }}{% if images|length > 1 %} - foto {{ loop.index }}{% endif %}"
+          {% if not loop.first %}loading="lazy"{% endif %}
+        />
+      </div>
+      {% endfor %}
+    </div>
+    {% if images|length > 1 %}
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
+    <div class="swiper-pagination"></div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="card-image-placeholder large">
+    <i class="fa-solid {{ placeholder_icon }}"></i>
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{# Kartu bagikan: salin tautan, WhatsApp, Facebook. Tautan dibangun di browser dari URL halaman. #}
+{% macro share_card(title) %}
+<div class="dp-side-card" data-share-title="{{ title }}">
+  <h3 class="dp-side-title"><i class="fa-solid fa-share-nodes"></i>Bagikan</h3>
+  <div class="dp-share">
+    <button type="button" class="dp-share-btn" data-share="copy">
+      <i class="fa-regular fa-copy"></i><span>Salin tautan</span>
+    </button>
+    <a class="dp-share-btn dp-share-btn--wa" data-share="wa" href="#" target="_blank" rel="noopener noreferrer">
+      <i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span>
+    </a>
+    <a class="dp-share-btn dp-share-btn--fb" data-share="fb" href="#" target="_blank" rel="noopener noreferrer">
+      <i class="fa-brands fa-facebook"></i><span>Facebook</span>
+    </a>
+  </div>
+</div>
+{% endmacro %}
+
+{# Tombol yang membuka widget chatbot. #}
+{% macro ask_bot(subject) %}
+<div class="dp-side-card dp-ask">
+  <span class="dp-ask-icon"><i class="fa-solid fa-comments"></i></span>
+  <h3>Ingin tahu lebih banyak?</h3>
+  <p>Tanyakan apa saja tentang {{ subject }} kepada asisten Sorong Raya.</p>
+  <button type="button" class="btn btn-primary" data-open-chat>
+    <i class="fa-solid fa-robot"></i>Tanya Asisten
+  </button>
+</div>
+{% endmacro %}
+
+{# Skrip galeri Swiper + bagikan + pembuka chatbot. #}
+{% macro detail_scripts(images) %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.js"></script>
+<script>
+  (function () {
+    var gallery = document.querySelector(".detail-swiper");
+    if (gallery && {{ 'true' if images|length > 1 else 'false' }}) {
+      new Swiper(".detail-swiper", {
+        loop: true,
+        grabCursor: true,
+        navigation: {
+          nextEl: ".detail-swiper .swiper-button-next",
+          prevEl: ".detail-swiper .swiper-button-prev",
+        },
+        pagination: { el: ".detail-swiper .swiper-pagination", clickable: true },
+      });
+    }
+
+    // Bagikan: URL halaman dipakai apa adanya.
+    var card = document.querySelector("[data-share-title]");
+    if (card) {
+      var url = window.location.href.split("#")[0];
+      var text = card.dataset.shareTitle + " - Sorong Raya";
+      var wa = card.querySelector('[data-share="wa"]');
+      var fb = card.querySelector('[data-share="fb"]');
+      if (wa) wa.href = "https://wa.me/?text=" + encodeURIComponent(text + "\n" + url);
+      if (fb) fb.href = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url);
+      var copyBtn = card.querySelector('[data-share="copy"]');
+      if (copyBtn) {
+        copyBtn.addEventListener("click", function () {
+          var label = copyBtn.querySelector("span");
+          var done = function () {
+            label.textContent = "Tautan tersalin!";
+            copyBtn.classList.add("is-done");
+            setTimeout(function () {
+              label.textContent = "Salin tautan";
+              copyBtn.classList.remove("is-done");
+            }, 2200);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(done, function () { window.prompt("Salin tautan:", url); });
+          } else {
+            window.prompt("Salin tautan:", url);
+          }
+        });
+      }
+    }
+
+    // Tombol "Tanya Asisten" membuka widget chatbot yang sudah ada.
+    document.querySelectorAll("[data-open-chat]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var toggle = document.getElementById("chat-toggle-btn");
+        var widget = document.getElementById("chat-widget");
+        if (toggle && widget && widget.classList.contains("closed")) toggle.click();
+      });
+    });
+  })();
+</script>
+{% endmacro %}
+
+{# Kartu destinasi/budaya lain di bagian bawah halaman. #}
+{% macro related_cards(items, kind) %}
+{% if items %}
+<section class="dp-related">
+  <div class="dp-related-head">
+    <h2>{{ 'Destinasi Lainnya' if kind == 'wisata' else 'Budaya Lainnya' }}</h2>
+    <a href="{{ url_for('wisata_list' if kind == 'wisata' else 'budaya_list') }}" class="dp-link">
+      Lihat semua<i class="fa-solid fa-arrow-right"></i>
+    </a>
+  </div>
+  <div class="grid-3">
+    {% for r in items %}
+    {% if kind == 'wisata' %}
+    <a href="{{ url_for('wisata_detail', wisata_id=r.id) }}" class="card">
+      <div class="card-image">
+        {% if r.gambar %}
+        <img src="{{ url_for('static', filename='uploads/' ~ r.gambar) }}" alt="{{ r.nama_wisata }}" loading="lazy" />
+        {% else %}
+        <div class="card-image-placeholder"><i class="fa-solid fa-water"></i></div>
+        {% endif %}
+        <span class="badge-tag badge-tag--wisata badge-overlay"><i class="fa-solid fa-map-pin"></i>{{ r.wilayah }}</span>
+      </div>
+      <div class="card-body">
+        <h3>{{ r.nama_wisata }}</h3>
+        <p>{{ r.deskripsi | striptags | truncate(110) }}</p>
+        <div class="card-meta">
+          <span class="meta-item"><i class="fa-solid fa-location-dot"></i>{{ r.wilayah }}</span>
+          <span class="meta-rating"><i class="fa-solid fa-star"></i>{{ r.rating.average }}<small>({{ r.rating.count }})</small></span>
+        </div>
+      </div>
+    </a>
+    {% else %}
+    <a href="{{ url_for('budaya_detail', budaya_id=r.id) }}" class="card">
+      <div class="card-image">
+        {% if r.gambar %}
+        <img src="{{ url_for('static', filename='uploads/' ~ r.gambar) }}" alt="{{ r.judul }}" loading="lazy" />
+        {% else %}
+        <div class="card-image-placeholder"><i class="fa-solid fa-feather"></i></div>
+        {% endif %}
+        <span class="badge-tag badge-tag--budaya badge-overlay"><i class="fa-solid fa-tag"></i>{{ r.kategori }}</span>
+      </div>
+      <div class="card-body">
+        <h3>{{ r.judul }}</h3>
+        <p>{{ r.ringkasan | truncate(110) }}</p>
+      </div>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endmacro %}
+
+{# Daftar ringkas (thumbnail + nama) untuk sidebar. #}
+{% macro related_list(items, kind) %}
+{% if items %}
+<div class="dp-side-card">
+  <h3 class="dp-side-title"><i class="fa-solid fa-compass"></i>{{ 'Destinasi Lainnya' if kind == 'wisata' else 'Budaya Lainnya' }}</h3>
+  <ul class="dp-related-list">
+    {% for r in items %}
+    <li>
+      {% if kind == 'wisata' %}
+      <a href="{{ url_for('wisata_detail', wisata_id=r.id) }}" class="dp-related-item">
+        {% if r.gambar %}
+        <img src="{{ url_for('static', filename='uploads/' ~ r.gambar) }}" alt="" loading="lazy" />
+        {% else %}
+        <span class="dp-related-ph"><i class="fa-solid fa-water"></i></span>
+        {% endif %}
+        <span class="dp-related-text">
+          <strong>{{ r.nama_wisata }}</strong>
+          <small><i class="fa-solid fa-location-dot"></i>{{ r.wilayah }}</small>
+        </span>
+        <span class="dp-related-rate"><i class="fa-solid fa-star"></i>{{ r.rating.average }}</span>
+      </a>
+      {% else %}
+      <a href="{{ url_for('budaya_detail', budaya_id=r.id) }}" class="dp-related-item">
+        {% if r.gambar %}
+        <img src="{{ url_for('static', filename='uploads/' ~ r.gambar) }}" alt="" loading="lazy" />
+        {% else %}
+        <span class="dp-related-ph"><i class="fa-solid fa-feather"></i></span>
+        {% endif %}
+        <span class="dp-related-text">
+          <strong>{{ r.judul }}</strong>
+          <small><i class="fa-solid fa-tag"></i>{{ r.kategori }}</small>
+        </span>
+      </a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <a href="{{ url_for('wisata_list' if kind == 'wisata' else 'budaya_list') }}" class="dp-link dp-related-all">
+    Lihat semua<i class="fa-solid fa-arrow-right"></i>
+  </a>
+</div>
+{% endif %}
+{% endmacro %}

@@ -44,6 +44,7 @@
   }
 
   let history = loadHistory();
+  const defaultWelcomeHtml = messagesEl.innerHTML;
 
   // Posisi scroll disimpan terpisah dari riwayat supaya saat pindah halaman (situs
   // ini multi-halaman) chat tidak selalu lompat ke pesan paling awal. Elemen dengan
@@ -151,6 +152,17 @@
     requestAnimationFrame(tick);
   }
 
+  // Jam pesan dalam WIT (Asia/Jayapura), format 24 jam "09:41".
+  function nowTime() {
+    try {
+      return new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jayapura', hour: '2-digit', minute: '2-digit', hour12: false,
+      }).format(new Date()).replace('.', ':');
+    } catch (err) {
+      return '';
+    }
+  }
+
   function renderMessage(text, sender, sources, isHtml, options) {
     const animate = !!(options && options.animate);
     const wrapper = document.createElement('div');
@@ -168,8 +180,12 @@
       links.forEach((s) => {
         const a = document.createElement('a');
         a.href = s.url;
-        a.textContent = `📍 ${s.title}`;
         a.className = 'chat-source-link';
+        const pin = document.createElement('i');
+        pin.className = 'fa-solid fa-location-dot';
+        const label = document.createElement('span');
+        label.textContent = s.title;
+        a.append(pin, label);
         linksEl.appendChild(a);
       });
       wrapper.appendChild(linksEl);
@@ -191,19 +207,27 @@
       appendSources();
     }
 
+    if (options && options.time) {
+      const timeEl = document.createElement('span');
+      timeEl.className = 'chat-time';
+      timeEl.textContent = options.time;
+      wrapper.appendChild(timeEl);
+    }
+
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
   function appendMessage(text, sender, sources, isHtml, options) {
-    renderMessage(text, sender, sources, isHtml, options);
-    history.push({ text, sender, sources: sources || [], isHtml: !!isHtml });
+    const time = nowTime();
+    renderMessage(text, sender, sources, isHtml, Object.assign({}, options, { time }));
+    history.push({ text, sender, sources: sources || [], isHtml: !!isHtml, time });
     saveHistory();
   }
 
   if (history.length) {
     // Ganti bubble sambutan bawaan dengan riwayat percakapan sebelumnya.
     messagesEl.innerHTML = '';
-    history.forEach((msg) => renderMessage(msg.text, msg.sender, msg.sources, msg.isHtml));
+    history.forEach((msg) => renderMessage(msg.text, msg.sender, msg.sources, msg.isHtml, { time: msg.time }));
   } else {
     // Kunjungan pertama di tab ini: simpan bubble sambutan bawaan sebagai riwayat awal.
     const welcomeBubble = messagesEl.querySelector('.bubble');
@@ -254,6 +278,29 @@
   }
 
   closeBtn.addEventListener('click', closeWidget);
+
+  // Mulai percakapan baru: hapus riwayat & job tertunda, kembalikan sambutan bawaan.
+  const resetBtn = document.getElementById('chat-reset-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (sendBtn.disabled) return; // jangan reset saat jawaban masih diproses
+      clearPendingJob();
+      try {
+        sessionStorage.removeItem(SCROLL_KEY);
+      } catch (err) {
+        // abaikan jika sessionStorage tidak tersedia
+      }
+      messagesEl.innerHTML = defaultWelcomeHtml;
+      const welcomeBubble = messagesEl.querySelector('.bubble');
+      history = welcomeBubble
+        ? [{ text: welcomeBubble.textContent, sender: 'bot', sources: [], isHtml: false }]
+        : [];
+      saveHistory();
+      if (quickReplies) quickReplies.hidden = false;
+      messagesEl.scrollTop = 0;
+      input.focus();
+    });
+  }
 
   // Panel chat berlaku seperti dialog, jadi harus bisa ditutup lewat Escape
   // sama seperti modal admin (lihat static/js/admin.js).

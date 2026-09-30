@@ -1,216 +1,242 @@
-{% extends "public/base.html" %} {% block title %}{{ item.nama_wisata }} |
-Wisata Sorong Raya{% endblock %} {% block extra_css %}
+{% extends "public/base.html" %}
+{% from "public/_detail_macros.html" import gallery, share_card, ask_bot, detail_scripts, related_list %}
+{% block title %}{{ item.nama_wisata }} | Wisata Sorong Raya{% endblock %}
+{% block extra_css %}
 <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.css"
 />
-{% endblock %} {% block content %}
-<section class="section section-tint">
-  <div class="section-inner narrow">
-    <a href="{{ url_for('wisata_list') }}" class="back-link">
-      <i class="fa-solid fa-arrow-left"></i>Kembali ke Wisata
-    </a>
+{% endblock %}
+{% block content %}
+{% set hero_img = url_for('static', filename='uploads/' ~ galeri_images[0]) if galeri_images else url_for('static', filename='assets/wisata-header.png') %}
+{% set has_map = item.latitude is not none and item.longitude is not none %}
+{% set fasilitas = item.fasilitas.replace('\n', ',').split(',') | map('trim') | select | list if item.fasilitas else [] %}
 
-    <span class="badge-tag badge-tag--wisata">
+<header class="dp-hero dp-hero--wisata" style="--hero-img: url('{{ hero_img }}')">
+  <div class="dp-hero-inner">
+    <nav class="dp-crumbs" aria-label="Breadcrumb">
+      <a href="{{ url_for('index') }}">Beranda</a>
+      <i class="fa-solid fa-chevron-right"></i>
+      <a href="{{ url_for('wisata_list') }}">Wisata</a>
+      <i class="fa-solid fa-chevron-right"></i>
+      <span>{{ item.nama_wisata }}</span>
+    </nav>
+
+    <span class="badge-tag badge-tag--wisata dp-hero-tag">
       <i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}
     </span>
-    <h1 class="page-title">{{ item.nama_wisata }}</h1>
+    <h1 class="dp-title">{{ item.nama_wisata }}</h1>
 
-    <div class="rating-summary" id="rating-summary">
-      <i class="fa-solid fa-star"></i
-      ><span id="rating-summary-average">{{ summary.average }}</span> / 5
-      <small
-        >· <span id="rating-summary-count">{{ summary.count }}</span>
-        ulasan</small
-      >
+    <div class="dp-facts">
+      <span class="rating-summary rating-summary--hero" id="rating-summary">
+        <i class="fa-solid fa-star"></i
+        ><span id="rating-summary-average" class="js-rating-avg">{{ summary.average }}</span> / 5
+        <small>· <span id="rating-summary-count" class="js-rating-count">{{ summary.count }}</span> ulasan</small>
+      </span>
+      {% if item.alamat %}<span class="dp-fact"><i class="fa-solid fa-location-dot"></i>{{ item.alamat }}</span>{% endif %}
+      {% if item.jam_operasional %}<span class="dp-fact"><i class="fa-regular fa-clock"></i>{{ item.jam_operasional }}</span>{% endif %}
+      <span class="dp-fact"><i class="fa-solid fa-ticket"></i>{{ item.tiket_masuk }}</span>
     </div>
 
-    <div class="detail-image">
-      {% if galeri_images %}
-      <div class="swiper detail-swiper">
-        <div class="swiper-wrapper">
-          {% for gambar in galeri_images %}
-          <div class="swiper-slide">
-            <img
-              src="{{ url_for('static', filename='uploads/' ~ gambar) }}"
-              alt="{{ item.nama_wisata }}"
-            />
-          </div>
-          {% endfor %}
-        </div>
-        {% if galeri_images|length > 1 %}
-        <div class="swiper-button-prev"></div>
-        <div class="swiper-button-next"></div>
-        <div class="swiper-pagination"></div>
-        {% endif %}
-      </div>
-      {% else %}
-      <div class="card-image-placeholder large">
-        <i class="fa-solid fa-water"></i>
-      </div>
+    <div class="dp-hero-actions">
+      {% if has_map %}
+      <a href="#peta" class="btn btn-primary"><i class="fa-solid fa-map-location-dot"></i>Lihat Peta</a>
       {% endif %}
-    </div>
-
-    <div class="detail-content">{{ item.deskripsi | safe }}</div>
-
-    <div class="detail-meta-grid">
-      <div class="meta-box">
-        <strong><i class="fa-solid fa-list-check"></i>Fasilitas</strong>
-        <p>{{ item.fasilitas }}</p>
-      </div>
-      <div class="meta-box">
-        <strong><i class="fa-solid fa-location-dot"></i>Alamat</strong>
-        <p>{{ item.alamat }}</p>
-      </div>
-      <div class="meta-box">
-        <strong><i class="fa-solid fa-ticket"></i>Tiket Masuk</strong>
-        <p>{{ item.tiket_masuk }}</p>
-      </div>
-      <div class="meta-box">
-        <strong><i class="fa-solid fa-clock"></i>Jam Operasional</strong>
-        <p>{{ item.jam_operasional }}</p>
-      </div>
-    </div>
-
-    {% if item.latitude is not none and item.longitude is not none %}
-    <div class="location-map-card">
-      <h2>Peta Lokasi</h2>
-      <div class="map-embed">
-        <iframe
-          src="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}&z=15&output=embed"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-          allowfullscreen
-        ></iframe>
-      </div>
-      <a
-        href="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="map-link"
-      >
-        <i class="fa-solid fa-up-right-from-square"></i>Buka di Google Maps
-      </a>
-    </div>
-    {% endif %} {% if item.sosmed_email or item.sosmed_facebook or
-    item.sosmed_instagram or item.sosmed_youtube %}
-    <div class="social-links-card">
-      <h2>Kontak &amp; Media Sosial</h2>
-      <div class="social-links">
-        {% if item.sosmed_email %}
-        <a
-          href="mailto:{{ item.sosmed_email }}"
-          class="social-link social-link--email"
-        >
-          <i class="fa-solid fa-envelope"></i>Email
-        </a>
-        {% endif %} {% if item.sosmed_facebook %}
-        <a
-          href="{{ item.sosmed_facebook | social_url }}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="social-link social-link--facebook"
-        >
-          <i class="fa-brands fa-facebook"></i>Facebook
-        </a>
-        {% endif %} {% if item.sosmed_instagram %}
-        <a
-          href="{{ item.sosmed_instagram | social_url }}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="social-link social-link--instagram"
-        >
-          <i class="fa-brands fa-instagram"></i>Instagram
-        </a>
-        {% endif %} {% if item.sosmed_youtube %}
-        <a
-          href="{{ item.sosmed_youtube | social_url }}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="social-link social-link--youtube"
-        >
-          <i class="fa-brands fa-youtube"></i>YouTube
-        </a>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-
-    <div
-      class="rating-section"
-      id="rating-section"
-      data-wisata-id="{{ item.id }}"
-    >
-      <h2>Beri Penilaian</h2>
-      <form id="rating-form" class="rating-form">
-        <div
-          class="star-input"
-          id="star-input"
-          role="group"
-          aria-label="Pilih skor bintang"
-        >
-          {% for i in range(1, 6) %}
-          <button
-            type="button"
-            class="star"
-            data-value="{{ i }}"
-            aria-label="{{ i }} bintang"
-            aria-pressed="false"
-          >
-            <i class="fa-solid fa-star" aria-hidden="true"></i>
-          </button>
-          {% endfor %}
-        </div>
-        <textarea
-          id="rating-komentar"
-          placeholder="Bagikan pengalaman Anda di destinasi ini (opsional)"
-          maxlength="500"
-        ></textarea>
-        <button type="submit" id="rating-submit-btn" class="btn btn-primary">
-          <i class="fa-solid fa-paper-plane"></i>Kirim Ulasan
-        </button>
-        <p id="rating-feedback" class="rating-feedback"></p>
-      </form>
-    </div>
-
-    <div class="review-list">
-      <h2>Ulasan Pengunjung</h2>
-      <div id="review-items">
-        {% for r in ratings %}
-        <div class="review-item">
-          <div class="review-stars">
-            {% for _ in range(r.skor_bintang) %}<i class="fa-solid fa-star"></i>{%
-            endfor %}
-          </div>
-          {% if r.komentar %}
-          <p>{{ r.komentar }}</p>
-          {% endif %}
-          <span class="review-date">{{ r.created_at.strftime('%d %B %Y') }}</span>
-        </div>
-        {% else %}
-        <p class="empty-state" id="review-empty-state">
-          Belum ada ulasan yang disetujui untuk destinasi ini.
-        </p>
-        {% endfor %}
-      </div>
+      <a href="#rating-section" class="btn btn-glass"><i class="fa-regular fa-star"></i>Beri Ulasan</a>
     </div>
   </div>
+</header>
+
+<section class="section dp-body">
+  <div class="dp-layout">
+    <div class="dp-main">
+      {{ gallery(galeri_images, item.nama_wisata, 'fa-water') }}
+
+      <article class="dp-card">
+        <h2 class="dp-h2"><i class="fa-solid fa-book-open"></i>Tentang Destinasi</h2>
+        <div class="detail-content">{{ item.deskripsi | safe }}</div>
+      </article>
+
+      {% if has_map %}
+      <article class="dp-card" id="peta">
+        <h2 class="dp-h2"><i class="fa-solid fa-map-location-dot"></i>Peta Lokasi</h2>
+        <div class="map-embed">
+          <iframe
+            src="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}&z=15&output=embed"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+            title="Peta lokasi {{ item.nama_wisata }}"
+          ></iframe>
+        </div>
+        <a
+          href="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="map-link"
+        >
+          <i class="fa-solid fa-up-right-from-square"></i>Buka di Google Maps
+        </a>
+      </article>
+      {% endif %}
+
+      <article class="dp-card rating-section" id="rating-section" data-wisata-id="{{ item.id }}">
+        <h2 class="dp-h2"><i class="fa-regular fa-star"></i>Beri Penilaian</h2>
+        <form id="rating-form" class="rating-form">
+          <div class="star-input" id="star-input" role="group" aria-label="Pilih skor bintang">
+            {% for i in range(1, 6) %}
+            <button
+              type="button"
+              class="star"
+              data-value="{{ i }}"
+              aria-label="{{ i }} bintang"
+              aria-pressed="false"
+            >
+              <i class="fa-solid fa-star" aria-hidden="true"></i>
+            </button>
+            {% endfor %}
+          </div>
+          <textarea
+            id="rating-komentar"
+            placeholder="Bagikan pengalaman Anda di destinasi ini (opsional)"
+            maxlength="500"
+          ></textarea>
+          <button type="submit" id="rating-submit-btn" class="btn btn-primary">
+            <i class="fa-solid fa-paper-plane"></i>Kirim Ulasan
+          </button>
+          <p id="rating-feedback" class="rating-feedback"></p>
+        </form>
+      </article>
+
+      <article class="dp-card review-list">
+        <div class="review-head">
+          <h2 class="dp-h2"><i class="fa-regular fa-comments"></i>Ulasan Pengunjung</h2>
+        </div>
+
+        <div class="rating-card" {% if not summary.count %}hidden{% endif %} aria-label="Rating rata-rata {{ summary.average }} dari 5 berdasarkan {{ summary.count }} ulasan">
+          <div class="rating-card-score">
+            <strong class="rating-card-num js-rating-avg">{{ summary.average }}</strong>
+            <div class="rating-card-stars js-rating-stars" style="--pct: {{ (summary.average / 5 * 100) | round(1) }}%" aria-hidden="true">
+              <span class="rating-card-stars-base">★★★★★</span>
+              <span class="rating-card-stars-fill">★★★★★</span>
+            </div>
+            <span class="rating-card-count"><b class="js-rating-count">{{ summary.count }}</b> ulasan</span>
+          </div>
+          <ul class="rating-card-bars" id="rating-bars">
+            {% set total_r = ratings|length %}
+            {% for star in [5, 4, 3, 2, 1] %}
+            {% set n = ratings|selectattr('skor_bintang', 'equalto', star)|list|length %}
+            <li data-dist-star="{{ star }}" data-count="{{ n }}">
+              <span class="rating-bar-label">{{ star }} <i class="fa-solid fa-star"></i></span>
+              <span class="rating-bar-track"><span class="rating-bar-fill" style="width: {{ (n * 100 / total_r) | round(1) if total_r else 0 }}%"></span></span>
+              <span class="rating-bar-count">{{ n }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div id="review-items">
+          {% for r in ratings %}
+          <div class="review-item">
+            <div class="review-stars">
+              {% for _ in range(r.skor_bintang) %}<i class="fa-solid fa-star"></i>{% endfor %}
+            </div>
+            {% if r.komentar %}
+            <p>{{ r.komentar }}</p>
+            {% endif %}
+            <span class="review-date">{{ r.created_at.strftime('%d %B %Y') }}</span>
+          </div>
+          {% else %}
+          <div class="review-empty" id="review-empty-state">
+            <div class="review-empty-art" aria-hidden="true">
+              <span class="review-empty-icon"><i class="fa-regular fa-comments"></i></span>
+            </div>
+            <h3>Belum ada ulasan</h3>
+            <p>Jadilah yang pertama membagikan pengalaman Anda di {{ item.nama_wisata }} untuk membantu calon pengunjung lainnya.</p>
+            <a href="#rating-form" class="btn btn-primary"><i class="fa-regular fa-pen-to-square"></i>Tulis Ulasan Pertama</a>
+          </div>
+          {% endfor %}
+        </div>
+      </article>
+    </div>
+
+    <aside class="dp-side dp-side--tall">
+      <div class="dp-side-card">
+        <h3 class="dp-side-title"><i class="fa-solid fa-circle-info"></i>Informasi Kunjungan</h3>
+        <dl class="dp-info">
+          <div>
+            <dt><i class="fa-solid fa-location-dot"></i>Alamat</dt>
+            <dd>{{ item.alamat }}</dd>
+          </div>
+          <div>
+            <dt><i class="fa-solid fa-ticket"></i>Tiket Masuk</dt>
+            <dd>{{ item.tiket_masuk }}</dd>
+          </div>
+          <div>
+            <dt><i class="fa-regular fa-clock"></i>Jam Operasional</dt>
+            <dd>{{ item.jam_operasional or '-' }}</dd>
+          </div>
+          <div>
+            <dt><i class="fa-solid fa-map-pin"></i>Wilayah</dt>
+            <dd>{{ item.wilayah }}</dd>
+          </div>
+        </dl>
+        {% if has_map %}
+        <a
+          href="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-primary dp-side-cta"
+        >
+          <i class="fa-solid fa-diamond-turn-right"></i>Petunjuk Arah
+        </a>
+        {% endif %}
+      </div>
+
+      {% if fasilitas %}
+      <div class="dp-side-card">
+        <h3 class="dp-side-title"><i class="fa-solid fa-list-check"></i>Fasilitas</h3>
+        <ul class="dp-chips">
+          {% for f in fasilitas %}
+          <li><i class="fa-solid fa-circle-check"></i>{{ f }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if item.sosmed_email or item.sosmed_facebook or item.sosmed_instagram or item.sosmed_youtube %}
+      <div class="dp-side-card social-links-card">
+        <h3 class="dp-side-title"><i class="fa-solid fa-at"></i>Kontak &amp; Media Sosial</h3>
+        <div class="social-links">
+          {% if item.sosmed_email %}
+          <a href="mailto:{{ item.sosmed_email }}" class="social-link social-link--email"><i class="fa-solid fa-envelope"></i>Email</a>
+          {% endif %}
+          {% if item.sosmed_facebook %}
+          <a href="{{ item.sosmed_facebook | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--facebook"><i class="fa-brands fa-facebook"></i>Facebook</a>
+          {% endif %}
+          {% if item.sosmed_instagram %}
+          <a href="{{ item.sosmed_instagram | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--instagram"><i class="fa-brands fa-instagram"></i>Instagram</a>
+          {% endif %}
+          {% if item.sosmed_youtube %}
+          <a href="{{ item.sosmed_youtube | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--youtube"><i class="fa-brands fa-youtube"></i>YouTube</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {{ related_list(related, 'wisata') }}
+      {{ share_card(item.nama_wisata) }}
+      {{ ask_bot('destinasi ini') }}
+
+      <a href="{{ url_for('wisata_list') }}" class="dp-back">
+        <i class="fa-solid fa-arrow-left"></i>Kembali ke daftar wisata
+      </a>
+    </aside>
+  </div>
+
 </section>
-{% endblock %} {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.js"></script>
+{% endblock %}
+{% block extra_js %}
 <script src="{{ url_for('static', filename='js/rating.js') }}"></script>
-{% if galeri_images|length > 1 %}
-<script>
-  new Swiper(".detail-swiper", {
-    loop: true,
-    navigation: {
-      nextEl: ".detail-swiper .swiper-button-next",
-      prevEl: ".detail-swiper .swiper-button-prev",
-    },
-    pagination: {
-      el: ".detail-swiper .swiper-pagination",
-      clickable: true,
-    },
-  });
-</script>
-{% endif %} {% endblock %}
+{{ detail_scripts(galeri_images) }}
+{% endblock %}
