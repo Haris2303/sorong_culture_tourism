@@ -3,28 +3,74 @@
 {% block page_title %}Repositori Pengetahuan & Sinkronisasi RAG{% endblock %}
 {% block admin_content %}
 
-<div class="admin-form-card">
-  <h2>Unggah Dokumen Pengetahuan</h2>
-  <form method="post" action="{{ url_for('admin_knowledge_upload') }}" enctype="multipart/form-data" class="admin-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label>Berkas (PDF / TXT / MD)</label>
-    <div class="file-input-wrap">
-      <input type="file" name="dokumen" id="f-dokumen" accept=".pdf,.txt,.md" required class="file-input-native">
-      <label for="f-dokumen" class="file-input-btn"><i class="fa-solid fa-upload"></i>Pilih Berkas</label>
-      <span class="file-input-name" id="f-dokumen-name">Belum ada file dipilih</span>
+<section class="upload-card" id="upload-card">
+  <button type="button" class="upload-toggle" id="upload-toggle" aria-expanded="false" aria-controls="upload-panel">
+    <span class="upload-toggle-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+    <span class="upload-toggle-text">
+      <strong>Unggah Dokumen Pengetahuan</strong>
+      <small>PDF, TXT, atau MD &middot; ditambahkan ke basis pengetahuan chatbot</small>
+    </span>
+    <span class="upload-toggle-count">{{ docs|length }} dokumen</span>
+    <i class="fa-solid fa-chevron-down upload-chevron" aria-hidden="true"></i>
+  </button>
+
+  <div class="upload-panel" id="upload-panel">
+    <div class="upload-panel-inner">
+      <form method="post" action="{{ url_for('admin_knowledge_upload') }}" enctype="multipart/form-data" class="admin-form upload-form" id="upload-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="dropzone" id="dropzone">
+          <input type="file" name="dokumen" id="f-dokumen" accept=".pdf,.txt,.md" required class="file-input-native">
+          <label for="f-dokumen" class="dropzone-label">
+            <span class="dropzone-icon"><i class="fa-solid fa-file-arrow-up"></i></span>
+            <strong>Tarik &amp; lepas berkas ke sini</strong>
+            <span class="dropzone-or">atau <u>klik untuk memilih berkas</u></span>
+            <span class="dropzone-formats">
+              <span class="tag tag--doc">PDF</span><span class="tag tag--doc">TXT</span><span class="tag tag--doc">MD</span>
+              <em id="dropzone-limit">maks. 15 MB</em>
+            </span>
+          </label>
+        </div>
+
+        <div class="upload-file" id="upload-file" hidden>
+          <span class="upload-file-icon" id="upload-file-icon"><i class="fa-solid fa-file-lines"></i></span>
+          <div class="upload-file-info">
+            <strong id="upload-file-name">-</strong>
+            <small id="upload-file-meta">-</small>
+          </div>
+          <span class="upload-file-ready"><i class="fa-solid fa-circle-check"></i>Siap diunggah</span>
+          <button type="button" class="icon-btn icon-btn--danger" id="upload-file-remove" title="Batalkan pilihan" aria-label="Batalkan pilihan berkas"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <p class="upload-error" id="upload-error" role="alert" hidden></p>
+
+        <ol class="upload-steps">
+          <li><span>1</span>Unggah dokumen</li>
+          <li><span>2</span>Jalankan sinkronisasi</li>
+          <li><span>3</span>Chatbot memakai pengetahuan baru</li>
+        </ol>
+
+        <div class="form-actions upload-actions">
+          <button type="submit" class="btn btn-primary" id="upload-submit" disabled>
+            <i class="fa-solid fa-cloud-arrow-up"></i><span>Unggah Dokumen</span>
+          </button>
+        </div>
+      </form>
     </div>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Unggah Dokumen</button>
-    </div>
-  </form>
-</div>
+  </div>
+</section>
 
 <div class="admin-form-card sync-card">
   <h2>Sinkronisasi & Latih Ulang Vector DB</h2>
   <p>Proses ini akan membaca seluruh dokumen PDF/TXT yang diunggah beserta artikel budaya
      dan wisata dari database, memecahnya menjadi potongan teks (<em>chunking</em>), menghitung
      ulang vektor embedding, lalu memperbarui koleksi ChromaDB.</p>
-  <button type="button" id="sync-btn" class="btn btn-primary btn-lg">Sinkronkan &amp; Latih Ulang Vector DB</button>
+  <div class="sync-actions">
+    <button type="button" id="sync-btn" class="btn btn-primary btn-lg">Sinkronkan &amp; Latih Ulang Vector DB</button>
+    <button type="button" id="vec-toggle" class="btn btn-outline btn-lg" aria-expanded="false" aria-controls="vec-card">
+      <i class="fa-solid fa-eye"></i><span>Lihat Hasil Pelatihan</span>
+    </button>
+  </div>
 
   <div class="sync-progress" id="sync-progress" hidden>
     <div class="sync-progress-bar-track">
@@ -37,36 +83,86 @@
   <p id="sync-status" class="sync-status"></p>
 </div>
 
+<div class="admin-form-card vec-card" id="vec-card" hidden>
+  <div class="vec-head">
+    <div>
+      <h2>Hasil Pelatihan Vector DB</h2>
+      <p class="vec-lead">Isi koleksi ChromaDB yang dipakai chatbot untuk menjawab: berapa potongan teks (chunk) tersimpan dan dari sumber mana saja.</p>
+    </div>
+    <button type="button" id="vec-refresh" class="btn btn-outline btn-small"><i class="fa-solid fa-rotate"></i>Muat Ulang</button>
+  </div>
+
+  <p id="vec-message" class="vec-message" hidden></p>
+
+  <div id="vec-summary" class="vec-summary" hidden>
+    <div class="vec-stat"><span>Total Chunk</span><strong id="vec-total-chunks">0</strong></div>
+    <div class="vec-stat"><span>Sumber</span><strong id="vec-total-sources">0</strong></div>
+    <div class="vec-stat"><span>Dokumen</span><strong id="vec-kind-dokumen">0</strong></div>
+    <div class="vec-stat"><span>Artikel Budaya</span><strong id="vec-kind-budaya">0</strong></div>
+    <div class="vec-stat"><span>Destinasi Wisata</span><strong id="vec-kind-wisata">0</strong></div>
+    <div class="vec-stat"><span>Rata-rata Panjang Chunk</span><strong><span id="vec-avg-chars">0</span> <small>karakter</small></strong></div>
+  </div>
+
+  <div id="vec-tools" class="vec-tools" hidden>
+    <input type="search" id="vec-filter" class="vec-filter" placeholder="Cari sumber (judul budaya, nama wisata, nama dokumen)...">
+    <div class="vec-kind-tabs" id="vec-kind-tabs">
+      <button type="button" class="vec-tab is-active" data-kind="">Semua</button>
+      <button type="button" class="vec-tab" data-kind="dokumen">Dokumen</button>
+      <button type="button" class="vec-tab" data-kind="budaya">Budaya</button>
+      <button type="button" class="vec-tab" data-kind="wisata">Wisata</button>
+    </div>
+  </div>
+
+  <div class="admin-table-wrap" id="vec-table-wrap" hidden>
+    <table class="admin-table vec-table">
+      <thead><tr><th>Sumber</th><th>Jenis</th><th>Chunk</th><th>Karakter</th><th></th></tr></thead>
+      <tbody id="vec-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
 <div class="admin-table-card">
-  <h2>Daftar Dokumen Pengetahuan</h2>
+  <div class="admin-table-header">
+    <h2>Daftar Dokumen Pengetahuan</h2>
+    <span class="count-pill">{{ docs|length }} dokumen</span>
+  </div>
   <div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
-      <tr><th>Nama File</th><th>Tipe</th><th>Diunggah</th><th>Status</th><th>Aksi</th></tr>
+      <tr><th class="col-no">No</th><th>Dokumen</th><th>Tipe</th><th>Diunggah</th><th>Status</th><th class="col-actions">Aksi</th></tr>
     </thead>
     <tbody>
       {% for doc in docs %}
-      <tr>
-        <td>{{ doc.nama_file }}</td>
-        <td>{{ doc.tipe_file|upper }}</td>
-        <td>{{ doc.uploaded_at.strftime('%d %b %Y %H:%M') }}</td>
+      <tr style="--i: {{ loop.index0 }}">
+        <td class="col-no">{{ loop.index }}</td>
         <td>
-          <span class="badge {{ 'badge-approved' if doc.status_indexed else 'badge-pending' }}">
-            {{ 'Indexed' if doc.status_indexed else 'Pending' }}
+          <div class="cell-item">
+            <span class="cell-thumb cell-thumb--empty cell-thumb--doc"><i class="fa-solid {{ 'fa-file-pdf' if doc.tipe_file|lower == 'pdf' else 'fa-file-lines' }}"></i></span>
+            <div class="cell-text"><strong class="cell-title">{{ doc.nama_file }}</strong></div>
+          </div>
+        </td>
+        <td><span class="tag tag--doc">{{ doc.tipe_file|upper }}</span></td>
+        <td>
+          <span class="cell-date">{{ doc.uploaded_at.strftime('%d %b %Y') }}</span>
+          <span class="cell-time">{{ doc.uploaded_at.strftime('%H:%M') }}</span>
+        </td>
+        <td>
+          <span class="badge badge-dot {{ 'badge-approved' if doc.status_indexed else 'badge-pending' }}">
+            {{ 'Ter-index' if doc.status_indexed else 'Menunggu' }}
           </span>
         </td>
         <td class="table-actions">
           <a href="{{ url_for('admin_knowledge_view', doc_id=doc.id) }}" target="_blank" rel="noopener"
-             class="btn btn-small btn-outline">Lihat</a>
+             class="icon-btn icon-btn--edit" title="Lihat dokumen" aria-label="Lihat dokumen"><i class="fa-solid fa-eye"></i></a>
           <form method="post" action="{{ url_for('admin_knowledge_delete', doc_id=doc.id) }}" class="inline-form"
-                onsubmit="return confirm('Hapus dokumen ini?');">
+                data-confirm="Dokumen dihapus dari repositori. Jalankan sinkronisasi ulang agar chatbot ikut diperbarui." data-confirm-title="Hapus dokumen?">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-small btn-danger">Hapus</button>
+            <button type="submit" class="icon-btn icon-btn--danger" title="Hapus dokumen" aria-label="Hapus dokumen"><i class="fa-solid fa-trash"></i></button>
           </form>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="5" class="empty-state">Belum ada dokumen diunggah.</td></tr>
+      <tr><td colspan="6" class="empty-state"><i class="fa-regular fa-file"></i>Belum ada dokumen diunggah.</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -75,19 +171,110 @@
 {% endblock %}
 {% block extra_js %}
 <script>
-// ---------- Nama file yang dipilih pada input unggah dokumen ----------
-function bindFileInputName(inputId, nameId) {
-  const input = document.getElementById(inputId);
-  const nameEl = document.getElementById(nameId);
-  input.addEventListener('change', () => {
-    if (!input.files || input.files.length === 0) {
-      nameEl.textContent = 'Belum ada file dipilih';
-    } else {
-      nameEl.textContent = input.files[0].name;
+// ---------- Unggah dokumen: dropdown, drag & drop, validasi ----------
+(function () {
+  const ALLOWED = ['pdf', 'txt', 'md'];
+  const maxBytes = (window.ADMIN_UPLOAD_CONFIG && window.ADMIN_UPLOAD_CONFIG.maxContentBytes) || 0;
+
+  const card = document.getElementById('upload-card');
+  const toggle = document.getElementById('upload-toggle');
+  const input = document.getElementById('f-dokumen');
+  const dropzone = document.getElementById('dropzone');
+  const fileBox = document.getElementById('upload-file');
+  const errorEl = document.getElementById('upload-error');
+  const submitBtn = document.getElementById('upload-submit');
+  const form = document.getElementById('upload-form');
+
+  if (maxBytes) {
+    document.getElementById('dropzone-limit').textContent = `maks. ${Math.round(maxBytes / 1024 / 1024)} MB`;
+  }
+
+  function setOpen(open) {
+    card.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+  toggle.addEventListener('click', () => setOpen(!card.classList.contains('is-open')));
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  }
+
+  function showError(message) {
+    errorEl.textContent = message;
+    errorEl.hidden = !message;
+  }
+
+  function clearSelection() {
+    input.value = '';
+    fileBox.hidden = true;
+    dropzone.classList.remove('has-file');
+    submitBtn.disabled = true;
+  }
+
+  function validate(file) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!ALLOWED.includes(ext)) return 'Format tidak didukung. Hanya PDF, TXT, atau MD yang diterima.';
+    if (file.size === 0) return 'Berkas kosong. Pilih berkas yang berisi teks.';
+    if (maxBytes && file.size > maxBytes) return `Ukuran berkas (${formatSize(file.size)}) melebihi batas ${formatSize(maxBytes)}.`;
+    return '';
+  }
+
+  function handleFile(file) {
+    const problem = validate(file);
+    if (problem) {
+      clearSelection();
+      showError(problem);
+      if (window.AdminUI) AdminUI.toast('warning', problem, { title: 'Berkas ditolak' });
+      return;
     }
+    showError('');
+    const ext = file.name.split('.').pop().toLowerCase();
+    document.getElementById('upload-file-name').textContent = file.name;
+    document.getElementById('upload-file-meta').textContent = `${ext.toUpperCase()} \u00b7 ${formatSize(file.size)}`;
+    document.getElementById('upload-file-icon').innerHTML =
+      `<i class="fa-solid ${ext === 'pdf' ? 'fa-file-pdf' : 'fa-file-lines'}"></i>`;
+    fileBox.hidden = false;
+    dropzone.classList.add('has-file');
+    submitBtn.disabled = false;
+  }
+
+  input.addEventListener('change', () => {
+    if (input.files && input.files[0]) handleFile(input.files[0]);
+    else { clearSelection(); showError(''); }
   });
-}
-bindFileInputName('f-dokumen', 'f-dokumen-name');
+
+  document.getElementById('upload-file-remove').addEventListener('click', () => {
+    clearSelection();
+    showError('');
+  });
+
+  ['dragenter', 'dragover'].forEach((type) => dropzone.addEventListener(type, (e) => {
+    e.preventDefault();
+    dropzone.classList.add('is-dragover');
+  }));
+  ['dragleave', 'drop'].forEach((type) => dropzone.addEventListener(type, (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('is-dragover');
+  }));
+  dropzone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (!files || !files.length) return;
+    const dt = new DataTransfer();
+    dt.items.add(files[0]);
+    input.files = dt.files;
+    if (files.length > 1 && window.AdminUI) {
+      AdminUI.toast('info', 'Hanya satu berkas per unggahan. Berkas pertama yang dipakai.', { title: 'Beberapa berkas dipilih' });
+    }
+    handleFile(files[0]);
+  });
+
+  form.addEventListener('submit', () => {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Mengunggah...</span>';
+  });
+})();
 
 const syncBtn = document.getElementById('sync-btn');
 const syncStatus = document.getElementById('sync-status');
@@ -121,6 +308,30 @@ function appendSyncLogLine(entry) {
   syncLog.appendChild(line);
 }
 
+// Pesan gagal yang mudah dipahami untuk respons non-sukses dari server.
+async function describeSyncHttpError(res, fallback) {
+  let serverMessage = '';
+  try {
+    const data = await res.json();
+    serverMessage = data.message || '';
+  } catch (e) {
+    // Respons bukan JSON (mis. halaman error HTML dari rate limiter).
+  }
+  if (res.status === 429) {
+    return 'Terlalu banyak permintaan ke server (batas rate limit tercapai). Tunggu beberapa saat lalu coba sinkronkan lagi.';
+  }
+  if (res.status === 401 || res.status === 403) {
+    return 'Sesi admin berakhir atau token tidak valid. Muat ulang halaman lalu login kembali.';
+  }
+  return serverMessage || `${fallback} (kode ${res.status}).`;
+}
+
+function showSyncFailure(message) {
+  finishSyncUI(null);
+  syncStatus.className = 'sync-status sync-error';
+  syncStatus.textContent = message;
+}
+
 function renderSyncProgress(data) {
   syncProgressWrap.hidden = false;
   syncLog.hidden = false;
@@ -152,6 +363,7 @@ function finishSyncUI(result) {
   if (result.success) {
     syncStatus.textContent = `${result.message} (${result.documents} dokumen, ${result.chunks} chunk).`;
     syncStatus.classList.add('sync-success');
+    if (typeof vecIsOpen === 'function' && vecIsOpen()) loadVectorResult();
   } else {
     syncStatus.textContent = result.message || 'Sinkronisasi gagal.';
     syncStatus.classList.add('sync-error');
@@ -161,6 +373,10 @@ function finishSyncUI(result) {
 async function pollSyncStatus() {
   try {
     const res = await fetch("{{ url_for('admin_sync_knowledge_status') }}");
+    if (!res.ok) {
+      showSyncFailure(await describeSyncHttpError(res, 'Gagal memantau status sinkronisasi'));
+      return;
+    }
     const data = await res.json();
     renderSyncProgress(data);
 
@@ -170,9 +386,7 @@ async function pollSyncStatus() {
     }
     finishSyncUI(data.result);
   } catch (err) {
-    finishSyncUI(null);
-    syncStatus.textContent = 'Gagal memantau status sinkronisasi.';
-    syncStatus.classList.add('sync-error');
+    showSyncFailure('Gagal memantau status sinkronisasi. Periksa koneksi ke server.');
   }
 }
 
@@ -191,18 +405,13 @@ syncBtn.addEventListener('click', async () => {
       headers: { 'X-CSRFToken': syncCsrfToken() }
     });
     if (res.status !== 202 && res.status !== 409) {
-      const data = await res.json();
-      finishSyncUI(null);
-      syncStatus.textContent = data.message || 'Gagal memulai sinkronisasi.';
-      syncStatus.classList.add('sync-error');
+      showSyncFailure(await describeSyncHttpError(res, 'Gagal memulai sinkronisasi'));
       return;
     }
     clearTimeout(syncPollTimer);
     pollSyncStatus();
   } catch (err) {
-    finishSyncUI(null);
-    syncStatus.textContent = 'Gagal menghubungi server.';
-    syncStatus.classList.add('sync-error');
+    showSyncFailure('Gagal menghubungi server.');
   }
 });
 
@@ -224,5 +433,171 @@ syncBtn.addEventListener('click', async () => {
     // Abaikan; tombol tetap dalam keadaan siap dipakai.
   }
 })();
+
+// ---------- Hasil pelatihan vector DB ----------
+const VEC_URL = "{{ url_for('admin_vector_db') }}";
+const VEC_CHUNKS_URL = "{{ url_for('admin_vector_db_chunks') }}";
+const VEC_KIND_LABEL = { dokumen: 'Dokumen', budaya: 'Budaya', wisata: 'Wisata' };
+const vecEls = {
+  card: document.getElementById('vec-card'),
+  toggle: document.getElementById('vec-toggle'),
+  message: document.getElementById('vec-message'),
+  summary: document.getElementById('vec-summary'),
+  tools: document.getElementById('vec-tools'),
+  tableWrap: document.getElementById('vec-table-wrap'),
+  tbody: document.getElementById('vec-tbody'),
+  filter: document.getElementById('vec-filter'),
+  refresh: document.getElementById('vec-refresh'),
+};
+let vecSources = [];
+let vecKind = '';
+
+function vecShowMessage(text, isError) {
+  vecEls.message.hidden = !text;
+  vecEls.message.textContent = text || '';
+  vecEls.message.classList.toggle('sync-error', !!isError);
+}
+
+function vecDisplayName(source) {
+  return source.replace(/^(budaya|wisata):/, '');
+}
+
+function vecRenderRows() {
+  const q = vecEls.filter.value.trim().toLowerCase();
+  vecEls.tbody.innerHTML = '';
+  const rows = vecSources.filter((s) =>
+    (!vecKind || s.kind === vecKind) && (!q || s.source.toLowerCase().includes(q)));
+
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="5" class="empty-state">Tidak ada sumber yang cocok.</td>';
+    vecEls.tbody.appendChild(tr);
+    return;
+  }
+
+  rows.forEach((s) => {
+    const tr = document.createElement('tr');
+    const name = document.createElement('td');
+    name.textContent = vecDisplayName(s.source);
+    const kind = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = `badge vec-kind vec-kind--${s.kind}`;
+    badge.textContent = VEC_KIND_LABEL[s.kind] || s.kind;
+    kind.appendChild(badge);
+    const chunks = document.createElement('td');
+    chunks.textContent = s.chunks;
+    const chars = document.createElement('td');
+    chars.textContent = s.chars.toLocaleString('id-ID');
+    const act = document.createElement('td');
+    act.className = 'table-actions';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-small btn-outline';
+    btn.textContent = 'Lihat Chunk';
+    act.appendChild(btn);
+    tr.append(name, kind, chunks, chars, act);
+    vecEls.tbody.appendChild(tr);
+
+    let detailRow = null;
+    btn.addEventListener('click', async () => {
+      if (detailRow) {
+        detailRow.remove();
+        detailRow = null;
+        btn.textContent = 'Lihat Chunk';
+        return;
+      }
+      detailRow = document.createElement('tr');
+      detailRow.className = 'vec-detail-row';
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.textContent = 'Memuat chunk...';
+      detailRow.appendChild(cell);
+      tr.after(detailRow);
+      btn.textContent = 'Tutup';
+      try {
+        const res = await fetch(`${VEC_CHUNKS_URL}?source=${encodeURIComponent(s.source)}`);
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || `Kode ${res.status}`);
+        cell.textContent = '';
+        data.chunks.forEach((c) => {
+          const box = document.createElement('div');
+          box.className = 'vec-chunk';
+          const label = document.createElement('span');
+          label.className = 'vec-chunk-label';
+          label.textContent = `Chunk ${c.index} \u00b7 ${c.text.length} karakter`;
+          const pre = document.createElement('pre');
+          pre.textContent = c.text;
+          box.append(label, pre);
+          cell.appendChild(box);
+        });
+        if (!data.chunks.length) cell.textContent = 'Tidak ada chunk untuk sumber ini.';
+      } catch (err) {
+        cell.textContent = `Gagal memuat chunk: ${err.message}`;
+        cell.classList.add('sync-error');
+      }
+    });
+  });
+}
+
+async function loadVectorResult() {
+  vecEls.refresh.disabled = true;
+  vecShowMessage('Membaca isi vector DB...', false);
+  try {
+    const res = await fetch(VEC_URL);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      vecEls.summary.hidden = vecEls.tools.hidden = vecEls.tableWrap.hidden = true;
+      vecShowMessage(data.message || `Gagal membaca vector DB (kode ${res.status}).`, true);
+      return;
+    }
+    if (data.total_chunks === 0) {
+      vecEls.summary.hidden = vecEls.tools.hidden = vecEls.tableWrap.hidden = true;
+      vecShowMessage('Vector DB masih kosong. Jalankan sinkronisasi untuk melatih chatbot.', false);
+      return;
+    }
+    vecShowMessage('', false);
+    document.getElementById('vec-total-chunks').textContent = data.total_chunks.toLocaleString('id-ID');
+    document.getElementById('vec-total-sources').textContent = data.total_sources;
+    document.getElementById('vec-kind-dokumen').textContent = data.by_kind.dokumen || 0;
+    document.getElementById('vec-kind-budaya').textContent = data.by_kind.budaya || 0;
+    document.getElementById('vec-kind-wisata').textContent = data.by_kind.wisata || 0;
+    document.getElementById('vec-avg-chars').textContent = data.avg_chunk_chars;
+    vecSources = data.sources;
+    vecEls.summary.hidden = vecEls.tools.hidden = vecEls.tableWrap.hidden = false;
+    vecRenderRows();
+  } catch (err) {
+    vecShowMessage('Gagal menghubungi server saat membaca vector DB.', true);
+  } finally {
+    vecEls.refresh.disabled = false;
+  }
+}
+
+function vecIsOpen() {
+  return !vecEls.card.hidden;
+}
+
+// Hasil pelatihan disembunyikan secara default; baru dimuat saat tombol ditekan.
+vecEls.toggle.addEventListener('click', () => {
+  const open = !vecIsOpen();
+  vecEls.card.hidden = !open;
+  vecEls.toggle.setAttribute('aria-expanded', String(open));
+  vecEls.toggle.querySelector('span').textContent = open ? 'Sembunyikan Hasil Pelatihan' : 'Lihat Hasil Pelatihan';
+  vecEls.toggle.querySelector('i').className = open ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+  if (open) {
+    loadVectorResult();
+    vecEls.card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+});
+
+vecEls.refresh.addEventListener('click', loadVectorResult);
+vecEls.filter.addEventListener('input', vecRenderRows);
+document.querySelectorAll('#vec-kind-tabs .vec-tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('#vec-kind-tabs .vec-tab').forEach((t) => t.classList.remove('is-active'));
+    tab.classList.add('is-active');
+    vecKind = tab.dataset.kind;
+    vecRenderRows();
+  });
+});
 </script>
 {% endblock %}

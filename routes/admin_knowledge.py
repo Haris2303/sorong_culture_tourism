@@ -7,7 +7,10 @@ from flask import (
 )
 
 from core.auth import admin_required
-from core.sync_engine import get_sync_progress, is_sync_running, run_sync
+from extensions import limiter
+from core.sync_engine import (
+    get_sync_progress, inspect_vector_store, is_sync_running, list_source_chunks, run_sync,
+)
 from models import knowledge as knowledge_model
 from utils.uploads import delete_knowledge_file, save_uploaded_doc
 
@@ -77,6 +80,31 @@ def admin_sync_knowledge_status():
     return jsonify(get_sync_progress())
 
 
+@admin_required
+def admin_vector_db():
+    if is_sync_running():
+        return jsonify({"success": False, "message": "Sinkronisasi sedang berjalan; hasil tersedia setelah selesai."}), 409
+    try:
+        return jsonify({"success": True, **inspect_vector_store()})
+    except Exception as exc:
+        current_app.logger.exception("Gagal membaca vector DB")
+        return jsonify({"success": False, "message": f"Gagal membaca vector DB: {exc}"}), 500
+
+
+@admin_required
+def admin_vector_db_chunks():
+    source = request.args.get("source", "")
+    if not source:
+        return jsonify({"success": False, "message": "Parameter source wajib diisi."}), 400
+    if is_sync_running():
+        return jsonify({"success": False, "message": "Sinkronisasi sedang berjalan."}), 409
+    try:
+        return jsonify({"success": True, "chunks": list_source_chunks(source)})
+    except Exception as exc:
+        current_app.logger.exception("Gagal membaca chunk vector DB")
+        return jsonify({"success": False, "message": f"Gagal membaca chunk: {exc}"}), 500
+
+
 def register(app):
     app.add_url_rule("/admin/knowledge", endpoint="admin_knowledge", view_func=admin_knowledge)
     app.add_url_rule(
@@ -97,5 +125,16 @@ def register(app):
     )
     app.add_url_rule(
         "/admin/api/sync-knowledge/status", endpoint="admin_sync_knowledge_status",
-        view_func=admin_sync_knowledge_status, methods=["GET"],
+        # Di-poll tiap ~0,8 detik selama sinkronisasi berjalan; hanya baca state
+        # in-memory, jadi dibebaskan dari RATELIMIT_DEFAULT (50/jam) agar polling
+        # tidak berujung 429.
+        view_func=limiter.exempt(admin_sync_knowledge_status), methods=["GET"],
+    )
+    app.add_url_rule(
+        "/admin/api/vector-db", endpoint="admin_vector_db",
+        view_func=limiter.exempt(admin_vector_db), methods=["GET"],
+    )
+    app.add_url_rule(
+        "/admin/api/vector-db/chunks", endpoint="admin_vector_db_chunks",
+        view_func=limiter.exempt(admin_vector_db_chunks), methods=["GET"],
     )

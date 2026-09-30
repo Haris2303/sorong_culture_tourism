@@ -22,6 +22,7 @@ from langchain_chroma import Chroma
 from models import budaya as budaya_model
 from models import knowledge as knowledge_model
 from models import wisata as wisata_model
+from utils.timezone import now_wit
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class SyncProgress:
 
     def log(self, message: str, percent=None):
         with self._lock:
-            self.logs.append({"time": datetime.now().strftime("%H:%M:%S"), "message": message})
+            self.logs.append({"time": now_wit().strftime("%H:%M:%S"), "message": message})
             if percent is not None:
                 self.percent = max(0, min(100, percent))
         logger.info(message)
@@ -303,3 +304,54 @@ def get_last_sync_time():
         return datetime.fromisoformat(raw)
     except ValueError:
         return None
+
+
+# ============================================================
+# INSPEKSI: lihat isi vector DB hasil pelatihan
+# ============================================================
+
+def _open_vectorstore_readonly() -> Chroma:
+    """Buka koleksi Chroma tanpa embedding: cukup untuk membaca isi, tanpa memanggil API."""
+    return Chroma(
+        collection_name=current_app.config["CHROMA_COLLECTION_NAME"],
+        persist_directory=current_app.config["CHROMA_PERSIST_DIR"],
+    )
+
+
+def _source_kind(metadata: dict) -> str:
+    return metadata.get("table") or "dokumen"
+
+
+def inspect_vector_store() -> dict:
+    """Ringkasan isi vector DB: total chunk dan rincian per sumber."""
+    data = _open_vectorstore_readonly().get(include=["documents", "metadatas"])
+    documents = data.get("documents") or []
+    metadatas = data.get("metadatas") or []
+
+    sources: dict[str, dict] = {}
+    for text, meta in zip(documents, metadatas):
+        meta = meta or {}
+        name = meta.get("source") or "(tanpa sumber)"
+        entry = sources.setdefault(name, {"source": name, "kind": _source_kind(meta), "chunks": 0, "chars": 0})
+        entry["chunks"] += 1
+        entry["chars"] += len(text or "")
+
+    by_kind = {"dokumen": 0, "budaya": 0, "wisata": 0}
+    for entry in sources.values():
+        by_kind[entry["kind"]] = by_kind.get(entry["kind"], 0) + 1
+
+    total_chunks = len(documents)
+    total_chars = sum(e["chars"] for e in sources.values())
+    return {
+        "total_chunks": total_chunks,
+        "total_sources": len(sources),
+        "avg_chunk_chars": round(total_chars / total_chunks) if total_chunks else 0,
+        "by_kind": by_kind,
+        "sources": sorted(sources.values(), key=lambda e: (e["kind"], e["source"].lower())),
+    }
+
+
+def list_source_chunks(source: str) -> list[dict]:
+    """Seluruh potongan teks (chunk) milik satu sumber, sesuai urutan tersimpan."""
+    data = _open_vectorstore_readonly().get(where={"source": source}, include=["documents"])
+    return [{"index": i + 1, "text": text} for i, text in enumerate(data.get("documents") or [])]

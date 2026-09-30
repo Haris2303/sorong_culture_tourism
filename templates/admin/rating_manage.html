@@ -3,43 +3,54 @@
 {% block page_title %}Moderasi Rating & Ulasan{% endblock %}
 {% block admin_content %}
 <div class="admin-table-card">
+  <div class="admin-table-header">
+    <h2>Daftar Ulasan Pengunjung</h2>
+    <span class="count-pill">{{ items|length }} ulasan</span>
+  </div>
   <div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
-      <tr><th>Destinasi</th><th>Skor</th><th>Komentar</th><th>Tanggal</th><th>Status</th><th>Aksi</th></tr>
+      <tr><th class="col-no">No</th><th>Destinasi</th><th>Skor</th><th>Komentar</th><th>Tanggal</th><th>Status</th><th class="col-actions">Aksi</th></tr>
     </thead>
     <tbody>
       {% for r in items %}
-      <tr>
-        <td>{{ r.nama_wisata }}</td>
-        <td>{{ '⭐' * r.skor_bintang }}</td>
-        <td>{{ r.komentar or '-' }}</td>
-        <td>{{ r.created_at.strftime('%d %b %Y %H:%M') }}</td>
-        <td><span class="badge badge-{{ r.status_tampil }}">{{ r.status_tampil }}</span></td>
+      <tr style="--i: {{ loop.index0 }}">
+        <td class="col-no">{{ loop.index }}</td>
+        <td><strong class="cell-title">{{ r.nama_wisata }}</strong></td>
+        <td>
+          <span class="score-stars" aria-label="{{ r.skor_bintang }} dari 5">{{ '★' * r.skor_bintang }}<span>{{ '★' * (5 - r.skor_bintang) }}</span></span>
+          <span class="score-num">{{ r.skor_bintang }}/5</span>
+        </td>
+        <td class="cell-comment">{% if r.komentar %}{{ r.komentar }}{% else %}<em>Tanpa komentar</em>{% endif %}</td>
+        <td>
+          <span class="cell-date">{{ r.created_at.strftime('%d %b %Y') }}</span>
+          <span class="cell-time">{{ r.created_at.strftime('%H:%M') }}</span>
+        </td>
+        <td><span class="badge badge-dot badge-{{ r.status_tampil }}">{{ {'approved': 'Tampil', 'pending': 'Menunggu', 'rejected': 'Ditolak'}[r.status_tampil] }}</span></td>
         <td class="table-actions">
           {% if r.status_tampil != 'approved' %}
           <form method="post" action="{{ url_for('admin_rating_status', rating_id=r.id) }}" class="inline-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="status" value="approved">
-            <button type="submit" class="btn btn-small btn-primary">Setujui</button>
+            <button type="submit" class="icon-btn icon-btn--ok" title="Setujui ulasan" aria-label="Setujui ulasan"><i class="fa-solid fa-check"></i></button>
           </form>
           {% endif %}
           {% if r.status_tampil != 'rejected' %}
           <form method="post" action="{{ url_for('admin_rating_status', rating_id=r.id) }}" class="inline-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="status" value="rejected">
-            <button type="submit" class="btn btn-small btn-outline">Tolak</button>
+            <button type="submit" class="icon-btn icon-btn--warn" title="Tolak ulasan" aria-label="Tolak ulasan"><i class="fa-solid fa-ban"></i></button>
           </form>
           {% endif %}
           <form method="post" action="{{ url_for('admin_rating_delete', rating_id=r.id) }}" class="inline-form"
-                onsubmit="return confirm('Hapus ulasan ini?');">
+                data-confirm="Ulasan yang dihapus tidak dapat dikembalikan. Lanjutkan?" data-confirm-title="Hapus ulasan?">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-small btn-danger">Hapus</button>
+            <button type="submit" class="icon-btn icon-btn--danger" title="Hapus ulasan" aria-label="Hapus ulasan"><i class="fa-solid fa-trash"></i></button>
           </form>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="6" class="empty-state">Belum ada ulasan masuk.</td></tr>
+      <tr><td colspan="7" class="empty-state"><i class="fa-regular fa-comment-dots"></i>Belum ada ulasan masuk.</td></tr>
       {% endfor %}
     </tbody>
   </table>

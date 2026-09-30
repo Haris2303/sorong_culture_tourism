@@ -17,6 +17,10 @@ def create(nama_file, tipe_file, path_file):
     )
 
 
+def count_unindexed():
+    return dbcore.query_one("SELECT COUNT(*) AS c FROM knowledge_docs WHERE status_indexed = FALSE")["c"]
+
+
 def get_by_id(doc_id):
     return dbcore.query_one("SELECT * FROM knowledge_docs WHERE id = %s", (doc_id,))
 

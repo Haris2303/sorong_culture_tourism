@@ -6,6 +6,12 @@
   const DEFAULTS = { maxDimension: 1920, quality: 0.82, maxGaleriFiles: 12 };
   const cfg = Object.assign({}, DEFAULTS, window.ADMIN_UPLOAD_CONFIG || {});
 
+  // Tampilkan pesan lewat toast admin; jatuh ke alert bawaan bila AdminUI belum termuat.
+  function notify(type, message, title) {
+    if (window.AdminUI) window.AdminUI.toast(type, message, { title, duration: 8000 });
+    else alert(message);
+  }
+
   let webpSupportChecked = null;
   function supportsWebpEncoding() {
     if (webpSupportChecked !== null) return webpSupportChecked;
@@ -146,10 +152,36 @@
     const emptyText = options.emptyText || 'Belum ada file dipilih';
     const form = input.closest('form');
     const submitBtn = form ? form.querySelector('.form-actions button[type="submit"]') : null;
+    const previewEl = options.previewId ? document.getElementById(options.previewId) : null;
+    let previewUrls = [];
+
+    // Thumbnail gambar yang baru dipilih (belum tersimpan), supaya admin bisa
+    // memastikan file-nya benar sebelum menekan Simpan.
+    function renderPreview(files) {
+      if (!previewEl) return;
+      previewUrls.forEach((u) => URL.revokeObjectURL(u));
+      previewUrls = [];
+      previewEl.innerHTML = '';
+      Array.from(files || []).forEach((f) => {
+        const url = URL.createObjectURL(f);
+        previewUrls.push(url);
+        const thumb = document.createElement('div');
+        thumb.className = 'gallery-thumb';
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = f.name;
+        thumb.appendChild(img);
+        previewEl.appendChild(thumb);
+      });
+      previewEl.hidden = previewUrls.length === 0;
+    }
+
+    if (form) form.addEventListener('reset', () => renderPreview([]));
 
     input.addEventListener('change', async () => {
       if (!input.files || input.files.length === 0) {
         nameEl.textContent = emptyText;
+        renderPreview([]);
         return;
       }
 
@@ -166,6 +198,7 @@
       const dt = new DataTransfer();
       result.files.forEach((f) => dt.items.add(f));
       input.files = dt.files;
+      renderPreview(result.files);
 
       if (result.files.length === 0) {
         nameEl.textContent = emptyText;
@@ -176,10 +209,10 @@
       }
 
       if (result.rejected.length) {
-        alert(`Berkas berikut dilewati karena bukan gambar yang valid:\n- ${result.rejected.join('\n- ')}`);
+        notify('warning', `Berkas berikut dilewati karena bukan gambar yang valid:\n- ${result.rejected.join('\n- ')}`, 'Berkas dilewati');
       }
       if (result.truncated) {
-        alert(`Maksimal ${maxCount} foto galeri per unggahan. Hanya ${maxCount} foto pertama yang dipakai.`);
+        notify('warning', `Maksimal ${maxCount} foto galeri per unggahan. Hanya ${maxCount} foto pertama yang dipakai.`, 'Foto melebihi batas');
       }
     });
   }

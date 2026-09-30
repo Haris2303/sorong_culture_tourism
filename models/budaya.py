@@ -44,6 +44,13 @@ def list_kategori_distinct():
     return dbcore.query_all("SELECT DISTINCT kategori FROM budaya ORDER BY kategori")
 
 
+def count_changed_since(since):
+    """Jumlah artikel yang dibuat/diubah setelah `since` (None = semua)."""
+    if since is None:
+        return dbcore.query_one("SELECT COUNT(*) AS c FROM budaya")["c"]
+    return dbcore.query_one("SELECT COUNT(*) AS c FROM budaya WHERE updated_at > %s", (since,))["c"]
+
+
 def get_by_id(budaya_id):
     return dbcore.query_one("SELECT * FROM budaya WHERE id = %s", (budaya_id,))
 

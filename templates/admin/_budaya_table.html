@@ -1,29 +1,46 @@
   <div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
-      <tr><th>Judul</th><th>Kategori</th><th>Diperbarui</th><th>Aksi</th></tr>
+      <tr><th class="col-no">No</th><th>Artikel</th><th>Kategori</th><th>Diperbarui</th><th class="col-actions">Aksi</th></tr>
     </thead>
     <tbody>
       {% for item in items %}
-      <tr>
-        <td>{{ item.judul }}</td>
-        <td>{{ item.kategori }}</td>
-        <td>{{ item.updated_at.strftime('%d %b %Y') }}</td>
+      <tr style="--i: {{ loop.index0 }}">
+        <td class="col-no">{{ loop.index + pagination.offset }}</td>
+        <td>
+          <div class="cell-item">
+            {% if item.gambar %}
+            <img class="cell-thumb" src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="" loading="lazy">
+            {% else %}
+            <span class="cell-thumb cell-thumb--empty cell-thumb--budaya"><i class="fa-solid fa-landmark"></i></span>
+            {% endif %}
+            <div class="cell-text">
+              <strong class="cell-title">{{ item.judul }}</strong>
+              <span class="cell-sub">{{ item.ringkasan }}</span>
+            </div>
+          </div>
+        </td>
+        <td><span class="tag tag--budaya">{{ item.kategori }}</span></td>
+        <td>
+          <span class="cell-date">{{ item.updated_at.strftime('%d %b %Y') }}</span>
+          <span class="cell-time">{{ item.updated_at.strftime('%H:%M') }}</span>
+        </td>
         <td class="table-actions">
-          <button type="button" class="btn btn-small btn-outline edit-budaya-btn"
+          <button type="button" class="icon-btn icon-btn--edit edit-budaya-btn" title="Edit artikel" aria-label="Edit artikel"
             data-id="{{ item.id }}" data-judul="{{ item.judul }}" data-kategori="{{ item.kategori }}"
             data-ringkasan="{{ item.ringkasan }}" data-konten="{{ item.konten_lengkap }}"
             data-gambar="{{ item.gambar or '' }}"
-            data-galeri="{{ item.galeri | tojson | forceescape }}">Edit</button>
+            data-galeri="{{ item.galeri | tojson | forceescape }}"><i class="fa-solid fa-pen"></i></button>
           <form method="post" action="{{ url_for('admin_budaya_delete', budaya_id=item.id) }}" class="inline-form"
-                onsubmit="return confirm('Hapus artikel ini?');">
+                data-confirm="Artikel yang dihapus tidak dapat dikembalikan. Lanjutkan?" data-confirm-title="Hapus artikel?">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-small btn-danger">Hapus</button>
+            <button type="submit" class="icon-btn icon-btn--danger" title="Hapus artikel" aria-label="Hapus artikel"><i class="fa-solid fa-trash"></i></button>
           </form>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="4" class="empty-state">
+      <tr><td colspan="5" class="empty-state">
+        <i class="fa-regular fa-folder-open"></i>
         {% if q %}Tidak ada artikel yang cocok dengan "{{ q }}".{% else %}Belum ada data.{% endif %}
       </td></tr>
       {% endfor %}

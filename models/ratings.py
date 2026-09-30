@@ -64,6 +64,18 @@ def count_pending():
     return dbcore.query_one("SELECT COUNT(*) AS c FROM ratings WHERE status_tampil = 'pending'")["c"]
 
 
+def distribution_approved():
+    """Jumlah ulasan approved per skor, dikembalikan sebagai {1: n, ..., 5: n}."""
+    rows = dbcore.query_all(
+        "SELECT skor_bintang, COUNT(*) AS c FROM ratings "
+        "WHERE status_tampil = 'approved' GROUP BY skor_bintang"
+    )
+    dist = {star: 0 for star in range(1, 6)}
+    for r in rows:
+        dist[r["skor_bintang"]] = r["c"]
+    return dist
+
+
 def average_approved_score():
     row = dbcore.query_one("SELECT AVG(skor_bintang) AS avg_score FROM ratings WHERE status_tampil = 'approved'")
     return row["avg_score"]

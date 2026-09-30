@@ -40,7 +40,11 @@
 <div class="modal-overlay" id="budaya-modal-overlay" hidden>
   <div class="modal-panel">
     <div class="modal-header">
-      <h2 id="budaya-modal-title">Tambah Artikel Budaya</h2>
+      <span class="modal-header-icon modal-header-icon--budaya"><i class="fa-solid fa-landmark"></i></span>
+      <div class="modal-header-text">
+        <h2 id="budaya-modal-title">Tambah Artikel Budaya</h2>
+        <p>Lengkapi informasi artikel yang akan tampil di halaman budaya.</p>
+      </div>
       <button type="button" class="modal-close-btn" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
@@ -48,10 +52,12 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" id="edit-id">
 
-        <label>Judul</label>
+        <div class="form-section-title"><span class="form-section-no"><i class="fa-solid fa-pen-nib"></i></span><span>Informasi Artikel</span></div>
+
+        <label>Judul <b class="req">*</b></label>
         <input type="text" name="judul" id="f-judul" required>
 
-        <label>Kategori</label>
+        <label>Kategori <b class="req">*</b></label>
         <div class="radio-group radio-group--budaya" id="f-kategori-group">
           {% for opt in kategori_options %}
           <label class="radio-option">
@@ -61,19 +67,22 @@
           {% endfor %}
         </div>
 
-        <label>Ringkasan</label>
+        <label>Ringkasan <b class="req">*</b></label>
         <textarea name="ringkasan" id="f-ringkasan" rows="2" required></textarea>
 
-        <label>Konten Lengkap</label>
+        <label>Konten Lengkap <b class="req">*</b></label>
         <div class="wysiwyg-editor" id="f-konten-editor"></div>
         <textarea name="konten_lengkap" id="f-konten" hidden></textarea>
 
-        <label>Gambar Utama (opsional)</label>
+        <div class="form-section-title"><span class="form-section-no"><i class="fa-solid fa-images"></i></span><span>Media & Galeri</span><span class="form-section-hint">opsional</span></div>
+
+        <label>Gambar Utama</label>
         <div class="file-input-wrap">
           <input type="file" name="gambar" id="f-gambar" accept=".png,.jpg,.jpeg,.webp" class="file-input-native">
           <label for="f-gambar" class="file-input-btn"><i class="fa-solid fa-upload"></i>Pilih Gambar</label>
           <span class="file-input-name" id="f-gambar-name">Belum ada file dipilih</span>
         </div>
+        <div class="gallery-thumbs upload-preview" id="f-gambar-preview" hidden></div>
         <div class="gallery-preview" id="gambar-preview" hidden>
           <label>Gambar Utama Saat Ini</label>
           <div class="gallery-thumbs">
@@ -83,12 +92,13 @@
           </div>
         </div>
 
-        <label>Galeri Foto Tambahan (opsional, bisa pilih beberapa gambar sekaligus)</label>
+        <label>Galeri Foto Tambahan <span class="label-note">bisa pilih beberapa sekaligus</span></label>
         <div class="file-input-wrap">
           <input type="file" name="galeri" id="f-galeri" accept=".png,.jpg,.jpeg,.webp" multiple class="file-input-native">
           <label for="f-galeri" class="file-input-btn"><i class="fa-solid fa-images"></i>Pilih Galeri</label>
           <span class="file-input-name" id="f-galeri-name">Belum ada file dipilih</span>
         </div>
+        <div class="gallery-thumbs upload-preview" id="f-galeri-preview" hidden></div>
         <small class="form-hint">Gambar utama + galeri akan tampil sebagai slider di halaman detail budaya.</small>
 
         <div class="gallery-preview" id="gallery-preview" hidden>
@@ -97,8 +107,9 @@
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Simpan</button>
+          <span class="form-actions-note"><i class="fa-regular fa-lightbulb"></i>Kolom bertanda <b>*</b> wajib diisi</span>
           <button type="button" id="reset-form-btn" class="btn btn-outline">Batal</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Simpan</button>
         </div>
       </form>
     </div>
@@ -135,8 +146,8 @@ function isKontenEmpty() {
 }
 
 // ---------- Nama file + optimasi otomatis (resize & convert ke WebP) ----------
-ImageOptimizer.attachImageOptimizer('f-gambar', 'f-gambar-name');
-ImageOptimizer.attachImageOptimizer('f-galeri', 'f-galeri-name', { multiple: true });
+ImageOptimizer.attachImageOptimizer('f-gambar', 'f-gambar-name', { previewId: 'f-gambar-preview' });
+ImageOptimizer.attachImageOptimizer('f-galeri', 'f-galeri-name', { multiple: true, previewId: 'f-galeri-preview' });
 
 // ---------- Preview galeri foto saat ini (muncul saat Edit) ----------
 const galleryPreview = document.getElementById('gallery-preview');
@@ -196,7 +207,7 @@ function renderGalleryPreview(galeri) {
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!confirm('Hapus foto ini?')) return;
+      if (!(await AdminUI.confirm({ title: 'Hapus foto?', message: 'Foto galeri ini akan dihapus permanen.', confirmText: 'Ya, Hapus', tone: 'danger' }))) return;
       delBtn.disabled = true;
       try {
         await deleteViaAjax(form);
@@ -204,7 +215,7 @@ function renderGalleryPreview(galeri) {
         removeGaleriFromEditButton(g.id);
         if (!galleryPreviewThumbs.children.length) galleryPreview.hidden = true;
       } catch (err) {
-        alert('Gagal menghapus foto. Coba lagi.');
+        AdminUI.toast('error', 'Gagal menghapus foto. Coba lagi.');
         delBtn.disabled = false;
       }
     });
@@ -250,7 +261,7 @@ function renderGambarPreview(filename, budayaId) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!confirm('Hapus gambar utama ini?')) return;
+    if (!(await AdminUI.confirm({ title: 'Hapus gambar utama?', message: 'Gambar utama ini akan dihapus permanen.', confirmText: 'Ya, Hapus', tone: 'danger' }))) return;
     delBtn.disabled = true;
     try {
       await deleteViaAjax(form);
@@ -260,7 +271,7 @@ function renderGambarPreview(filename, budayaId) {
       const btn = document.querySelector(`.edit-budaya-btn[data-id="${budayaId}"]`);
       if (btn) btn.dataset.gambar = '';
     } catch (err) {
-      alert('Gagal menghapus gambar. Coba lagi.');
+      AdminUI.toast('error', 'Gagal menghapus gambar. Coba lagi.');
       delBtn.disabled = false;
     }
   });
@@ -288,6 +299,8 @@ document.getElementById('add-budaya-btn').addEventListener('click', () => {
 function bindEditBudayaButtons() {
 document.querySelectorAll('.edit-budaya-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    // Bersihkan sisa pilihan file/preview dari sesi modal sebelumnya.
+    resetBudayaForm();
     document.getElementById('edit-id').value = btn.dataset.id;
     document.getElementById('f-judul').value = btn.dataset.judul;
     document.getElementById('f-ringkasan').value = btn.dataset.ringkasan;
@@ -370,7 +383,7 @@ budayaPerPageSelect.addEventListener('change', () => {
 document.querySelector('.admin-form').addEventListener('submit', (e) => {
   if (ImageOptimizer.isCompressing(e.target)) {
     e.preventDefault();
-    alert('Gambar masih diproses (resize & kompres). Tunggu sebentar lalu klik Simpan lagi.');
+    AdminUI.toast('warning', 'Gambar masih diproses (resize & kompres). Tunggu sebentar lalu klik Simpan lagi.', { title: 'Mohon tunggu' });
     return;
   }
   const totalBytes = ImageOptimizer.totalFileSize(
@@ -380,15 +393,16 @@ document.querySelector('.admin-form').addEventListener('submit', (e) => {
   const maxBytes = ImageOptimizer.config.maxContentBytes || Infinity;
   if (totalBytes > maxBytes * 0.9) {
     e.preventDefault();
-    alert(
+    AdminUI.alert(
       `Total ukuran gambar (${(totalBytes / 1024 / 1024).toFixed(1)} MB) masih terlalu besar. ` +
-      'Kurangi jumlah foto galeri, lalu coba lagi.'
+      'Kurangi jumlah foto galeri, lalu coba lagi.',
+      { title: 'Ukuran gambar terlalu besar', type: 'warning' }
     );
     return;
   }
   if (isKontenEmpty()) {
     e.preventDefault();
-    alert('Konten lengkap wajib diisi.');
+    AdminUI.toast('warning', 'Konten lengkap wajib diisi.', { title: 'Form belum lengkap' });
     return;
   }
   kontenInput.value = kontenQuill.root.innerHTML;

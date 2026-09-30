@@ -2,8 +2,17 @@
 from datetime import datetime
 
 
+def pending_review_count():
+    """Jumlah ulasan menunggu moderasi (badge sidebar admin). Dipanggil lazy dari template."""
+    from models import ratings as ratings_model
+    try:
+        return ratings_model.count_pending()
+    except Exception:
+        return 0
+
+
 def inject_globals():
-    return {"current_year": datetime.utcnow().year}
+    return {"current_year": datetime.utcnow().year, "pending_review_count": pending_review_count}
 
 
 def social_url_filter(value):

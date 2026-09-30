@@ -1,16 +1,32 @@
   <div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
-      <tr><th>Nama</th><th>Wilayah</th><th>Diperbarui</th><th>Aksi</th></tr>
+      <tr><th class="col-no">No</th><th>Destinasi</th><th>Wilayah</th><th>Diperbarui</th><th class="col-actions">Aksi</th></tr>
     </thead>
     <tbody>
       {% for item in items %}
-      <tr>
-        <td>{{ item.nama_wisata }}</td>
-        <td>{{ item.wilayah }}</td>
-        <td>{{ item.updated_at.strftime('%d %b %Y') }}</td>
+      <tr style="--i: {{ loop.index0 }}">
+        <td class="col-no">{{ loop.index + pagination.offset }}</td>
+        <td>
+          <div class="cell-item">
+            {% if item.gambar %}
+            <img class="cell-thumb" src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="" loading="lazy">
+            {% else %}
+            <span class="cell-thumb cell-thumb--empty cell-thumb--wisata"><i class="fa-solid fa-compass"></i></span>
+            {% endif %}
+            <div class="cell-text">
+              <strong class="cell-title">{{ item.nama_wisata }}</strong>
+              <span class="cell-sub"><i class="fa-solid fa-location-dot"></i>{{ item.alamat or 'Alamat belum diisi' }}</span>
+            </div>
+          </div>
+        </td>
+        <td><span class="tag {{ 'tag--kota' if item.wilayah == 'Kota Sorong' else 'tag--kabupaten' }}">{{ item.wilayah }}</span></td>
+        <td>
+          <span class="cell-date">{{ item.updated_at.strftime('%d %b %Y') }}</span>
+          <span class="cell-time">{{ item.updated_at.strftime('%H:%M') }}</span>
+        </td>
         <td class="table-actions">
-          <button type="button" class="btn btn-small btn-outline edit-wisata-btn"
+          <button type="button" class="icon-btn icon-btn--edit edit-wisata-btn" title="Edit destinasi" aria-label="Edit destinasi"
             data-id="{{ item.id }}" data-nama="{{ item.nama_wisata }}" data-wilayah="{{ item.wilayah }}"
             data-deskripsi="{{ item.deskripsi }}" data-fasilitas="{{ item.fasilitas }}"
             data-alamat="{{ item.alamat }}" data-tiket="{{ item.tiket_masuk }}" data-jam="{{ item.jam_operasional }}"
@@ -21,16 +37,17 @@
             data-sosmed-facebook="{{ item.sosmed_facebook or '' }}"
             data-sosmed-instagram="{{ item.sosmed_instagram or '' }}"
             data-sosmed-youtube="{{ item.sosmed_youtube or '' }}"
-            data-galeri="{{ item.galeri | tojson | forceescape }}">Edit</button>
+            data-galeri="{{ item.galeri | tojson | forceescape }}"><i class="fa-solid fa-pen"></i></button>
           <form method="post" action="{{ url_for('admin_wisata_delete', wisata_id=item.id) }}" class="inline-form"
-                onsubmit="return confirm('Hapus destinasi ini?');">
+                data-confirm="Destinasi beserta foto galerinya akan dihapus permanen. Lanjutkan?" data-confirm-title="Hapus destinasi?">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-small btn-danger">Hapus</button>
+            <button type="submit" class="icon-btn icon-btn--danger" title="Hapus destinasi" aria-label="Hapus destinasi"><i class="fa-solid fa-trash"></i></button>
           </form>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="4" class="empty-state">
+      <tr><td colspan="5" class="empty-state">
+        <i class="fa-regular fa-folder-open"></i>
         {% if q %}Tidak ada destinasi yang cocok dengan "{{ q }}".{% else %}Belum ada data.{% endif %}
       </td></tr>
       {% endfor %}

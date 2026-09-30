@@ -40,7 +40,11 @@
 <div class="modal-overlay" id="wisata-modal-overlay" hidden>
   <div class="modal-panel">
     <div class="modal-header">
-      <h2 id="wisata-modal-title">Tambah Destinasi Wisata</h2>
+      <span class="modal-header-icon modal-header-icon--wisata"><i class="fa-solid fa-compass"></i></span>
+      <div class="modal-header-text">
+        <h2 id="wisata-modal-title">Tambah Destinasi Wisata</h2>
+        <p>Lengkapi informasi destinasi yang akan tampil di halaman wisata.</p>
+      </div>
       <button type="button" class="modal-close-btn" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
@@ -48,10 +52,12 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" id="edit-id">
 
-        <label>Nama Wisata</label>
+        <div class="form-section-title"><span class="form-section-no"><i class="fa-solid fa-circle-info"></i></span><span>Informasi Umum</span></div>
+
+        <label>Nama Wisata <b class="req">*</b></label>
         <input type="text" name="nama_wisata" id="f-nama" required>
 
-        <label>Wilayah</label>
+        <label>Wilayah <b class="req">*</b></label>
         <div class="radio-group radio-group--wisata" id="f-wilayah-group">
           <label class="radio-option">
             <input type="radio" name="wilayah" value="Kota Sorong" checked required>
@@ -63,17 +69,19 @@
           </label>
         </div>
 
-        <label>Deskripsi</label>
+        <label>Deskripsi <b class="req">*</b></label>
         <div class="wysiwyg-editor" id="f-deskripsi-editor"></div>
         <textarea name="deskripsi" id="f-deskripsi" hidden></textarea>
 
-        <label>Fasilitas</label>
+        <div class="form-section-title"><span class="form-section-no"><i class="fa-solid fa-map-location-dot"></i></span><span>Lokasi & Operasional</span></div>
+
+        <label>Fasilitas <b class="req">*</b></label>
         <textarea name="fasilitas" id="f-fasilitas" rows="2" required></textarea>
 
-        <label>Alamat</label>
+        <label>Alamat <b class="req">*</b></label>
         <input type="text" name="alamat" id="f-alamat" placeholder="Jl. ..., Distrik ..., Kota/Kabupaten Sorong" required>
 
-        <label>Tiket Masuk</label>
+        <label>Tiket Masuk <b class="req">*</b></label>
         <div class="radio-group radio-group--wisata" id="f-tiket-group">
           {% for opt in tiket_options %}
           <label class="radio-option">
@@ -92,17 +100,20 @@
         <label>Jam Operasional</label>
         <input type="text" name="jam_operasional" id="f-jam" placeholder="Setiap Hari">
 
-        <label>Koordinat Lokasi (opsional)</label>
+        <label>Koordinat Lokasi <span class="label-note">opsional</span></label>
         <input type="text" name="koordinat" id="f-koordinat"
                placeholder='Contoh: -0.859042, 131.247695 atau 0°44&#39;11.6&quot;S 131°35&#39;01.1&quot;E'>
         <small class="form-hint">Diisi format desimal (lat, lon) atau DMS. Dipakai untuk menampilkan peta lokasi di halaman detail wisata.</small>
 
-        <label>Gambar Utama (opsional)</label>
+        <div class="form-section-title"><span class="form-section-no"><i class="fa-solid fa-images"></i></span><span>Media & Galeri</span><span class="form-section-hint">opsional</span></div>
+
+        <label>Gambar Utama</label>
         <div class="file-input-wrap">
           <input type="file" name="gambar" id="f-gambar" accept=".png,.jpg,.jpeg,.webp" class="file-input-native">
           <label for="f-gambar" class="file-input-btn"><i class="fa-solid fa-upload"></i>Pilih Gambar</label>
           <span class="file-input-name" id="f-gambar-name">Belum ada file dipilih</span>
         </div>
+        <div class="gallery-thumbs upload-preview" id="f-gambar-preview" hidden></div>
         <div class="gallery-preview" id="gambar-preview" hidden>
           <label>Gambar Utama Saat Ini</label>
           <div class="gallery-thumbs">
@@ -112,12 +123,13 @@
           </div>
         </div>
 
-        <label>Galeri Foto Tambahan (opsional, bisa pilih beberapa gambar sekaligus)</label>
+        <label>Galeri Foto Tambahan <span class="label-note">bisa pilih beberapa sekaligus</span></label>
         <div class="file-input-wrap">
           <input type="file" name="galeri" id="f-galeri" accept=".png,.jpg,.jpeg,.webp" multiple class="file-input-native">
           <label for="f-galeri" class="file-input-btn"><i class="fa-solid fa-images"></i>Pilih Galeri</label>
           <span class="file-input-name" id="f-galeri-name">Belum ada file dipilih</span>
         </div>
+        <div class="gallery-thumbs upload-preview" id="f-galeri-preview" hidden></div>
         <small class="form-hint">Gambar utama + galeri akan tampil sebagai slider di halaman detail wisata.</small>
 
         <div class="gallery-preview" id="gallery-preview" hidden>
@@ -125,7 +137,7 @@
           <div class="gallery-thumbs" id="gallery-preview-thumbs"></div>
         </div>
 
-        <label>Kontak &amp; Media Sosial (opsional)</label>
+        <div class="form-section-title"><span class="form-section-no"><i class="fa-solid fa-share-nodes"></i></span><span>Kontak & Media Sosial</span><span class="form-section-hint">opsional</span></div>
         <div class="sosmed-grid">
           <div class="sosmed-field">
             <label for="f-sosmed-email"><i class="fa-solid fa-envelope"></i>Email</label>
@@ -146,8 +158,9 @@
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Simpan</button>
+          <span class="form-actions-note"><i class="fa-regular fa-lightbulb"></i>Kolom bertanda <b>*</b> wajib diisi</span>
           <button type="button" id="reset-form-btn" class="btn btn-outline">Batal</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Simpan</button>
         </div>
       </form>
     </div>
@@ -200,8 +213,8 @@ tiketGroup.querySelectorAll('input[type="radio"]').forEach(r => {
 });
 
 // ---------- Nama file + optimasi otomatis (resize & convert ke WebP) ----------
-ImageOptimizer.attachImageOptimizer('f-gambar', 'f-gambar-name');
-ImageOptimizer.attachImageOptimizer('f-galeri', 'f-galeri-name', { multiple: true });
+ImageOptimizer.attachImageOptimizer('f-gambar', 'f-gambar-name', { previewId: 'f-gambar-preview' });
+ImageOptimizer.attachImageOptimizer('f-galeri', 'f-galeri-name', { multiple: true, previewId: 'f-galeri-preview' });
 
 // ---------- Preview galeri foto saat ini (muncul saat Edit) ----------
 const galleryPreview = document.getElementById('gallery-preview');
@@ -261,7 +274,7 @@ function renderGalleryPreview(galeri) {
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!confirm('Hapus foto ini?')) return;
+      if (!(await AdminUI.confirm({ title: 'Hapus foto?', message: 'Foto galeri ini akan dihapus permanen.', confirmText: 'Ya, Hapus', tone: 'danger' }))) return;
       delBtn.disabled = true;
       try {
         await deleteViaAjax(form);
@@ -269,7 +282,7 @@ function renderGalleryPreview(galeri) {
         removeGaleriFromEditButton(g.id);
         if (!galleryPreviewThumbs.children.length) galleryPreview.hidden = true;
       } catch (err) {
-        alert('Gagal menghapus foto. Coba lagi.');
+        AdminUI.toast('error', 'Gagal menghapus foto. Coba lagi.');
         delBtn.disabled = false;
       }
     });
@@ -315,7 +328,7 @@ function renderGambarPreview(filename, wisataId) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!confirm('Hapus gambar utama ini?')) return;
+    if (!(await AdminUI.confirm({ title: 'Hapus gambar utama?', message: 'Gambar utama ini akan dihapus permanen.', confirmText: 'Ya, Hapus', tone: 'danger' }))) return;
     delBtn.disabled = true;
     try {
       await deleteViaAjax(form);
@@ -325,7 +338,7 @@ function renderGambarPreview(filename, wisataId) {
       const btn = document.querySelector(`.edit-wisata-btn[data-id="${wisataId}"]`);
       if (btn) btn.dataset.gambar = '';
     } catch (err) {
-      alert('Gagal menghapus gambar. Coba lagi.');
+      AdminUI.toast('error', 'Gagal menghapus gambar. Coba lagi.');
       delBtn.disabled = false;
     }
   });
@@ -355,6 +368,8 @@ document.getElementById('add-wisata-btn').addEventListener('click', () => {
 function bindEditWisataButtons() {
 document.querySelectorAll('.edit-wisata-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    // Bersihkan sisa pilihan file/preview dari sesi modal sebelumnya.
+    resetWisataForm();
     document.getElementById('edit-id').value = btn.dataset.id;
     document.getElementById('f-nama').value = btn.dataset.nama;
     wilayahGroup.querySelectorAll('input[type="radio"]').forEach(r => {
@@ -455,7 +470,7 @@ wisataPerPageSelect.addEventListener('change', () => {
 document.querySelector('.admin-form').addEventListener('submit', (e) => {
   if (ImageOptimizer.isCompressing(e.target)) {
     e.preventDefault();
-    alert('Gambar masih diproses (resize & kompres). Tunggu sebentar lalu klik Simpan lagi.');
+    AdminUI.toast('warning', 'Gambar masih diproses (resize & kompres). Tunggu sebentar lalu klik Simpan lagi.', { title: 'Mohon tunggu' });
     return;
   }
   const totalBytes = ImageOptimizer.totalFileSize(
@@ -465,15 +480,16 @@ document.querySelector('.admin-form').addEventListener('submit', (e) => {
   const maxBytes = ImageOptimizer.config.maxContentBytes || Infinity;
   if (totalBytes > maxBytes * 0.9) {
     e.preventDefault();
-    alert(
+    AdminUI.alert(
       `Total ukuran gambar (${(totalBytes / 1024 / 1024).toFixed(1)} MB) masih terlalu besar. ` +
-      'Kurangi jumlah foto galeri, lalu coba lagi.'
+      'Kurangi jumlah foto galeri, lalu coba lagi.',
+      { title: 'Ukuran gambar terlalu besar', type: 'warning' }
     );
     return;
   }
   if (isDeskripsiEmpty()) {
     e.preventDefault();
-    alert('Deskripsi wajib diisi.');
+    AdminUI.toast('warning', 'Deskripsi wajib diisi.', { title: 'Form belum lengkap' });
     return;
   }
   deskripsiInput.value = deskripsiQuill.root.innerHTML;

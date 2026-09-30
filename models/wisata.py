@@ -60,6 +60,24 @@ def list_highlight(limit=3):
     )
 
 
+def top_rated(limit=5):
+    """Destinasi dengan rata-rata rating approved tertinggi (minimal 1 ulasan)."""
+    return dbcore.query_all(
+        "SELECT w.id, w.nama_wisata, w.wilayah, AVG(r.skor_bintang) AS avg_score, "
+        "COUNT(r.id) AS total FROM wisata w JOIN ratings r ON r.wisata_id = w.id "
+        "AND r.status_tampil = 'approved' GROUP BY w.id, w.nama_wisata, w.wilayah "
+        "ORDER BY avg_score DESC, total DESC LIMIT %s",
+        (limit,),
+    )
+
+
+def count_changed_since(since):
+    """Jumlah destinasi yang dibuat/diubah setelah `since` (None = semua)."""
+    if since is None:
+        return dbcore.query_one("SELECT COUNT(*) AS c FROM wisata")["c"]
+    return dbcore.query_one("SELECT COUNT(*) AS c FROM wisata WHERE updated_at > %s", (since,))["c"]
+
+
 def get_by_id(wisata_id):
     return dbcore.query_one("SELECT * FROM wisata WHERE id = %s", (wisata_id,))
 
