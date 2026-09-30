@@ -281,7 +281,9 @@ h4 {
   border-bottom: 1px solid var(--glass-line);
   box-shadow: 0 1px 0 rgba(11, 41, 71, 0.06);
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
   .navbar {
     background: rgba(238, 245, 252, 0.97);
   }
@@ -599,7 +601,9 @@ h4 {
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     0 30px 60px -24px rgba(3, 12, 24, 0.6);
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
   .hero-card {
     background: rgba(8, 26, 46, 0.82);
   }
@@ -695,7 +699,7 @@ h4 {
   overflow: hidden;
   background-color: #062f44;
   background-image:
-    url("../images/wisata.jpg"), url("../images/wisata-fallback.svg");
+    url("../assets/bg-budaya.webp"), url("../images/wisata-fallback.svg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1021,7 +1025,11 @@ h4 {
   width: 100%;
   height: 100%;
   background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.74), rgba(214, 230, 244, 0.8)),
+    linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.74),
+      rgba(214, 230, 244, 0.8)
+    ),
     var(--motif-tile);
   background-size:
     cover,
@@ -1095,6 +1103,18 @@ h4 {
    untuk "dikacakan". */
 .section-tint {
   background: transparent;
+}
+
+/* Section wisata di beranda: foto bg-wisata tipis (10%) di atas kanvas
+   awal, jadi 90% latar asli tetap terlihat. */
+.section-wisata-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: url("../assets/bg-wisata.webp") center / cover no-repeat;
+  opacity: 0.1;
+  pointer-events: none;
 }
 
 /* ---------- About: satu panel kaca, tiga kolom ----------
@@ -1282,7 +1302,9 @@ h4 {
   border-color: #ffffff;
   color: var(--primary-deep);
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
   .filter-bar--glass {
     background: rgba(8, 26, 46, 0.7);
   }
@@ -1334,7 +1356,9 @@ h4 {
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--r-pill);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 .detail-swiper .swiper-button-prev:hover,
 .detail-swiper .swiper-button-next:hover {
@@ -1804,7 +1828,9 @@ h4 {
     0 28px 56px -20px rgba(11, 41, 71, 0.45);
   overflow: hidden;
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
   .chat-panel {
     background: rgba(240, 246, 252, 0.98);
   }
