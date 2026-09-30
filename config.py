@@ -53,6 +53,10 @@ class Config:
     # --- Gemini (embedding RAG) ---
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
     GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "models/gemini-embedding-001")
+    # Model cadangan untuk MENYUSUN JAWABAN saat OpenRouter kena batas (memakai GEMINI_API_KEY yang
+    # sama). Nama model Gemini berganti cepat; bila 404 "no longer available", ganti lewat .env
+    # (daftar model: genai.list_models()). Kosongkan untuk menonaktifkan cadangan ini.
+    GEMINI_CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-3.5-flash-lite")
 
     # --- OpenRouter (chat/generation chatbot) ---
     # Model gratis OpenRouter kadang penuh/di-deprecate tanpa peringatan, jadi dipakai

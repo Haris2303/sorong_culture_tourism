@@ -1,8 +1,9 @@
 """Router API: chatbot RAG & pengiriman rating wisata (anti-spam)."""
 from datetime import datetime
 
-from flask import jsonify, request
+from flask import current_app, jsonify, request
 
+from core import ai_status
 from core.chat_jobs import get_job, start_job
 from core.security import contains_badword, generate_fingerprint, get_client_ip
 from extensions import limiter
@@ -52,6 +53,20 @@ def api_chat_status(job_id):
     if job is None:
         return jsonify({"status": "not_found"}), 404
     return jsonify(job)
+
+
+def api_chat_health():
+    """Status kuota asisten AI untuk indikator di widget chat (hijau/kuning/merah)."""
+    cfg = current_app.config
+    snap = ai_status.snapshot(
+        cfg.get("OPENROUTER_API_KEY", ""),
+        cfg.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+        cfg.get("GEMINI_API_KEY", "") if cfg.get("GEMINI_CHAT_MODEL") else "",
+    )
+    snap["reset_at_iso"] = ai_status.to_iso(snap.get("reset_at"))
+    response = jsonify(snap)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def api_rating():
@@ -109,6 +124,11 @@ def register(app):
         # (bisa 15-20+ kali per pertanyaan) — dibebaskan dari RATELIMIT_DEFAULT
         # global di config.py karena cuma baca dict in-memory, bukan aksi mahal.
         view_func=limiter.exempt(api_chat_status), methods=["GET"],
+    )
+    app.add_url_rule(
+        "/api/chat/health", endpoint="api_chat_health",
+        # Di-poll klien tiap ~60 detik; hanya membaca status di memori.
+        view_func=limiter.exempt(api_chat_health), methods=["GET"],
     )
     app.add_url_rule(
         "/api/rating", endpoint="api_rating",

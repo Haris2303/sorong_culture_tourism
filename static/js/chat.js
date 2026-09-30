@@ -268,7 +268,8 @@
     if (!widget.classList.contains('closed')) {
       if (unreadBadge) unreadBadge.hidden = true;
       restoreScrollPosition();
-      input.focus();
+      refreshAiStatus();
+      if (!input.disabled) input.focus();
     }
   });
 
@@ -428,6 +429,80 @@
     }
   }
 
+
+  // --- Indikator kuota asisten AI (hijau / kuning / merah) -----------------
+  // Status dihitung server dari hasil panggilan LLM yang sebenarnya (lihat core/ai_status.py)
+  // dan diambil dari /api/chat/health. Kuning = model cadangan/terbatas; merah = semua penyedia habis
+  // (bot tetap menampilkan halaman rujukan tanpa LLM).
+  const statusDot = document.getElementById('chat-status-dot');
+  const statusSubtitle = document.getElementById('chat-subtitle');
+  const statusBanner = document.getElementById('chat-status-banner');
+  const statusIcon = document.getElementById('chat-status-icon');
+  const statusTitle = document.getElementById('chat-status-title');
+  const statusDetail = document.getElementById('chat-status-detail');
+  const fabStatus = document.getElementById('chat-fab-status');
+  const defaultPlaceholder = input.getAttribute('placeholder') || '';
+  let aiLevel = 'ok';
+  let aiBlocked = false;
+
+  function formatResetTime(epochSeconds) {
+    if (!epochSeconds) return '';
+    const d = new Date(epochSeconds * 1000);
+    const tz = { timeZone: 'Asia/Jayapura' };
+    const time = new Intl.DateTimeFormat('id-ID', { ...tz, hour: '2-digit', minute: '2-digit', hour12: false })
+      .format(d).replace('.', ':');
+    const sameDay = new Intl.DateTimeFormat('en-CA', tz).format(d) === new Intl.DateTimeFormat('en-CA', tz).format(new Date());
+    const day = sameDay ? '' : new Intl.DateTimeFormat('id-ID', { ...tz, day: 'numeric', month: 'short' }).format(d) + ', ';
+    return `${day}${time} WIT`;
+  }
+
+  function applyAiStatus(s) {
+    aiLevel = s.level || 'ok';
+    aiBlocked = s.blocked === true;
+    widget.dataset.aiLevel = aiLevel;
+    const titles = { ok: 'Online \u00b7 siap membantu Anda', warn: s.message || 'Asisten sedang padat', limited: s.message || 'Batas harian tercapai' };
+    statusSubtitle.textContent = titles[aiLevel] || titles.ok;
+    statusDot.title = `Status asisten AI: ${aiLevel === 'ok' ? 'normal' : aiLevel === 'warn' ? 'terbatas' : 'batas tercapai'}`;
+
+    if (fabStatus) {
+      fabStatus.hidden = aiLevel === 'ok';
+      fabStatus.title = s.message || '';
+    }
+
+    const show = aiLevel !== 'ok';
+    statusBanner.hidden = !show;
+    if (show) {
+      statusBanner.dataset.level = aiLevel;
+      statusIcon.className = aiLevel === 'limited' ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-triangle-exclamation';
+      statusTitle.textContent = s.message || '';
+      const when = aiLevel === 'limited' && s.reset_at ? ` Diperkirakan pulih sekitar ${formatResetTime(s.reset_at)}.` : '';
+      statusDetail.textContent = (s.detail || '') + when;
+    }
+
+    // Merah biasa tetap membolehkan bertanya (bot menampilkan halaman rujukan); input hanya dimatikan
+    // bila sama sekali tidak ada penyedia AI yang dikonfigurasi.
+    const blocked = aiBlocked;
+    input.disabled = blocked;
+    input.placeholder = blocked ? 'Asisten sedang tidak dapat menjawab' : defaultPlaceholder;
+    form.classList.toggle('is-blocked', blocked);
+    if (blocked) sendBtn.disabled = true;
+    else if (!document.getElementById('chat-typing-bubble')) sendBtn.disabled = false;
+    document.querySelectorAll('#chat-quick-replies .chip').forEach((chip) => { chip.disabled = blocked; });
+  }
+
+  async function refreshAiStatus() {
+    try {
+      const res = await fetch('/api/chat/health', { cache: 'no-store' });
+      if (res.ok) applyAiStatus(await res.json());
+    } catch (err) {
+      // Gagal mengambil status (jaringan): biarkan indikator terakhir apa adanya.
+    }
+  }
+
+  setTimeout(refreshAiStatus, 600);
+  setInterval(() => { if (!document.hidden) refreshAiStatus(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshAiStatus(); });
+
   async function resolveJob(jobId) {
     sendBtn.disabled = true;
     showTypingBubble();
@@ -437,12 +512,13 @@
     appendMessage(result.answer, 'bot', result.sources, true, { animate: true });
     sendBtn.disabled = false;
     showUnreadBadge();
+    refreshAiStatus();
   }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const message = input.value.trim();
-    if (!message) return;
+    if (!message || aiBlocked) return;
 
     // Diambil sebelum pesan ini masuk riwayat, supaya tidak terkirim dua kali.
     const previousTurns = historyPayload();

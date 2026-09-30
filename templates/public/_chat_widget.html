@@ -2,6 +2,7 @@
   <button id="chat-toggle-btn" class="chat-toggle-btn" aria-label="Buka chatbot" aria-controls="chat-panel">
     <span class="chat-toggle-icon"><i class="fa-solid fa-comment-dots"></i></span>
     <span id="chat-unread-badge" class="chat-unread-badge" hidden></span>
+    <span id="chat-fab-status" class="chat-fab-status" hidden></span>
   </button>
 
   <div id="chat-panel" class="chat-panel" role="dialog" aria-label="Pemandu Pintar Sorong">
@@ -9,11 +10,11 @@
       <div class="chat-header-info">
         <span class="chat-avatar">
           <i class="fa-solid fa-robot"></i>
-          <span class="chat-online-dot"></span>
+          <span class="chat-online-dot" id="chat-status-dot" title="Status asisten AI"></span>
         </span>
         <div class="chat-header-text">
           <div class="chat-title">Pemandu Pintar Sorong</div>
-          <div class="chat-subtitle">Online &middot; siap membantu Anda</div>
+          <div class="chat-subtitle" id="chat-subtitle">Online &middot; siap membantu Anda</div>
         </div>
       </div>
       <div class="chat-header-actions">
@@ -24,6 +25,11 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
+    </div>
+
+    <div id="chat-status-banner" class="chat-status-banner" role="status" hidden>
+      <i class="fa-solid fa-triangle-exclamation" id="chat-status-icon"></i>
+      <div><strong id="chat-status-title"></strong><span id="chat-status-detail"></span></div>
     </div>
 
     <div id="chat-messages" class="chat-messages" aria-live="polite">

@@ -2564,6 +2564,29 @@ h4 {
 .chat-disclaimer { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0 0; color: var(--ink-tertiary); font-size: 11px; }
 .chat-disclaimer i { color: var(--semantic-success); font-size: 11px; }
 
+/* ---------- Indikator kuota asisten AI ---------- */
+.chat-widget[data-ai-level="warn"] .chat-online-dot { background: #fbbf24; animation-name: chat-online-warn; }
+.chat-widget[data-ai-level="limited"] .chat-online-dot { background: #ef4444; animation: none; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3); }
+@keyframes chat-online-warn {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.6); }
+  70%, 100% { box-shadow: 0 0 0 7px rgba(251, 191, 36, 0); }
+}
+.chat-fab-status { position: absolute; top: 0; left: 0; width: 16px; height: 16px; border: 3px solid #fff; border-radius: 50%; box-sizing: content-box; }
+.chat-fab-status[hidden] { display: none; }
+.chat-widget[data-ai-level="warn"] .chat-fab-status { background: #f59e0b; }
+.chat-widget[data-ai-level="limited"] .chat-fab-status { background: #ef4444; }
+.chat-status-banner { display: flex; align-items: flex-start; gap: 10px; padding: 10px var(--space-md); border-bottom: 1px solid; font-size: 12.5px; line-height: 1.45; }
+.chat-status-banner[hidden] { display: none; }
+.chat-status-banner > i { margin-top: 2px; font-size: 14px; }
+.chat-status-banner > div { display: grid; gap: 1px; min-width: 0; }
+.chat-status-banner strong { font-weight: 700; }
+.chat-status-banner[data-level="warn"] { background: #fffbeb; border-color: rgba(245, 158, 11, 0.35); color: #92400e; }
+.chat-status-banner[data-level="limited"] { background: #fef2f2; border-color: rgba(239, 68, 68, 0.3); color: #991b1b; }
+.chat-input-row.is-blocked .chat-input-wrap { background: #f1f5f9; border-color: rgba(11, 41, 71, 0.1); box-shadow: none; }
+.chat-input-wrap input:disabled { cursor: not-allowed; color: var(--ink-tertiary); }
+.chat-quick-replies .chip:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .chat-widget[data-ai-level="warn"] .chat-online-dot { animation: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   .chat-toggle-btn::before, .chat-online-dot, .chat-panel, .chat-message { animation: none; }
   .chat-messages { scroll-behavior: auto; }

@@ -11,6 +11,8 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 from openai import APIConnectionError, APIStatusError, RateLimitError
+
+from core import ai_status
 from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_openai import ChatOpenAI
@@ -350,6 +352,71 @@ def _history_messages(history: list) -> list:
     return messages
 
 
+def _get_gemini_llm(model: str):
+    """LLM cadangan (Gemini) untuk menyusun jawaban; instance di-cache per nama model."""
+    if model not in _llm_by_model:
+        from flask import current_app
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        _llm_by_model[f"gemini:{model}"] = ChatGoogleGenerativeAI(
+            model=model,
+            google_api_key=current_app.config["GEMINI_API_KEY"],
+            temperature=0.3,
+            timeout=20,
+            max_retries=0,  # percobaan ulang diatur sendiri oleh answer_query
+        )
+        _llm_by_model[model] = _llm_by_model[f"gemini:{model}"]
+    return _llm_by_model[model]
+
+
+def _message_text(response) -> str:
+    """Isi teks dari balasan model; Gemini bisa mengembalikan daftar bagian (parts)."""
+    content = getattr(response, "content", response)
+    if isinstance(content, list):
+        return "".join(
+            part if isinstance(part, str) else (part.get("text", "") if isinstance(part, dict) else "")
+            for part in content
+        )
+    return content if isinstance(content, str) else str(content or "")
+
+
+def _is_quota_error(exc: Exception) -> bool:
+    """Apakah galat ini berarti kuota/rate-limit (khusus Gemini, yang tidak memakai RateLimitError openai)."""
+    name = type(exc).__name__.lower()
+    text = str(exc).lower()
+    return (
+        "resourceexhausted" in name
+        or "toomanyrequests" in name
+        or "429" in text
+        or "quota" in text
+        or "resource_exhausted" in text
+    )
+
+
+# Dipakai saat TIDAK ADA model yang bisa menjawab (kuota habis / semua gagal) tetapi pencarian
+# pengetahuan (yang hanya butuh embedding) masih menemukan halaman yang relevan.
+LIMITED_MODE_ANSWER = (
+    "ℹ️ Asisten AI sedang mencapai batas penggunaannya, jadi saya belum bisa menyusun jawaban "
+    "lengkap. Namun berikut halaman di portal yang paling relevan dengan pertanyaan Anda, "
+    "silakan dibuka untuk informasi detailnya."
+)
+
+
+def _limited_mode_result(relevant: list, only_rate_limited: bool) -> dict:
+    """Jawaban tanpa LLM: tautan ke halaman paling relevan hasil retrieval (maks 3).
+    Bila tidak ada yang relevan, kembali ke pesan kuota / kendala teknis biasa."""
+    sources = [s for s in _build_sources(relevant) if s.get("url")][:3] if relevant else []
+    if sources:
+        return {
+            "answer": _render_rich_answer(LIMITED_MODE_ANSWER),
+            "sources": sources,
+            "grounded": True,
+            "mode": "limited",
+        }
+    fallback = QUOTA_EXHAUSTED_ANSWER if only_rate_limited else ERROR_ANSWER
+    return {"answer": _render_rich_answer(fallback), "sources": [], "grounded": False, "mode": "limited"}
+
+
 def answer_query(question: str, history: list | None = None) -> dict:
     """Jalankan retrieval + generation. Return dict {answer, sources, grounded}."""
     from flask import current_app
@@ -374,8 +441,9 @@ def answer_query(question: str, history: list | None = None) -> dict:
         results = vectorstore.similarity_search_with_relevance_scores(
             _retrieval_query(question, history), k=top_k
         )
-    except Exception:
+    except Exception as exc:
         logger.exception("RAG retrieval gagal untuk pertanyaan: %r", question)
+        ai_status.record_quota_hint(exc)
         results = []
 
     relevant = [(doc, score) for doc, score in results if score >= threshold]
@@ -393,55 +461,75 @@ def answer_query(question: str, history: list | None = None) -> dict:
     base_messages += _history_messages(history)
     base_messages.append(HumanMessage(content=question))
 
+    # Urutan percobaan: model OpenRouter (gratis) lebih dulu, lalu Gemini sebagai cadangan.
+    # Penyedia yang batas hariannya sudah diketahui dilewati supaya tidak membuang waktu/kuota.
+    attempts = []
+    if current_app.config.get("OPENROUTER_API_KEY"):
+        attempts += [(ai_status.OPENROUTER, m) for m in _candidate_models(current_app)]
+    gemini_model = current_app.config.get("GEMINI_CHAT_MODEL")
+    if gemini_model and current_app.config.get("GEMINI_API_KEY"):
+        attempts.append((ai_status.GEMINI, gemini_model))
+
     answer_text = None
-    # Tetap True hanya jika SEMUA percobaan di SEMUA model gagal karena RateLimitError
+    raw_answer = ""
+    # Tetap True hanya jika SEMUA percobaan yang dilakukan gagal karena kuota/rate-limit
     # — dipakai untuk membedakan pesan "kuota harian habis" dari kendala teknis lain.
     only_rate_limited = True
-    for model in _candidate_models(current_app):
-        llm = get_llm(model)
+    for provider, model in attempts:
+        if ai_status.is_daily_limited(provider):
+            continue
+        llm = _get_gemini_llm(model) if provider == ai_status.GEMINI else get_llm(model)
         for attempt in range(_QUOTA_RETRIES_PER_MODEL + 1):
             try:
                 future = _llm_executor.submit(llm.invoke, base_messages)
                 response = future.result(timeout=_LLM_CALL_TIMEOUT_SECONDS)
-                raw_answer = response.content.strip()
+                raw_answer = _message_text(response).strip()
+                if not raw_answer:
+                    raise ValueError("respons kosong dari model")
                 answer_text = _render_rich_answer(raw_answer)
+                ai_status.record_success(provider)
                 break
             except FutureTimeoutError:
                 only_rate_limited = False
+                ai_status.record_error("Jawaban AI melewati batas waktu", provider)
                 logger.warning(
-                    "RAG generation timeout (>%ss) model=%s untuk pertanyaan: %r",
-                    _LLM_CALL_TIMEOUT_SECONDS, model, question,
+                    "RAG generation timeout (>%ss) %s/%s untuk pertanyaan: %r",
+                    _LLM_CALL_TIMEOUT_SECONDS, provider, model, question,
                 )
                 break
-            except RateLimitError:
-                if attempt < _QUOTA_RETRIES_PER_MODEL:
-                    logger.warning(
-                        "Model %s rate-limited upstream, coba lagi dalam %ss...",
-                        model, _QUOTA_RETRY_DELAY_SECONDS,
-                    )
-                    time.sleep(_QUOTA_RETRY_DELAY_SECONDS)
-                    continue
-                logger.warning("Model %s tetap rate-limited, pindah ke model fallback berikutnya.", model)
             except Exception as exc:
+                if isinstance(exc, RateLimitError) or (provider == ai_status.GEMINI and _is_quota_error(exc)):
+                    ai_status.record_rate_limit(exc, provider)
+                    if ai_status.is_daily_limited(provider):
+                        # Batas harian: percobaan ulang & model lain di penyedia ini pasti gagal juga.
+                        break
+                    if attempt < _QUOTA_RETRIES_PER_MODEL:
+                        logger.warning(
+                            "%s/%s rate-limited, coba lagi dalam %ss...",
+                            provider, model, _QUOTA_RETRY_DELAY_SECONDS,
+                        )
+                        time.sleep(_QUOTA_RETRY_DELAY_SECONDS)
+                        continue
+                    logger.warning("%s/%s tetap rate-limited, pindah ke percobaan berikutnya.", provider, model)
+                    break
                 only_rate_limited = False
                 upstream = _upstream_error_summary(exc)
+                ai_status.record_error(upstream or "Gangguan pada layanan AI", provider)
                 if upstream:
-                    # Gangguan di sisi provider (502, layanan down, koneksi putus) itu
-                    # hal biasa di model gratis dan sudah ditangani lewat fallback,
-                    # jadi cukup satu baris log, tanpa traceback.
-                    logger.warning("Model %s gagal di upstream (%s), pindah ke model berikutnya.", model, upstream)
+                    # Gangguan di sisi provider (502, layanan down, koneksi putus) itu hal biasa di
+                    # model gratis dan sudah ditangani lewat fallback: cukup satu baris log.
+                    logger.warning("%s/%s gagal di upstream (%s), pindah ke percobaan berikutnya.", provider, model, upstream)
                 else:
                     logger.warning(
-                        "RAG generation gagal model=%s untuk pertanyaan: %r, coba model fallback berikutnya.",
-                        model, question, exc_info=True,
+                        "RAG generation gagal %s/%s untuk pertanyaan: %r, coba percobaan berikutnya.",
+                        provider, model, question, exc_info=True,
                     )
                 break
         if answer_text is not None:
             break
 
     if answer_text is None:
-        fallback = QUOTA_EXHAUSTED_ANSWER if only_rate_limited else ERROR_ANSWER
-        return {"answer": _render_rich_answer(fallback), "sources": [], "grounded": False}
+        return _limited_mode_result(relevant, only_rate_limited)
 
     sources = _build_sources(relevant, raw_answer)
 
