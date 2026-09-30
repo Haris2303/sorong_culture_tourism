@@ -122,7 +122,23 @@ copy .env.example .env       # lalu isi GEMINI_API_KEY dan kredensial DB
 Dapatkan API key di [Google AI Studio](https://aistudio.google.com/app/apikey), lalu isi
 `GEMINI_API_KEY` di `.env`.
 
-## 4. Jalankan Aplikasi
+## 4. Isi Data Dummy (Opsional)
+
+`schema.sql` cuma menyertakan sedikit data contoh. Untuk isi database dengan lebih
+banyak data dummy (budaya, wisata, rating) tanpa input manual satu-per-satu lewat
+form admin, jalankan seeder:
+
+```bash
+python seed.py                        # isi admin + budaya + wisata + ratings (skip yang sudah ada)
+python seed.py --only budaya wisata    # hanya isi target tertentu
+python seed.py --reset                 # kosongkan dulu tabel yang di-seed, baru isi ulang
+python seed.py --reset --only wisata -y  # reset tanpa tanya konfirmasi (mis. buat CI/testing)
+```
+
+Aman dijalankan berkali-kali — baris yang judul/namanya sudah ada otomatis dilewati.
+Isi datanya (judul, deskripsi, dst.) bisa disesuaikan langsung di `seed.py`.
+
+## 5. Jalankan Aplikasi
 
 ```bash
 python app.py
@@ -130,7 +146,7 @@ python app.py
 
 Buka `http://localhost:5000`.
 
-## 5. Login Admin
+## 6. Login Admin
 
 - URL: `http://localhost:5000/admin/login`
 - Username: `admin`
@@ -140,7 +156,7 @@ Buka `http://localhost:5000`.
 menggunakan `werkzeug.security.generate_password_hash`, karena boilerplate belum
 menyertakan fitur ganti password di UI).
 
-## 6. Melatih Chatbot RAG
+## 7. Melatih Chatbot RAG
 
 1. Masuk ke **Dashboard Admin > Knowledge Base**.
 2. Unggah dokumen PDF/TXT/MD terkait budaya Suku Moi & wisata Sorong Raya.
