@@ -4,7 +4,11 @@ from flask import render_template, request
 from models import budaya as budaya_model
 from models import ratings as ratings_model
 from models import wisata as wisata_model
-from utils.pagination import PAGE_SIZE, paginate
+from utils.pagination import paginate
+
+# Listing publik pakai grid 3 kolom (lihat .grid-3 di style.css), jadi 6
+# kartu per halaman selalu memenuhi baris genap (2 baris penuh).
+PUBLIC_PAGE_SIZE = 6
 
 
 def index():
@@ -32,7 +36,7 @@ def budaya_list():
     page = request.args.get("page", 1, type=int) or 1
 
     total = budaya_model.count_public(kategori)
-    pagination = paginate(total, page, PAGE_SIZE)
+    pagination = paginate(total, page, PUBLIC_PAGE_SIZE)
     rows = budaya_model.list_public(kategori, pagination["per_page"], pagination["offset"])
     kategori_list = budaya_model.list_kategori_distinct()
 
@@ -57,7 +61,7 @@ def wisata_list():
     page = request.args.get("page", 1, type=int) or 1
 
     total = wisata_model.count_public(wilayah)
-    pagination = paginate(total, page, PAGE_SIZE)
+    pagination = paginate(total, page, PUBLIC_PAGE_SIZE)
     rows = wisata_model.list_public(wilayah, pagination["per_page"], pagination["offset"])
     for r in rows:
         r["rating"] = ratings_model.get_wisata_rating_summary(r["id"])
