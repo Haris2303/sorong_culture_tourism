@@ -1,104 +1,53 @@
-{% extends "public/base.html" %} {% block title %}Katalog Budaya Suku Moi |
-Sorong Raya{% endblock %} {% block content %}
+{% extends "public/base.html" %}
+{% from "public/_home_macros.html" import feature_card %}
+{% from "public/_pager.html" import pager %}
+{% block title %}Katalog Budaya Suku Moi | Sorong Raya{% endblock %}
+{% block content %}
 <section class="page-header page-header--budaya">
   <span class="motif-icon motif-icon--tr on-dark" aria-hidden="true">
     <img src="{{ url_for('static', filename='assets/tifa.png') }}" alt="" />
   </span>
+  <span class="hero-blob hero-blob--b" aria-hidden="true"></span>
   <div class="section-inner">
+    <nav class="dp-crumbs" aria-label="Breadcrumb">
+      <a href="{{ url_for('index') }}">Beranda</a>
+      <i class="fa-solid fa-chevron-right"></i>
+      <span>Budaya</span>
+    </nav>
     <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
     <h1 class="page-title">Budaya Suku Moi</h1>
     <p class="section-subtitle">
       Katalog sejarah, hukum adat, upacara, kesenian, dan kearifan lokal
       masyarakat Suku Moi di Sorong Raya.
     </p>
+    <div class="list-stats">
+      <span class="list-stat"><i class="fa-solid fa-book-open"></i><b>{{ pagination.total }}</b> artikel{% if active_kategori %} kategori {{ active_kategori }}{% endif %}</span>
+      <span class="list-stat"><i class="fa-solid fa-layer-group"></i>{{ kategori_list|length }} kategori</span>
+    </div>
     <nav class="filter-bar filter-bar--glass" aria-label="Filter kategori">
-      <a
-        href="{{ url_for('budaya_list') }}"
-        class="filter-chip {{ 'active' if not active_kategori }}"
-        >Semua</a
-      >
+      <a href="{{ url_for('budaya_list') }}" class="filter-chip {{ 'active' if not active_kategori }}">Semua</a>
       {% for k in kategori_list %}
-      <a
-        href="{{ url_for('budaya_list', kategori=k.kategori) }}"
-        class="filter-chip {{ 'active' if active_kategori == k.kategori }}"
-        >{{ k.kategori }}</a
-      >
+      <a href="{{ url_for('budaya_list', kategori=k.kategori) }}" class="filter-chip {{ 'active' if active_kategori == k.kategori }}">{{ k.kategori }}</a>
       {% endfor %}
     </nav>
   </div>
 </section>
 
-<section class="section section-tint">
+<section class="section section-tint list-section">
   <div class="section-inner">
-    <div class="grid-3">
+    {% if items %}
+    <div class="grid-3 showcase-grid">
       {% for item in items %}
-      <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card"
-         data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 80 }}">
-        <div class="card-image">
-          {% if item.gambar %}
-          <img
-            src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}"
-            alt="{{ item.judul }}"
-            loading="lazy"
-          />
-          {% else %}
-          <div class="card-image-placeholder">
-            <i class="fa-solid fa-feather"></i>
-          </div>
-          {% endif %}
-          <span class="badge-tag badge-tag--budaya badge-overlay">
-            <i class="fa-solid fa-tag"></i>{{ item.kategori }}
-          </span>
-        </div>
-        <div class="card-body">
-          <h3>{{ item.judul }}</h3>
-          <p>
-            {{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{%
-            endif %}
-          </p>
-        </div>
-      </a>
-      {% else %}
-      <p class="empty-state">Tidak ada artikel budaya untuk filter ini.</p>
+      <div class="showcase-cell" data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 100 }}">{{ feature_card('budaya', item, 0) }}</div>
       {% endfor %}
     </div>
-
-    {% if pagination.total > 0 %}
-    <div class="pagination">
-      <span class="pagination-info"
-        >Menampilkan {{ items|length }} dari {{ pagination.total }} data</span
-      >
-      {% if pagination.total_pages > 1 %}
-      <div class="pagination-controls">
-        {% if pagination.has_prev %}
-        <a
-          href="{{ url_for('budaya_list', kategori=active_kategori or None, page=pagination.page - 1) }}"
-          class="btn btn-small btn-outline"
-        >
-          <i class="fa-solid fa-chevron-left"></i>Sebelumnya
-        </a>
-        {% else %}
-        <span class="btn btn-small btn-outline pagination-btn-disabled">
-          <i class="fa-solid fa-chevron-left"></i>Sebelumnya
-        </span>
-        {% endif %}
-        <span class="pagination-pages"
-          >Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span
-        >
-        {% if pagination.has_next %}
-        <a
-          href="{{ url_for('budaya_list', kategori=active_kategori or None, page=pagination.page + 1) }}"
-          class="btn btn-small btn-outline"
-        >
-          Berikutnya<i class="fa-solid fa-chevron-right"></i>
-        </a>
-        {% else %}
-        <span class="btn btn-small btn-outline pagination-btn-disabled">
-          Berikutnya<i class="fa-solid fa-chevron-right"></i>
-        </span>
-        {% endif %}
-      </div>
-      {% endif %}
+    {{ pager('budaya_list', pagination, items|length, 'artikel', {'kategori': active_kategori or None}) }}
+    {% else %}
+    <div class="list-empty">
+      <span class="list-empty-icon list-empty-icon--budaya"><i class="fa-solid fa-feather"></i></span>
+      <h3>Belum ada artikel{% if active_kategori %} kategori {{ active_kategori }}{% endif %}</h3>
+      <p>Coba pilih kategori lain atau tampilkan seluruh artikel budaya.</p>
+      <a href="{{ url_for('budaya_list') }}" class="btn btn-primary"><i class="fa-solid fa-rotate-left"></i>Tampilkan semua</a>
     </div>
     {% endif %}
   </div>

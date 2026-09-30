@@ -1,6 +1,12 @@
-{% extends "public/base.html" %} {% block title %}Sorong Raya | Jelajahi Budaya
+{% extends "public/base.html" %}
+{% from "public/_home_macros.html" import showcase %} {% block title %}Sorong Raya | Jelajahi Budaya
 &amp; Wisata Papua Barat Daya{% endblock %} {% block content %}
+<div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+<button type="button" class="back-to-top" id="back-to-top" aria-label="Kembali ke atas"><i class="fa-solid fa-arrow-up"></i></button>
+
 <section class="hero">
+  <span class="hero-blob hero-blob--a" aria-hidden="true"></span>
+  <span class="hero-blob hero-blob--b" aria-hidden="true"></span>
   <video
     class="hero-video"
     muted
@@ -15,7 +21,7 @@
       <span class="eyebrow eyebrow--wisata">
         <i class="fa-solid fa-location-dot"></i>Kota &amp; Kabupaten Sorong
       </span>
-      <h1>Jelajahi Budaya &amp; Wisata Sorong Raya</h1>
+      <h1>Jelajahi <span class="text-gradient">Budaya &amp; Wisata</span> Sorong Raya</h1>
       <p>
         Portal edukasi terpadu warisan adat Suku Moi dan destinasi bahari Papua
         Barat Daya, dilengkapi pemandu virtual yang menjawab dari sumber
@@ -31,68 +37,123 @@
       </div>
       <div class="hero-stats">
         <div class="hero-stat">
-          <span class="hero-stat-value">{{ stats.total_budaya }}</span>
+          <span class="hero-stat-value" data-count="{{ stats.total_budaya }}">{{ stats.total_budaya }}</span>
           <span class="hero-stat-label">Artikel Budaya</span>
         </div>
         <div class="hero-stat">
-          <span class="hero-stat-value">{{ stats.total_wisata }}</span>
+          <span class="hero-stat-value" data-count="{{ stats.total_wisata }}">{{ stats.total_wisata }}</span>
           <span class="hero-stat-label">Destinasi Wisata</span>
         </div>
         <div class="hero-stat">
-          <span class="hero-stat-value">{{ stats.total_ulasan }}</span>
+          <span class="hero-stat-value" data-count="{{ stats.total_ulasan }}">{{ stats.total_ulasan }}</span>
           <span class="hero-stat-label">Ulasan Pengunjung</span>
         </div>
       </div>
     </div>
+    <div class="hero-floats" aria-label="Sorotan">
+      {% if highlight_wisata %}
+      {% set hw = highlight_wisata[0] %}
+      <a href="{{ url_for('wisata_detail', wisata_id=hw.id) }}" class="float-card float-card--a" data-aos="fade-left" data-aos-delay="300">
+        {% if hw.gambar %}
+        <img src="{{ url_for('static', filename='uploads/' ~ hw.gambar) }}" alt="" loading="lazy" />
+        {% else %}
+        <span class="float-card-ph"><i class="fa-solid fa-water"></i></span>
+        {% endif %}
+        <span class="float-card-body">
+          <small><i class="fa-solid fa-fire"></i>Destinasi Pilihan</small>
+          <strong>{{ hw.nama_wisata }}</strong>
+          <span class="float-card-meta"><i class="fa-solid fa-location-dot"></i>{{ hw.wilayah }}
+            <b><i class="fa-solid fa-star"></i>{{ hw.rating.average }}</b></span>
+        </span>
+      </a>
+      {% endif %}
+      {% if highlight_budaya %}
+      {% set hb = highlight_budaya[0] %}
+      <a href="{{ url_for('budaya_detail', budaya_id=hb.id) }}" class="float-card float-card--b" data-aos="fade-left" data-aos-delay="450">
+        {% if hb.gambar %}
+        <img src="{{ url_for('static', filename='uploads/' ~ hb.gambar) }}" alt="" loading="lazy" />
+        {% else %}
+        <span class="float-card-ph float-card-ph--budaya"><i class="fa-solid fa-feather"></i></span>
+        {% endif %}
+        <span class="float-card-body">
+          <small class="is-budaya"><i class="fa-solid fa-feather"></i>Budaya Pilihan</small>
+          <strong>{{ hb.judul }}</strong>
+          <span class="float-card-meta"><i class="fa-solid fa-tag"></i>{{ hb.kategori }}</span>
+        </span>
+      </a>
+      {% endif %}
+      <button type="button" class="float-pill" data-open-chat data-aos="fade-up" data-aos-delay="600">
+        <span class="float-pill-dot"></span>Asisten AI online &middot; tanya apa saja
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
   </div>
+  <a href="#about" class="scroll-cue" aria-label="Gulir ke bawah"><span></span></a>
 </section>
 
-<section id="about" class="section section-tint">
-  <div class="section-inner narrow">
-    <div class="section-heading center" data-aos="fade">
-      <span class="eyebrow eyebrow--primary">
-        <i class="fa-solid fa-circle-info"></i>Tentang Kami
-      </span>
-      <h2 class="section-title">
-        Satu Portal untuk Budaya &amp; Wisata Sorong Raya
-      </h2>
-      <p class="section-subtitle">
-        Sorong Raya menghimpun kekayaan adat Suku Moi dan destinasi bahari Kota
-        &amp; Kabupaten Sorong dalam satu portal edukasi digital, lengkap
-        dengan asisten virtual yang menjawab berdasarkan sumber terverifikasi,
-        bukan sekadar tebakan.
-      </p>
+<section id="about" class="section section-tint about">
+  <span class="about-deco about-deco--a" aria-hidden="true"></span>
+  <span class="about-deco about-deco--b" aria-hidden="true"></span>
+  <div class="section-inner">
+    <div class="about-top">
+      <div class="about-copy" data-aos="fade-right">
+        <span class="eyebrow eyebrow--primary">
+          <i class="fa-solid fa-circle-info"></i>Tentang Sorong Raya
+        </span>
+        <h2 class="about-title">
+          Temukan <span class="text-gradient-dark">pengalaman terbaik</span>
+          di Sorong Raya
+        </h2>
+        <p class="about-lead">
+          Dari pantai berair jernih hingga tradisi adat Suku Moi, semua yang Anda
+          butuhkan untuk merencanakan perjalanan ada di satu tempat: foto, lokasi
+          di peta, tiket, jam buka, dan cerita di balik budaya setempat. Bingung
+          harus mulai dari mana? Tanyakan saja kepada pemandu pintar kami, kapan pun
+          Anda mau.
+        </p>
+
+        <ul class="about-checks">
+          <li><i class="fa-solid fa-circle-check"></i>Pilih destinasi sesuai wilayah dan minat Anda</li>
+          <li><i class="fa-solid fa-circle-check"></i>Cek tiket, jam buka, dan petunjuk arah sebelum berangkat</li>
+          <li><i class="fa-solid fa-circle-check"></i>Gratis dan bisa dibuka langsung, tanpa daftar atau login</li>
+        </ul>
+      </div>
+
+      <div class="about-visual" data-aos="fade-left" aria-hidden="true">
+        {% set img_main = url_for('static', filename='uploads/' ~ about_wisata[0].gambar) if about_wisata else url_for('static', filename='assets/bg-wisata.webp') %}
+        {% set img_side = url_for('static', filename='uploads/' ~ about_budaya[0].gambar) if about_budaya else url_for('static', filename='assets/bg-budaya.webp') %}
+        {% set img_small = url_for('static', filename='uploads/' ~ about_wisata[1].gambar) if about_wisata|length > 1 else url_for('static', filename='assets/wisata-header.png') %}
+        <figure class="about-photo about-photo--main"><img src="{{ img_main }}" alt="" loading="lazy" /></figure>
+        <figure class="about-photo about-photo--side"><img src="{{ img_side }}" alt="" loading="lazy" /></figure>
+        <figure class="about-photo about-photo--small"><img src="{{ img_small }}" alt="" loading="lazy" /></figure>
+      </div>
     </div>
 
-    <div class="about-grid" data-aos="fade-up">
-      <div class="about-item about-item--budaya">
-        <span class="about-item-icon"
-          ><i class="fa-solid fa-book-open"></i
-        ></span>
-        <h3>Edukasi Terstruktur</h3>
-        <p>
-          Katalog budaya Suku Moi dan direktori wisata Kota &amp; Kabupaten
-          Sorong yang tersusun rapi dan mudah dijelajahi.
-        </p>
-      </div>
-      <div class="about-item about-item--rating">
-        <span class="about-item-icon"><i class="fa-solid fa-star"></i></span>
-        <h3>Rating &amp; Ulasan Terpercaya</h3>
-        <p>
-          Penilaian pengunjung dilindungi proteksi anti-spam berlapis, sehingga
-          skor tiap destinasi tetap akurat.
-        </p>
-      </div>
-      <div class="about-item about-item--primary">
-        <span class="about-item-icon"
-          ><i class="fa-solid fa-door-open"></i
-        ></span>
-        <h3>Akses Tanpa Hambatan</h3>
-        <p>
-          Seluruh konten dan chatbot dapat dinikmati publik tanpa perlu
-          mendaftar atau login.
-        </p>
-      </div>
+    <div class="about-features">
+      <article class="feature-card feature-card--primary" data-aos="fade-up">
+        <span class="feature-no">01</span>
+        <span class="feature-icon"><i class="fa-solid fa-map-location-dot"></i></span>
+        <h3>Jelajah Tanpa Ribet</h3>
+        <p>Pilih Kota atau Kabupaten Sorong, lalu lihat destinasi lengkap dengan foto, fasilitas, dan peta lokasinya.</p>
+      </article>
+      <article class="feature-card feature-card--ai" data-aos="fade-up" data-aos-delay="80">
+        <span class="feature-no">02</span>
+        <span class="feature-icon"><i class="fa-solid fa-robot"></i></span>
+        <h3>Tanya Kapan Saja</h3>
+        <p>Pemandu pintar menjawab pertanyaan seputar wisata dan budaya, lengkap dengan tautan ke halaman sumbernya.</p>
+      </article>
+      <article class="feature-card feature-card--budaya" data-aos="fade-up" data-aos-delay="160">
+        <span class="feature-no">03</span>
+        <span class="feature-icon"><i class="fa-solid fa-book-open"></i></span>
+        <h3>Kenali Lewat Cerita</h3>
+        <p>Pelajari asal-usul, adat, dan tradisi Suku Moi lewat artikel yang ditulis ringkas dan mudah dipahami.</p>
+      </article>
+      <article class="feature-card feature-card--rating" data-aos="fade-up" data-aos-delay="240">
+        <span class="feature-no">04</span>
+        <span class="feature-icon"><i class="fa-solid fa-star"></i></span>
+        <h3>Dengar Kata Pengunjung</h3>
+        <p>Baca rating dan ulasan pengunjung lain sebagai pertimbangan, lalu bagikan pengalaman Anda untuk yang berikutnya.</p>
+      </article>
     </div>
   </div>
 </section>
@@ -102,131 +163,197 @@
     <img src="{{ url_for('static', filename='assets/tifa.png') }}" alt="" />
   </span>
   <div class="section-inner">
-    <div class="section-heading" data-aos="fade">
-      <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
-      <h2 class="section-title">Budaya Suku Moi</h2>
-      <p class="section-subtitle">
-        Adat istiadat, tarian, seni ukir, dan upacara yang diwariskan
-        turun-temurun di tanah Malamoi.
-      </p>
-    </div>
-
-    <div class="grid-3">
-      {% for item in highlight_budaya %}
-      <a href="{{ url_for('budaya_detail', budaya_id=item.id) }}" class="card"
-         data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 80 }}">
-        <div class="card-image">
-          {% if item.gambar %}
-          <img
-            src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}"
-            alt="{{ item.judul }}"
-            loading="lazy"
-          />
-          {% else %}
-          <div class="card-image-placeholder">
-            <i class="fa-solid fa-feather"></i>
-          </div>
-          {% endif %}
-          <span class="badge-tag badge-tag--budaya badge-overlay">
-            <i class="fa-solid fa-tag"></i>{{ item.kategori }}
-          </span>
-        </div>
-        <div class="card-body">
-          <h3>{{ item.judul }}</h3>
-          <p>
-            {{ item.ringkasan[:120] }}{% if item.ringkasan|length > 120 %}…{%
-            endif %}
-          </p>
-          <div class="card-meta">
-            <span class="meta-item"
-              ><i class="fa-solid fa-book-open"></i>Artikel Edukasi</span
-            >
-            <span class="meta-item"
-              ><i class="fa-solid fa-arrow-right"></i>Baca</span
-            >
-          </div>
-        </div>
-      </a>
-      {% else %}
-      <p class="empty-state">
-        Belum ada artikel budaya. Tambahkan melalui dashboard admin.
-      </p>
-      {% endfor %}
+    <div class="show-head">
+      <div class="section-heading" data-aos="fade">
+        <span class="eyebrow eyebrow--budaya">01 / Warisan Malamoi</span>
+        <h2 class="section-title">Budaya Suku Moi</h2>
+        <p class="section-subtitle">
+          Adat istiadat, tarian, seni ukir, dan upacara yang diwariskan
+          turun-temurun di tanah Malamoi.
+        </p>
+      </div>
+      {% if highlight_budaya %}
+      <div class="show-head-side" data-aos="fade">
+        <span class="show-count"><b>{{ stats.total_budaya }}</b> artikel</span>
+        <a href="{{ url_for('budaya_list') }}" class="show-all">Lihat Semua<i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      {% endif %}
     </div>
 
     {% if highlight_budaya %}
-    <div class="section-cta">
-      <a href="{{ url_for('budaya_list') }}" class="btn btn-secondary">
-        Lihat Semua Budaya<i class="fa-solid fa-arrow-right"></i>
-      </a>
-    </div>
+    {{ showcase('budaya', highlight_budaya) }}
+    {% else %}
+    <p class="empty-state">Belum ada artikel budaya. Tambahkan melalui dashboard admin.</p>
     {% endif %}
   </div>
 </section>
 
 <section id="wisata" class="section section-tint section-wisata-bg">
   <div class="section-inner">
-    <div class="section-heading" data-aos="fade">
-      <span class="eyebrow eyebrow--wisata"
-        >02 / Destinasi Bahari &amp; Alam</span
-      >
-      <h2 class="section-title">Wisata Sorong Raya</h2>
-      <p class="section-subtitle">
-        Pantai, tebing karang, dan kawasan konservasi unggulan di Kota dan
-        Kabupaten Sorong.
-      </p>
-    </div>
-
-    <div class="grid-3">
-      {% for item in highlight_wisata %}
-      <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" class="card"
-         data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 80 }}">
-        <div class="card-image">
-          {% if item.gambar %}
-          <img
-            src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}"
-            alt="{{ item.nama_wisata }}"
-            loading="lazy"
-          />
-          {% else %}
-          <div class="card-image-placeholder">
-            <i class="fa-solid fa-water"></i>
-          </div>
-          {% endif %}
-          <span class="badge-tag badge-tag--wisata badge-overlay">
-            <i class="fa-solid fa-map-pin"></i>{{ item.wilayah }}
-          </span>
-        </div>
-        <div class="card-body">
-          <h3>{{ item.nama_wisata }}</h3>
-          <p>{{ item.deskripsi | striptags | truncate(120) }}</p>
-          <div class="card-meta">
-            <span class="meta-item"
-              ><i class="fa-solid fa-location-dot"></i>{{ item.wilayah }}</span
-            >
-            <span class="meta-rating">
-              <i class="fa-solid fa-star"></i>{{ item.rating.average }}
-              <small>({{ item.rating.count }})</small>
-            </span>
-          </div>
-        </div>
-      </a>
-      {% else %}
-      <p class="empty-state">
-        Belum ada destinasi wisata. Tambahkan melalui dashboard admin.
-      </p>
-      {% endfor %}
+    <div class="show-head">
+      <div class="section-heading" data-aos="fade">
+        <span class="eyebrow eyebrow--wisata">02 / Destinasi Bahari &amp; Alam</span>
+        <h2 class="section-title">Wisata Sorong Raya</h2>
+        <p class="section-subtitle">
+          Pantai, tebing karang, dan kawasan konservasi unggulan di Kota dan
+          Kabupaten Sorong.
+        </p>
+      </div>
+      {% if highlight_wisata %}
+      <div class="show-head-side" data-aos="fade">
+        <span class="show-count show-count--light"><b>{{ stats.total_wisata }}</b> destinasi</span>
+        <a href="{{ url_for('wisata_list') }}" class="show-all show-all--dark">Lihat Semua<i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      {% endif %}
     </div>
 
     {% if highlight_wisata %}
-    <div class="section-cta">
-      <a href="{{ url_for('wisata_list') }}" class="btn btn-secondary">
-        Lihat Semua Wisata<i class="fa-solid fa-arrow-right"></i>
-      </a>
-    </div>
+    {{ showcase('wisata', highlight_wisata, mirror=True) }}
+    {% else %}
+    <p class="empty-state">Belum ada destinasi wisata. Tambahkan melalui dashboard admin.</p>
     {% endif %}
+  </div>
+</section>
+
+{% if latest_reviews %}
+<section id="ulasan" class="section section-tint">
+  <div class="section-inner">
+    <div class="section-heading center" data-aos="fade">
+      <span class="eyebrow eyebrow--rating"><i class="fa-solid fa-comments"></i>Suara Pengunjung</span>
+      <h2 class="section-title">Kata Mereka yang Sudah Berkunjung</h2>
+      <p class="section-subtitle">
+        Cuplikan ulasan terbaru dari pengunjung destinasi wisata Sorong Raya.
+      </p>
+    </div>
+    <div class="quote-grid">
+      {% for r in latest_reviews %}
+      <figure class="quote-card" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}">
+        <span class="quote-mark" aria-hidden="true"><i class="fa-solid fa-quote-right"></i></span>
+        <div class="quote-stars" aria-label="{{ r.skor_bintang }} dari 5">
+          {% for _ in range(r.skor_bintang) %}<i class="fa-solid fa-star"></i>{% endfor %}<span>{% for _ in range(5 - r.skor_bintang) %}<i class="fa-solid fa-star"></i>{% endfor %}</span>
+        </div>
+        <blockquote>{{ r.komentar | truncate(170) }}</blockquote>
+        <figcaption>
+          <span class="quote-avatar"><i class="fa-solid fa-user"></i></span>
+          <span>
+            <strong>Pengunjung</strong>
+            <a href="{{ url_for('wisata_detail', wisata_id=r.wisata_id) }}">{{ r.nama_wisata }}</a>
+          </span>
+          <time>{{ r.created_at.strftime('%d %b %Y') }}</time>
+        </figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section ai-showcase">
+  <div class="ai-glow" aria-hidden="true"></div>
+  <div class="section-inner ai-inner">
+    <div class="ai-copy" data-aos="fade-right">
+      <span class="eyebrow ai-eyebrow"><i class="fa-solid fa-robot"></i>Pemandu Pintar</span>
+      <h2>Tanya apa saja,<br />dijawab dari sumber terverifikasi</h2>
+      <p>
+        Bingung memilih destinasi atau ingin tahu makna sebuah tarian adat? Asisten virtual
+        Sorong Raya menjawab seketika berdasarkan data portal, lengkap dengan tautan ke
+        halaman sumbernya.
+      </p>
+      <ul class="ai-points">
+        <li><i class="fa-solid fa-circle-check"></i>Rekomendasi wisata sesuai minat</li>
+        <li><i class="fa-solid fa-circle-check"></i>Info tiket, jam buka, dan lokasi</li>
+        <li><i class="fa-solid fa-circle-check"></i>Penjelasan budaya Suku Moi yang mudah dipahami</li>
+      </ul>
+      <button type="button" class="btn btn-primary ai-cta" data-open-chat>
+        <i class="fa-solid fa-comment-dots"></i>Coba Sekarang
+      </button>
+    </div>
+
+    <div class="ai-demo" data-aos="fade-left" aria-hidden="true">
+      <div class="ai-demo-head">
+        <span class="ai-demo-avatar"><i class="fa-solid fa-robot"></i></span>
+        <span><strong>Pemandu Pintar Sorong</strong><small><i></i>Online</small></span>
+      </div>
+      <div class="ai-demo-body">
+        <div class="demo-msg demo-msg--user" style="--d: 0.3s">Rekomendasi wisata pantai di Sorong?</div>
+        <div class="demo-msg demo-msg--typing" style="--d: 1.2s"><span></span><span></span><span></span></div>
+        <div class="demo-msg demo-msg--bot" style="--d: 2.6s">
+          Tentu! Beberapa pantai favorit pengunjung: <b>Tanjung Batu</b> dengan panorama
+          tenang, serta pantai lain yang cocok untuk snorkeling dan bersantai.
+          <span class="demo-src"><i class="fa-solid fa-location-dot"></i>Lihat detail destinasi</span>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 {% endblock %} {% block extra_js %}
 <script src="{{ url_for('static', filename='js/hero-video.js') }}"></script>
+<script>
+  (function () {
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Bilah progres gulir + tombol kembali ke atas.
+    var bar = document.getElementById("scroll-progress");
+    var topBtn = document.getElementById("back-to-top");
+    function onScroll() {
+      var h = document.documentElement;
+      var max = h.scrollHeight - h.clientHeight;
+      var p = max > 0 ? h.scrollTop / max : 0;
+      if (bar) bar.style.transform = "scaleX(" + p + ")";
+      if (topBtn) topBtn.classList.toggle("is-visible", h.scrollTop > 700);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    if (topBtn) topBtn.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+    });
+
+    // Angka statistik menghitung naik saat terlihat.
+    var counters = document.querySelectorAll("[data-count]");
+    function run(el) {
+      var target = parseInt(el.dataset.count, 10) || 0;
+      if (reduce || target < 2) { el.textContent = target.toLocaleString("id-ID"); return; }
+      var start = performance.now(), dur = 1400;
+      (function tick(now) {
+        var t = Math.min(1, (now - start) / dur);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3))).toLocaleString("id-ID");
+        if (t < 1) requestAnimationFrame(tick);
+      })(start);
+    }
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { run(e.target); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.4 });
+      counters.forEach(function (el) { io.observe(el); });
+    } else {
+      counters.forEach(run);
+    }
+
+    // Gerak halus hero mengikuti kursor (hanya perangkat dengan kursor, tanpa reduced-motion).
+    var hero = document.querySelector(".hero");
+    var floats = document.querySelector(".hero-floats");
+    if (hero && floats && !reduce && window.matchMedia("(hover: hover)").matches) {
+      hero.addEventListener("mousemove", function (e) {
+        var r = hero.getBoundingClientRect();
+        var x = (e.clientX - r.left) / r.width - 0.5;
+        var y = (e.clientY - r.top) / r.height - 0.5;
+        floats.style.transform = "translate3d(" + (x * -18).toFixed(1) + "px," + (y * -14).toFixed(1) + "px,0)";
+      });
+      hero.addEventListener("mouseleave", function () { floats.style.transform = ""; });
+    }
+
+    // Sorot cahaya mengikuti kursor pada kartu sorotan.
+    if (!reduce && window.matchMedia("(hover: hover)").matches) {
+      document.querySelectorAll("[data-spotlight]").forEach(function (card) {
+        card.addEventListener("mousemove", function (e) {
+          var r = card.getBoundingClientRect();
+          card.style.setProperty("--mx", (e.clientX - r.left) + "px");
+          card.style.setProperty("--my", (e.clientY - r.top) + "px");
+        });
+      });
+    }
+  })();
+</script>
 {% endblock %}

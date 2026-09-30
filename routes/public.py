@@ -1,5 +1,7 @@
 """Router publik: beranda, daftar & detail budaya/wisata, pencarian."""
-from flask import render_template, request
+import os
+
+from flask import current_app, render_template, request
 
 from models import budaya as budaya_model
 from models import ratings as ratings_model
@@ -9,6 +11,13 @@ from utils.pagination import paginate
 # Listing publik pakai grid 3 kolom (lihat .grid-3 di style.css), jadi 6
 # kartu per halaman selalu memenuhi baris genap (2 baris penuh).
 PUBLIC_PAGE_SIZE = 6
+
+
+def _existing_photos(rows, limit):
+    """Hanya item yang berkas fotonya benar-benar ada di folder upload (hindari gambar rusak)."""
+    folder = current_app.config["UPLOAD_FOLDER"]
+    ok = [r for r in rows if r.get("gambar") and os.path.exists(os.path.join(folder, r["gambar"]))]
+    return ok[:limit]
 
 
 def index():
@@ -28,6 +37,9 @@ def index():
         highlight_budaya=highlight_budaya,
         highlight_wisata=highlight_wisata,
         stats=stats,
+        latest_reviews=ratings_model.list_latest_with_comment(3),
+        about_wisata=_existing_photos(wisata_model.list_with_photo(8), 2),
+        about_budaya=_existing_photos(budaya_model.list_with_photo(8), 1),
     )
 
 
@@ -109,6 +121,8 @@ def search():
     if q:
         budaya_results = budaya_model.search(q, limit=20)
         wisata_results = wisata_model.search(q, limit=20)
+        for w in wisata_results:
+            w["rating"] = ratings_model.get_wisata_rating_summary(w["id"])
     return render_template("public/search.html", q=q, budaya_results=budaya_results, wisata_results=wisata_results)
 
 

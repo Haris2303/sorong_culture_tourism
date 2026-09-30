@@ -1,5 +1,5 @@
 {% extends "public/base.html" %}
-{% from "public/_detail_macros.html" import gallery, share_card, ask_bot, detail_scripts, related_cards %}
+{% from "public/_detail_macros.html" import gallery, share_card, ask_bot, detail_scripts, related_list %}
 {% block title %}{{ item.judul }} | Budaya Sorong Raya{% endblock %}
 {% block extra_css %}
 <link
@@ -48,7 +48,7 @@
       </article>
     </div>
 
-    <aside class="dp-side">
+    <aside class="dp-side dp-side--tall">
       <div class="dp-side-card">
         <h3 class="dp-side-title"><i class="fa-solid fa-circle-info"></i>Ringkasan</h3>
         <dl class="dp-info">
@@ -67,6 +67,7 @@
         </dl>
       </div>
 
+      {{ related_list(related, 'budaya') }}
       {{ share_card(item.judul) }}
       {{ ask_bot('budaya ini') }}
 
@@ -76,7 +77,6 @@
     </aside>
   </div>
 
-  {{ related_cards(related, 'budaya') }}
 </section>
 {% endblock %}
 {% block extra_js %}

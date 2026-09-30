@@ -8,6 +8,7 @@
       name="description"
       content="Portal edukasi budaya Suku Moi dan destinasi wisata Kota & Kabupaten Sorong, Papua Barat Daya."
     />
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='assets/logo.svg') }}" />
     <title>{% block title %}Sorong Raya | Budaya & Wisata{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,11 +26,11 @@
     />
     {% block extra_css %}{% endblock %}
   </head>
-  <body>
+  <body id="top">
     <header class="navbar" id="site-navbar">
       <div class="navbar-inner">
         <a href="{{ url_for('index') }}" class="brand" aria-label="Sorong Raya - Beranda">
-          <span class="brand-icon">SR</span>
+          <img src="{{ url_for('static', filename='assets/logo.svg') }}" alt="" class="brand-logo" width="40" height="40" />
           <span class="brand-text">
             <strong>Sorong Raya</strong>
             <small>Budaya &amp; Wisata</small>
@@ -107,19 +108,55 @@
     <main>{% block content %}{% endblock %}</main>
 
     <footer class="site-footer">
+      {% set fd = footer_data() %}
+      <span class="footer-glow" aria-hidden="true"></span>
       <div class="footer-inner">
-        <span class="footer-brand">
-          <span class="brand-icon">SR</span>
-          Sorong Raya
-        </span>
-        <p>
-          &copy; {{ current_year }} Sistem Informasi &amp; Chatbot Edukasi
-          Budaya dan Wisata.
-        </p>
-        <span class="footer-meta">
-          <i class="fa-solid fa-location-dot"></i>
-          Sorong Raya, Papua Barat Daya
-        </span>
+        <div class="footer-cols">
+          <div class="footer-col footer-col--brand">
+            <a href="{{ url_for('index') }}" class="footer-brand">
+              <img src="{{ url_for('static', filename='assets/logo.svg') }}" alt="" class="brand-logo" width="40" height="40" />
+              <span class="footer-brand-text"><strong>Sorong Raya</strong><small>Budaya &amp; Wisata</small></span>
+            </a>
+            <p class="footer-about">
+              Portal edukasi budaya Suku Moi dan destinasi wisata Kota &amp; Kabupaten
+              Sorong, Papua Barat Daya. Gratis dan terbuka untuk semua pengunjung.
+            </p>
+          </div>
+
+          <nav class="footer-col" aria-label="Jelajahi">
+            <h3>Jelajahi</h3>
+            <ul>
+              <li><a href="{{ url_for('index') }}">Beranda</a></li>
+              <li><a href="{{ url_for('wisata_list') }}">Direktori Wisata</a></li>
+              <li><a href="{{ url_for('budaya_list') }}">Katalog Budaya</a></li>
+              <li><a href="{{ url_for('search') }}">Pencarian</a></li>
+            </ul>
+          </nav>
+
+          <nav class="footer-col" aria-label="Wisata per wilayah">
+            <h3>Wisata per Wilayah</h3>
+            <ul>
+              <li><a href="{{ url_for('wisata_list', wilayah='Kota Sorong') }}"><i class="fa-solid fa-city"></i>Kota Sorong</a></li>
+              <li><a href="{{ url_for('wisata_list', wilayah='Kabupaten Sorong') }}"><i class="fa-solid fa-tree"></i>Kabupaten Sorong</a></li>
+            </ul>
+          </nav>
+
+          {% if fd.kategori %}
+          <nav class="footer-col" aria-label="Kategori budaya">
+            <h3>Kategori Budaya</h3>
+            <ul>
+              {% for k in fd.kategori %}
+              <li><a href="{{ url_for('budaya_list', kategori=k) }}">{{ k }}</a></li>
+              {% endfor %}
+            </ul>
+          </nav>
+          {% endif %}
+        </div>
+
+        <div class="footer-bottom">
+          <p>&copy; {{ current_year }} Sorong Raya. Sistem Informasi &amp; Chatbot Edukasi Budaya dan Wisata.</p>
+          <span class="footer-meta"><i class="fa-solid fa-location-dot"></i>Sorong Raya, Papua Barat Daya</span>
+        </div>
       </div>
     </footer>
 

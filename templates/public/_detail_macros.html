@@ -107,15 +107,6 @@
         });
       }
     }
-
-    // Tombol "Tanya Asisten" membuka widget chatbot yang sudah ada.
-    document.querySelectorAll("[data-open-chat]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var toggle = document.getElementById("chat-toggle-btn");
-        var widget = document.getElementById("chat-widget");
-        if (toggle && widget && widget.classList.contains("closed")) toggle.click();
-      });
-    });
   })();
 </script>
 {% endmacro %}

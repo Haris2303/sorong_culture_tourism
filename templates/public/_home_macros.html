@@ -1,0 +1,56 @@
+{# Kartu sorotan beranda: tiga kartu sama besar dalam grid 3 kolom. #}
+
+{# Kartu sorotan: foto penuh dengan teks di atasnya. #}
+{% macro feature_card(kind, item, index=1, tag=True) %}
+{% if kind == 'wisata' %}
+  {% set url = url_for('wisata_detail', wisata_id=item.id) %}
+  {% set title = item.nama_wisata %}
+  {% set text = item.deskripsi | striptags | truncate(170) %}
+  {% set fallback = url_for('static', filename='assets/wisata-header.png') %}
+{% else %}
+  {% set url = url_for('budaya_detail', budaya_id=item.id) %}
+  {% set title = item.judul %}
+  {% set text = item.ringkasan | truncate(170) %}
+  {% set fallback = url_for('static', filename='assets/budaya-header.png') %}
+{% endif %}
+{% set photo = url_for('static', filename='uploads/' ~ item.gambar) if item.gambar else fallback %}
+<a href="{{ url }}" class="show-card show-card--feature show-card--{{ kind }}" data-spotlight>
+  <img class="show-card-bg" src="{{ photo }}" alt="" loading="lazy" />
+  <span class="show-card-shade" aria-hidden="true"></span>
+  <span class="show-card-top">
+    {% if index == 1 %}
+    <span class="show-flag"><i class="fa-solid fa-fire"></i>Terbaru</span>
+    {% elif index > 1 %}
+    <span class="show-num">0{{ index }}</span>
+    {% endif %}
+    {% if tag %}
+    <span class="badge-tag badge-tag--{{ kind }} show-tag">
+      <i class="fa-solid {{ 'fa-map-pin' if kind == 'wisata' else 'fa-tag' }}"></i>{{ item.wilayah if kind == 'wisata' else item.kategori }}
+    </span>
+    {% endif %}
+  </span>
+  <span class="show-card-content">
+    <strong class="show-card-title">{{ title }}</strong>
+    <span class="show-card-text">{{ text }}</span>
+    <span class="show-card-foot">
+      {% if kind == 'wisata' %}
+      <span class="show-rate"><i class="fa-solid fa-star"></i>{{ item.rating.average }}<small>({{ item.rating.count }} ulasan)</small></span>
+      {% else %}
+      <span class="show-rate show-rate--plain"><i class="fa-solid fa-book-open"></i>Artikel edukasi</span>
+      {% endif %}
+      <span class="show-go" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
+    </span>
+  </span>
+</a>
+{% endmacro %}
+
+{# Tiga kartu dalam satu baris (grid 3 kolom). #}
+{% macro showcase(kind, items, mirror=False) %}
+{% if items %}
+<div class="grid-3 showcase-grid">
+  {% for it in items[:3] %}
+  <div class="showcase-cell" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}">{{ feature_card(kind, it, loop.index) }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}

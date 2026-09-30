@@ -64,6 +64,17 @@ def count_pending():
     return dbcore.query_one("SELECT COUNT(*) AS c FROM ratings WHERE status_tampil = 'pending'")["c"]
 
 
+def list_latest_with_comment(limit=3):
+    """Ulasan approved terbaru yang berkomentar, lengkap dengan destinasinya (untuk beranda)."""
+    return dbcore.query_all(
+        "SELECT r.skor_bintang, r.komentar, r.created_at, w.id AS wisata_id, w.nama_wisata "
+        "FROM ratings r JOIN wisata w ON w.id = r.wisata_id "
+        "WHERE r.status_tampil = 'approved' AND r.komentar IS NOT NULL AND r.komentar <> '' "
+        "ORDER BY r.created_at DESC LIMIT %s",
+        (limit,),
+    )
+
+
 def distribution_approved():
     """Jumlah ulasan approved per skor, dikembalikan sebagai {1: n, ..., 5: n}."""
     rows = dbcore.query_all(

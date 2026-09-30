@@ -51,6 +51,15 @@ def count_changed_since(since):
     return dbcore.query_one("SELECT COUNT(*) AS c FROM budaya WHERE updated_at > %s", (since,))["c"]
 
 
+def list_with_photo(limit=1):
+    """Artikel terbaru yang punya foto unggahan (untuk kolase beranda)."""
+    return dbcore.query_all(
+        "SELECT id, judul, gambar FROM budaya WHERE gambar IS NOT NULL AND gambar <> '' "
+        "ORDER BY created_at DESC LIMIT %s",
+        (limit,),
+    )
+
+
 def get_by_id(budaya_id):
     return dbcore.query_one("SELECT * FROM budaya WHERE id = %s", (budaya_id,))
 

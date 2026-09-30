@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Logo Sorong Raya">
+  <defs>
+    <linearGradient id="sr-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="0.55" stop-color="#0494ed"/>
+      <stop offset="1" stop-color="#123a5c"/>
+    </linearGradient>
+    <linearGradient id="sr-feather" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d4ecfb"/>
+    </linearGradient>
+  </defs>
+
+  <!-- latar -->
+  <rect width="48" height="48" rx="13" fill="url(#sr-bg)"/>
+  <path d="M0 14C0 6.3 6.3 0 14 0h20c7.7 0 14 6.3 14 14v2C36 12 14 14 0 22z" fill="#ffffff" opacity="0.12"/>
+
+  <!-- bulu cendrawasih: lambang budaya & kekayaan alam Papua -->
+  <path d="M13 31C10.5 19.5 19.5 8.5 36 8c0.6 14.5-8.6 24-23 23z" fill="url(#sr-feather)"/>
+  <path d="M13.5 30.5L33.5 11" stroke="#123a5c" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M19 25.5c1.2-3.4 3.6-5.6 7-6.8M23.5 21.2c1.1-3 3.2-5 6.2-6.1" stroke="#123a5c" stroke-opacity="0.35" stroke-width="1" stroke-linecap="round" fill="none"/>
+  <circle cx="13.5" cy="12" r="3" fill="#fbbf24"/>
+
+  <!-- ombak laut: lambang wisata bahari -->
+  <path d="M6 37.5c3-3 6-3 9 0s6 3 9 0 6-3 9 0 6 3 9 0" stroke="#ffffff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path d="M6 43.5c3-3 6-3 9 0s6 3 9 0 6-3 9 0 6 3 9 0" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+</svg>

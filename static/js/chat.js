@@ -279,6 +279,14 @@
 
   closeBtn.addEventListener('click', closeWidget);
 
+  // Tombol mana pun di halaman dengan atribut data-open-chat membuka widget ini.
+  document.querySelectorAll('[data-open-chat]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (widget.classList.contains('closed')) toggleBtn.click();
+      else input.focus();
+    });
+  });
+
   // Mulai percakapan baru: hapus riwayat & job tertunda, kembalikan sambutan bawaan.
   const resetBtn = document.getElementById('chat-reset-btn');
   if (resetBtn) {

@@ -11,8 +11,24 @@ def pending_review_count():
         return 0
 
 
+def footer_data():
+    """Data footer publik: kategori budaya. Dipanggil lazy dari template."""
+    data = {"kategori": []}
+    try:
+        from models import budaya as budaya_model
+
+        data["kategori"] = [k["kategori"] for k in budaya_model.list_kategori_distinct()][:6]
+    except Exception:
+        pass
+    return data
+
+
 def inject_globals():
-    return {"current_year": datetime.utcnow().year, "pending_review_count": pending_review_count}
+    return {
+        "current_year": datetime.utcnow().year,
+        "pending_review_count": pending_review_count,
+        "footer_data": footer_data,
+    }
 
 
 def social_url_filter(value):
