@@ -1,3 +1,7 @@
+<span data-list-total="{{ pagination.total }}" hidden></span>
+{% from "admin/_empty_state.html" import empty_state %}
+{% from "admin/_pagination.html" import pager %}
+{% if items %}
   <div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
@@ -26,6 +30,8 @@
           <span class="cell-time">{{ item.updated_at.strftime('%H:%M') }}</span>
         </td>
         <td class="table-actions">
+          <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" target="_blank" rel="noopener" class="icon-btn icon-btn--preview"
+             title="Pratinjau di situs publik" aria-label="Pratinjau destinasi"><i class="fa-solid fa-eye"></i></a>
           <button type="button" class="icon-btn icon-btn--edit edit-wisata-btn" title="Edit destinasi" aria-label="Edit destinasi"
             data-id="{{ item.id }}" data-nama="{{ item.nama_wisata }}" data-wilayah="{{ item.wilayah }}"
             data-deskripsi="{{ item.deskripsi }}" data-fasilitas="{{ item.fasilitas }}"
@@ -45,40 +51,19 @@
           </form>
         </td>
       </tr>
-      {% else %}
-      <tr><td colspan="5" class="empty-state">
-        <i class="fa-regular fa-folder-open"></i>
-        {% if q %}Tidak ada destinasi yang cocok dengan "{{ q }}".{% else %}Belum ada data.{% endif %}
-      </td></tr>
       {% endfor %}
     </tbody>
   </table>
   </div>
-  {% if pagination.total > 0 %}
-  <div class="pagination">
-    <span class="pagination-info">Menampilkan {{ items|length }} dari {{ pagination.total }} data</span>
-    {% if pagination.total_pages > 1 %}
-    <div class="pagination-controls">
-      {% if pagination.has_prev %}
-      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page - 1, per_page=per_page) }}" class="btn btn-small btn-outline">
-        <i class="fa-solid fa-chevron-left"></i>Sebelumnya
-      </a>
-      {% else %}
-      <span class="btn btn-small btn-outline pagination-btn-disabled">
-        <i class="fa-solid fa-chevron-left"></i>Sebelumnya
-      </span>
-      {% endif %}
-      <span class="pagination-pages">Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span>
-      {% if pagination.has_next %}
-      <a href="{{ url_for('admin_wisata_manage', q=q or None, page=pagination.page + 1, per_page=per_page) }}" class="btn btn-small btn-outline">
-        Berikutnya<i class="fa-solid fa-chevron-right"></i>
-      </a>
-      {% else %}
-      <span class="btn btn-small btn-outline pagination-btn-disabled">
-        Berikutnya<i class="fa-solid fa-chevron-right"></i>
-      </span>
-      {% endif %}
-    </div>
-    {% endif %}
-  </div>
+{% else %}
+  {% if q %}
+  {% call empty_state('fa-solid fa-magnifying-glass', 'Tidak ada hasil untuk “' ~ q ~ '”', 'Tidak ada destinasi wisata yang cocok dengan kata kunci tersebut. Periksa ejaan atau coba kata kunci yang lebih singkat.', tone='neutral', hint='Pencarian mencocokkan judul, kategori, dan isi ringkasan.') %}
+    <a href="{{ url_for('admin_wisata_manage') }}" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i>Hapus pencarian</a>
+  {% endcall %}
+  {% else %}
+  {% call empty_state('fa-solid fa-compass', 'Belum ada destinasi wisata', 'Tambahkan destinasi pertama untuk mengisi katalog wisata Kota & Kabupaten Sorong. Data ini juga dipakai chatbot untuk menjawab pertanyaan pengunjung.', tone='wisata', hint='Isi koordinat agar peta lokasi tampil di halaman detail.') %}
+    <button type="button" class="btn btn-primary" data-click-target="add-wisata-btn"><i class="fa-solid fa-plus"></i>Tambah Destinasi Pertama</button>
+  {% endcall %}
   {% endif %}
+{% endif %}
+  {{ pager('admin_wisata_manage', pagination, q, per_page, items|length) }}

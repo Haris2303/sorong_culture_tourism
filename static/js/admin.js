@@ -9,6 +9,34 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Tombol dengan data-click-target meneruskan klik ke elemen lain (mis. CTA keadaan kosong -> tombol Tambah).
+// Didelegasikan ke document karena isi tabel diganti lewat AJAX saat pencarian.
+document.addEventListener('click', (e) => {
+  const trigger = e.target.closest('[data-click-target]');
+  if (!trigger) return;
+  const target = document.getElementById(trigger.dataset.clickTarget);
+  if (target) target.click();
+});
+
+// Perbarui angka total di header daftar setelah isi tabel diganti lewat AJAX.
+function syncListTotal(container) {
+  const marker = container && container.querySelector('[data-list-total]');
+  const pill = document.getElementById('list-total');
+  if (marker && pill) pill.textContent = marker.dataset.listTotal;
+}
+
+// Tekan "/" untuk langsung fokus ke kolom pencarian daftar.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (document.activeElement && document.activeElement.isContentEditable)) return;
+  const input = document.querySelector('.table-search input[name="q"]');
+  if (!input) return;
+  e.preventDefault();
+  input.focus();
+  input.select();
+});
+
 // Jam & tanggal topbar dalam WIT (Asia/Jayapura).
 document.addEventListener('DOMContentLoaded', () => {
   const timeEl = document.getElementById('topbar-time');

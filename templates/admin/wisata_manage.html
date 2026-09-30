@@ -6,16 +6,23 @@
 {% endblock %}
 {% block admin_content %}
 <div class="admin-table-card">
-  <div class="admin-table-header">
-    <h2>Daftar Destinasi Wisata</h2>
-    <div class="header-actions">
+  <div class="list-head">
+    <div class="list-head-title">
+      <span class="list-head-icon list-head-icon--wisata"><i class="fa-solid fa-compass"></i></span>
+      <div>
+        <h2>Daftar Destinasi Wisata <span class="count-pill" id="list-total" title="Total data">{{ pagination.total }}</span></h2>
+      </div>
+    </div>
+    <div class="list-toolbar">
       <form method="get" class="table-search">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau wilayah...">
+        <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau wilayah..." autocomplete="off">
         {% if q %}
           <a href="{{ url_for('admin_wisata_manage') }}" class="table-search-clear" title="Hapus pencarian">
             <i class="fa-solid fa-xmark"></i>
           </a>
+        {% else %}
+          <kbd class="table-search-kbd" title="Tekan / untuk mencari">/</kbd>
         {% endif %}
       </form>
       <label class="per-page-select">
@@ -27,7 +34,7 @@
           <option value="all" {{ 'selected' if per_page == 'all' }}>Semua</option>
         </select>
       </label>
-      <button type="button" id="add-wisata-btn" class="btn btn-primary">
+      <button type="button" id="add-wisata-btn" class="btn btn-primary list-add-btn">
         <i class="fa-solid fa-plus"></i>Tambah Wisata
       </button>
     </div>
@@ -443,6 +450,7 @@ async function runWisataSearch(query) {
     });
     if (!resp.ok) return;
     wisataResults.innerHTML = await resp.text();
+    syncListTotal(wisataResults);
     bindEditWisataButtons();
     history.replaceState(null, '', url.pathname + url.search);
   } catch (err) {

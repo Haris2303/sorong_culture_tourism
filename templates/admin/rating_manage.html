@@ -1,12 +1,24 @@
 {% extends "admin/base_admin.html" %}
+{% from "admin/_empty_state.html" import empty_state %}
 {% block title %}Moderasi Rating - Admin{% endblock %}
 {% block page_title %}Moderasi Rating & Ulasan{% endblock %}
 {% block admin_content %}
 <div class="admin-table-card">
-  <div class="admin-table-header">
-    <h2>Daftar Ulasan Pengunjung</h2>
-    <span class="count-pill">{{ items|length }} ulasan</span>
+  {% set n_ok = items|selectattr('status_tampil', 'equalto', 'approved')|list|length %}
+  {% set n_no = items|selectattr('status_tampil', 'equalto', 'rejected')|list|length %}
+  <div class="list-head">
+    <div class="list-head-title">
+      <span class="list-head-icon list-head-icon--rating"><i class="fa-solid fa-star"></i></span>
+      <div>
+        <h2>Daftar Ulasan Pengunjung <span class="count-pill" title="Total ulasan">{{ items|length }}</span></h2>
+      </div>
+    </div>
+    <div class="list-toolbar list-stats">
+      <span class="stat-chip stat-chip--ok"><i class="fa-solid fa-circle-check"></i><b>{{ n_ok }}</b> Tampil</span>
+      <span class="stat-chip stat-chip--no"><i class="fa-solid fa-ban"></i><b>{{ n_no }}</b> Ditolak</span>
+    </div>
   </div>
+  {% if items %}
   <div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
@@ -49,11 +61,14 @@
           </form>
         </td>
       </tr>
-      {% else %}
-      <tr><td colspan="7" class="empty-state"><i class="fa-regular fa-comment-dots"></i>Belum ada ulasan masuk.</td></tr>
       {% endfor %}
     </tbody>
   </table>
   </div>
+  {% else %}
+  {% call empty_state('fa-regular fa-comment-dots', 'Belum ada ulasan masuk', 'Ulasan dan rating dari pengunjung akan muncul di sini. Ulasan yang mengandung kata tidak pantas otomatis ditahan untuk Anda tinjau.', tone='rating', hint='Pengunjung memberi ulasan dari halaman detail setiap destinasi wisata.') %}
+    <a href="{{ url_for('index') }}#wisata" target="_blank" rel="noopener" class="btn btn-outline"><i class="fa-solid fa-arrow-up-right-from-square"></i>Lihat situs publik</a>
+  {% endcall %}
+  {% endif %}
 </div>
 {% endblock %}

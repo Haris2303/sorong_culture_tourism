@@ -1,4 +1,5 @@
 {% extends "admin/base_admin.html" %}
+{% from "admin/_empty_state.html" import empty_state %}
 {% block title %}Knowledge Base RAG - Admin{% endblock %}
 {% block page_title %}Repositori Pengetahuan & Sinkronisasi RAG{% endblock %}
 {% block admin_content %}
@@ -122,10 +123,20 @@
 </div>
 
 <div class="admin-table-card">
-  <div class="admin-table-header">
-    <h2>Daftar Dokumen Pengetahuan</h2>
-    <span class="count-pill">{{ docs|length }} dokumen</span>
+  {% set n_idx = docs|selectattr('status_indexed')|list|length %}
+  <div class="list-head">
+    <div class="list-head-title">
+      <span class="list-head-icon list-head-icon--doc"><i class="fa-solid fa-book-open"></i></span>
+      <div>
+        <h2>Daftar Dokumen Pengetahuan <span class="count-pill" title="Total dokumen">{{ docs|length }}</span></h2>
+      </div>
+    </div>
+    <div class="list-toolbar list-stats">
+      <span class="stat-chip stat-chip--ok"><i class="fa-solid fa-circle-check"></i><b>{{ n_idx }}</b> Ter-index</span>
+      <span class="stat-chip stat-chip--wait"><i class="fa-solid fa-hourglass-half"></i><b>{{ docs|length - n_idx }}</b> Menunggu</span>
+    </div>
   </div>
+  {% if docs %}
   <div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
@@ -161,12 +172,15 @@
           </form>
         </td>
       </tr>
-      {% else %}
-      <tr><td colspan="6" class="empty-state"><i class="fa-regular fa-file"></i>Belum ada dokumen diunggah.</td></tr>
       {% endfor %}
     </tbody>
   </table>
   </div>
+  {% else %}
+  {% call empty_state('fa-regular fa-file-lines', 'Belum ada dokumen pengetahuan', 'Unggah dokumen PDF, TXT, atau MD berisi informasi tambahan (misalnya panduan wisata atau catatan budaya) agar chatbot bisa menjawab lebih lengkap.', tone='neutral', hint='Setelah mengunggah, jalankan sinkronisasi supaya dokumen ikut dipelajari.') %}
+    <button type="button" class="btn btn-primary" data-open-upload><i class="fa-solid fa-cloud-arrow-up"></i>Unggah Dokumen Pertama</button>
+  {% endcall %}
+  {% endif %}
 </div>
 {% endblock %}
 {% block extra_js %}
@@ -194,6 +208,10 @@
     toggle.setAttribute('aria-expanded', String(open));
   }
   toggle.addEventListener('click', () => setOpen(!card.classList.contains('is-open')));
+  document.querySelectorAll('[data-open-upload]').forEach((btn) => btn.addEventListener('click', () => {
+    setOpen(true);
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
 
   function formatSize(bytes) {
     if (bytes < 1024) return `${bytes} B`;
@@ -470,7 +488,7 @@ function vecRenderRows() {
 
   if (!rows.length) {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="5" class="empty-state">Tidak ada sumber yang cocok.</td>';
+    tr.innerHTML = '<td colspan="5" class="vec-empty"><i class="fa-solid fa-magnifying-glass"></i>Tidak ada sumber yang cocok.</td>';
     vecEls.tbody.appendChild(tr);
     return;
   }

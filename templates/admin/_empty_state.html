@@ -1,0 +1,18 @@
+{# Keadaan kosong seragam untuk daftar data admin.
+   Pakai: {% call empty_state('fa-solid fa-landmark', 'Judul', 'Penjelasan', tone='budaya') %} ...tombol... {% endcall %}
+   tone: budaya | wisata | rating | neutral #}
+{% macro empty_state(icon, title, text, tone='neutral', hint=None) %}
+<div class="admin-empty admin-empty--{{ tone }}">
+  <div class="admin-empty-art" aria-hidden="true">
+    <span class="admin-empty-ring"></span>
+    <span class="admin-empty-dot admin-empty-dot--a"></span>
+    <span class="admin-empty-dot admin-empty-dot--b"></span>
+    <span class="admin-empty-dot admin-empty-dot--c"></span>
+    <span class="admin-empty-icon"><i class="{{ icon }}"></i></span>
+  </div>
+  <h3>{{ title }}</h3>
+  <p>{{ text }}</p>
+  {% if hint %}<p class="admin-empty-hint"><i class="fa-regular fa-lightbulb"></i>{{ hint }}</p>{% endif %}
+  {% if caller %}<div class="admin-empty-actions">{{ caller() }}</div>{% endif %}
+</div>
+{% endmacro %}
