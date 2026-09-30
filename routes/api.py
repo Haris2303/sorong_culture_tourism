@@ -1,7 +1,7 @@
 """Router API: chatbot RAG & pengiriman rating wisata (anti-spam)."""
 from datetime import datetime
 
-from flask import current_app, jsonify, request
+from flask import jsonify, request
 
 from core.chat_jobs import get_job, start_job
 from core.security import contains_badword, generate_fingerprint, get_client_ip
@@ -43,8 +43,7 @@ def api_chat():
     # Diproses di background thread (bukan ditunggu di sini) supaya jawabannya
     # tidak ikut terputus kalau pengunjung pindah halaman sebelum LLM selesai —
     # klien menyimpan job_id dan melanjutkan polling dari halaman manapun.
-    app = current_app._get_current_object()
-    job_id = start_job(app, question, _clean_history(payload.get("history")))
+    job_id = start_job(question, _clean_history(payload.get("history")))
     return jsonify({"job_id": job_id}), 202
 
 

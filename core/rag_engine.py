@@ -10,8 +10,8 @@ import time
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
-from openai import RateLimitError
-from langchain_community.vectorstores import Chroma
+from openai import APIConnectionError, APIStatusError, RateLimitError
+from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -242,12 +242,34 @@ def get_llm(model: str):
             temperature=0.3,
             timeout=20,
             max_retries=1,
+            # Hampir semua model gratis OpenRouter adalah model "reasoning" yang
+            # berpikir dulu sebelum menjawab: 20-30 detik, sering lewat batas
+            # _LLM_CALL_TIMEOUT_SECONDS. Chatbot ini cuma merangkum KONTEKS hasil
+            # retrieval, tidak butuh rantai penalaran, jadi dimatikan (terukur
+            # 28s -> 4s). Model tanpa dukungan reasoning mengabaikan parameter ini.
+            extra_body={"reasoning": {"enabled": False}},
             default_headers={
                 "HTTP-Referer": "https://sorong-raya.local",
                 "X-Title": "Sorong Raya Chatbot",
             },
         )
     return _llm_by_model[model]
+
+
+def _upstream_error_summary(exc: Exception) -> str | None:
+    """Ringkasan satu baris kalau `exc` adalah gangguan dari OpenRouter/provider
+    (bukan bug di kode kita), atau None kalau bukan."""
+    if isinstance(exc, APIStatusError):
+        body = exc.body if isinstance(exc.body, dict) else {}
+        provider = (body.get("metadata") or {}).get("provider_name", "?")
+        return f"HTTP {exc.status_code} dari {provider}: {body.get('message', exc.message)}"
+    if isinstance(exc, APIConnectionError):
+        return f"koneksi gagal: {type(exc).__name__}"
+    # langchain_openai melempar ValueError(dict) kalau OpenRouter membalas 200
+    # tapi isinya error, mis. "Upstream error from Nvidia: Service temporarily unavailable".
+    if isinstance(exc, ValueError) and exc.args and isinstance(exc.args[0], dict):
+        return str(exc.args[0].get("message", exc.args[0]))[:160]
+    return None
 
 
 def _candidate_models(current_app) -> list[str]:
@@ -400,12 +422,19 @@ def answer_query(question: str, history: list | None = None) -> dict:
                     time.sleep(_QUOTA_RETRY_DELAY_SECONDS)
                     continue
                 logger.warning("Model %s tetap rate-limited, pindah ke model fallback berikutnya.", model)
-            except Exception:
+            except Exception as exc:
                 only_rate_limited = False
-                logger.warning(
-                    "RAG generation gagal model=%s untuk pertanyaan: %r, coba model fallback berikutnya.",
-                    model, question, exc_info=True,
-                )
+                upstream = _upstream_error_summary(exc)
+                if upstream:
+                    # Gangguan di sisi provider (502, layanan down, koneksi putus) itu
+                    # hal biasa di model gratis dan sudah ditangani lewat fallback,
+                    # jadi cukup satu baris log, tanpa traceback.
+                    logger.warning("Model %s gagal di upstream (%s), pindah ke model berikutnya.", model, upstream)
+                else:
+                    logger.warning(
+                        "RAG generation gagal model=%s untuk pertanyaan: %r, coba model fallback berikutnya.",
+                        model, question, exc_info=True,
+                    )
                 break
         if answer_text is not None:
             break

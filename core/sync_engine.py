@@ -18,7 +18,7 @@ from pypdf import PdfReader
 
 from core.content import html_to_plain_text
 from core.rag_engine import get_embeddings, reset_engine_cache
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from models import budaya as budaya_model
 from models import knowledge as knowledge_model
 from models import wisata as wisata_model

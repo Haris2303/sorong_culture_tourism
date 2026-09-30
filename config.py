@@ -3,6 +3,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Matikan telemetri anonim ChromaDB (statistik pemakaian dikirim ke server Chroma);
+# tidak dibutuhkan aplikasi. Harus diset sebelum klien Chroma pertama dibuat.
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -54,13 +58,12 @@ class Config:
     # Model gratis OpenRouter kadang penuh/di-deprecate tanpa peringatan, jadi dipakai
     # daftar fallback: dicoba berurutan sampai salah satu berhasil menjawab.
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-    OPENROUTER_CHAT_MODEL = os.getenv("OPENROUTER_CHAT_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")
+    OPENROUTER_CHAT_MODEL = os.getenv("OPENROUTER_CHAT_MODEL", "inclusionai/ling-3.0-flash-sante:free")
     OPENROUTER_CHAT_MODEL_FALLBACKS = [
         m.strip() for m in os.getenv(
             "OPENROUTER_CHAT_MODEL_FALLBACKS",
-            "nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,z-ai/glm-5.2:free,"
-            "google/gemma-4-26b-a4b-it:free,qwen/qwen3.8-27b:free,"
-            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free,inclusionai/ling-3.0-flash-vl:free",
+            "nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,"
+            "qwen/qwen3.8-27b:free,openrouter/free",
         ).split(",") if m.strip()
     ]
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
