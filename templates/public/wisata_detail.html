@@ -1,18 +1,22 @@
-{% extends "public/base.html" %}
-{% from "public/_detail_macros.html" import gallery, share_card, ask_bot, detail_scripts, related_list %}
-{% block title %}{{ item.nama_wisata }} | Wisata Sorong Raya{% endblock %}
-{% block extra_css %}
+{% extends "public/base.html" %} {% from "public/_detail_macros.html" import
+gallery, share_card, ask_bot, detail_scripts, related_list %} {% block title
+%}{{ item.nama_wisata }} | Wisata Sorong Raya{% endblock %} {% block extra_css
+%}
 <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.css"
 />
-{% endblock %}
-{% block content %}
-{% set hero_img = url_for('static', filename='uploads/' ~ galeri_images[0]) if galeri_images else url_for('static', filename='assets/wisata-header.png') %}
-{% set has_map = item.latitude is not none and item.longitude is not none %}
-{% set fasilitas = item.fasilitas.replace('\n', ',').split(',') | map('trim') | select | list if item.fasilitas else [] %}
+{% endblock %} {% block content %} {% set hero_img = url_for('static',
+filename='uploads/' ~ galeri_images[0]) if galeri_images else url_for('static',
+filename='assets/wisata-header.png') %} {% set has_map = item.latitude is not
+none and item.longitude is not none %} {% set fasilitas =
+item.fasilitas.replace('\n', ',').split(',') | map('trim') | select | list if
+item.fasilitas else [] %}
 
-<header class="dp-hero dp-hero--wisata" style="--hero-img: url('{{ hero_img }}')">
+<header
+  class="dp-hero dp-hero--wisata"
+  style="--hero-img: url('{{ hero_img }}')"
+>
   <div class="dp-hero-inner">
     <nav class="dp-crumbs" aria-label="Breadcrumb">
       <a href="{{ url_for('index') }}">Beranda</a>
@@ -30,19 +34,37 @@
     <div class="dp-facts">
       <span class="rating-summary rating-summary--hero" id="rating-summary">
         <i class="fa-solid fa-star"></i
-        ><span id="rating-summary-average" class="js-rating-avg">{{ summary.average }}</span> / 5
-        <small>· <span id="rating-summary-count" class="js-rating-count">{{ summary.count }}</span> ulasan</small>
+        ><span id="rating-summary-average" class="js-rating-avg"
+          >{{ summary.average }}</span
+        >
+        / 5
+        <small
+          >·
+          <span id="rating-summary-count" class="js-rating-count"
+            >{{ summary.count }}</span
+          >
+          ulasan</small
+        >
       </span>
-      {% if item.alamat %}<span class="dp-fact"><i class="fa-solid fa-location-dot"></i>{{ item.alamat }}</span>{% endif %}
-      {% if item.jam_operasional %}<span class="dp-fact"><i class="fa-regular fa-clock"></i>{{ item.jam_operasional }}</span>{% endif %}
-      <span class="dp-fact"><i class="fa-solid fa-ticket"></i>{{ item.tiket_masuk }}</span>
+      {% if item.alamat %}<span class="dp-fact"
+        ><i class="fa-solid fa-location-dot"></i>{{ item.alamat }}</span
+      >{% endif %} {% if item.jam_operasional %}<span class="dp-fact"
+        ><i class="fa-regular fa-clock"></i>{{ item.jam_operasional }}</span
+      >{% endif %}
+      <span class="dp-fact"
+        ><i class="fa-solid fa-ticket"></i>{{ item.tiket_masuk }}</span
+      >
     </div>
 
     <div class="dp-hero-actions">
       {% if has_map %}
-      <a href="#peta" class="btn btn-primary"><i class="fa-solid fa-map-location-dot"></i>Lihat Peta</a>
+      <a href="#peta" class="btn btn-primary"
+        ><i class="fa-solid fa-map-location-dot"></i>Lihat Peta</a
+      >
       {% endif %}
-      <a href="#rating-section" class="btn btn-glass"><i class="fa-regular fa-star"></i>Beri Ulasan</a>
+      <a href="#rating-section" class="btn btn-glass"
+        ><i class="fa-regular fa-star"></i>Beri Ulasan</a
+      >
     </div>
   </div>
 </header>
@@ -53,13 +75,17 @@
       {{ gallery(galeri_images, item.nama_wisata, 'fa-water') }}
 
       <article class="dp-card">
-        <h2 class="dp-h2"><i class="fa-solid fa-book-open"></i>Tentang Destinasi</h2>
+        <h2 class="dp-h2">
+          <i class="fa-solid fa-book-open"></i>Tentang Destinasi
+        </h2>
         <div class="detail-content">{{ item.deskripsi | safe }}</div>
       </article>
 
       {% if has_map %}
       <article class="dp-card" id="peta">
-        <h2 class="dp-h2"><i class="fa-solid fa-map-location-dot"></i>Peta Lokasi</h2>
+        <h2 class="dp-h2">
+          <i class="fa-solid fa-map-location-dot"></i>Peta Lokasi
+        </h2>
         <div class="map-embed">
           <iframe
             src="https://www.google.com/maps?q={{ item.latitude }},{{ item.longitude }}&z=15&output=embed"
@@ -80,10 +106,19 @@
       </article>
       {% endif %}
 
-      <article class="dp-card rating-section" id="rating-section" data-wisata-id="{{ item.id }}">
+      <article
+        class="dp-card rating-section"
+        id="rating-section"
+        data-wisata-id="{{ item.id }}"
+      >
         <h2 class="dp-h2"><i class="fa-regular fa-star"></i>Beri Penilaian</h2>
         <form id="rating-form" class="rating-form">
-          <div class="star-input" id="star-input" role="group" aria-label="Pilih skor bintang">
+          <div
+            class="star-input"
+            id="star-input"
+            role="group"
+            aria-label="Pilih skor bintang"
+          >
             {% for i in range(1, 6) %}
             <button
               type="button"
@@ -110,25 +145,52 @@
 
       <article class="dp-card review-list">
         <div class="review-head">
-          <h2 class="dp-h2"><i class="fa-regular fa-comments"></i>Ulasan Pengunjung</h2>
+          <h2 class="dp-h2">
+            <i class="fa-regular fa-comments"></i>Ulasan Pengunjung
+          </h2>
         </div>
 
-        <div class="rating-card" {% if not summary.count %}hidden{% endif %} aria-label="Rating rata-rata {{ summary.average }} dari 5 berdasarkan {{ summary.count }} ulasan">
+        <div
+          class="rating-card"
+          {%
+          if
+          not
+          summary.count
+          %}hidden{%
+          endif
+          %}
+          aria-label="Rating rata-rata {{ summary.average }} dari 5 berdasarkan {{ summary.count }} ulasan"
+        >
           <div class="rating-card-score">
-            <strong class="rating-card-num js-rating-avg">{{ summary.average }}</strong>
-            <div class="rating-card-stars js-rating-stars" style="--pct: {{ (summary.average / 5 * 100) | round(1) }}%" aria-hidden="true">
+            <strong class="rating-card-num js-rating-avg"
+              >{{ summary.average }}</strong
+            >
+            <div
+              class="rating-card-stars js-rating-stars"
+              style="--pct: {{ (summary.average / 5 * 100) | round(1) }}%"
+              aria-hidden="true"
+            >
               <span class="rating-card-stars-base">★★★★★</span>
               <span class="rating-card-stars-fill">★★★★★</span>
             </div>
-            <span class="rating-card-count"><b class="js-rating-count">{{ summary.count }}</b> ulasan</span>
+            <span class="rating-card-count"
+              ><b class="js-rating-count">{{ summary.count }}</b> ulasan</span
+            >
           </div>
           <ul class="rating-card-bars" id="rating-bars">
-            {% set total_r = ratings|length %}
-            {% for star in [5, 4, 3, 2, 1] %}
-            {% set n = ratings|selectattr('skor_bintang', 'equalto', star)|list|length %}
+            {% set total_r = ratings|length %} {% for star in [5, 4, 3, 2, 1] %}
+            {% set n = ratings|selectattr('skor_bintang', 'equalto',
+            star)|list|length %}
             <li data-dist-star="{{ star }}" data-count="{{ n }}">
-              <span class="rating-bar-label">{{ star }} <i class="fa-solid fa-star"></i></span>
-              <span class="rating-bar-track"><span class="rating-bar-fill" style="width: {{ (n * 100 / total_r) | round(1) if total_r else 0 }}%"></span></span>
+              <span class="rating-bar-label"
+                >{{ star }} <i class="fa-solid fa-star"></i
+              ></span>
+              <span class="rating-bar-track"
+                ><span
+                  class="rating-bar-fill"
+                  style="width: {{ (n * 100 / total_r) | round(1) if total_r else 0 }}%"
+                ></span
+              ></span>
               <span class="rating-bar-count">{{ n }}</span>
             </li>
             {% endfor %}
@@ -139,21 +201,34 @@
           {% for r in ratings %}
           <div class="review-item">
             <div class="review-stars">
-              {% for _ in range(r.skor_bintang) %}<i class="fa-solid fa-star"></i>{% endfor %}
+              {% for _ in range(r.skor_bintang) %}<i
+                class="fa-solid fa-star"
+              ></i
+              >{% endfor %}
             </div>
             {% if r.komentar %}
             <p>{{ r.komentar }}</p>
             {% endif %}
-            <span class="review-date">{{ r.created_at.strftime('%d %B %Y') }}</span>
+            <span class="review-date"
+              >{{ r.created_at.strftime('%d %B %Y') }}</span
+            >
           </div>
           {% else %}
           <div class="review-empty" id="review-empty-state">
             <div class="review-empty-art" aria-hidden="true">
-              <span class="review-empty-icon"><i class="fa-regular fa-comments"></i></span>
+              <span class="review-empty-icon"
+                ><i class="fa-regular fa-comments"></i
+              ></span>
             </div>
             <h3>Belum ada ulasan</h3>
-            <p>Jadilah yang pertama membagikan pengalaman Anda di {{ item.nama_wisata }} untuk membantu calon pengunjung lainnya.</p>
-            <a href="#rating-form" class="btn btn-primary"><i class="fa-regular fa-pen-to-square"></i>Tulis Ulasan Pertama</a>
+            <p>
+              Jadilah yang pertama membagikan pengalaman Anda di {{
+              item.nama_wisata }} untuk membantu calon pengunjung lainnya.
+            </p>
+            <a href="#rating-form" class="btn btn-primary"
+              ><i class="fa-regular fa-pen-to-square"></i>Tulis Ulasan
+              Pertama</a
+            >
           </div>
           {% endfor %}
         </div>
@@ -162,7 +237,9 @@
 
     <aside class="dp-side dp-side--tall">
       <div class="dp-side-card">
-        <h3 class="dp-side-title"><i class="fa-solid fa-circle-info"></i>Informasi Kunjungan</h3>
+        <h3 class="dp-side-title">
+          <i class="fa-solid fa-circle-info"></i>Informasi Kunjungan
+        </h3>
         <dl class="dp-info">
           <div>
             <dt><i class="fa-solid fa-location-dot"></i>Alamat</dt>
@@ -195,48 +272,64 @@
 
       {% if fasilitas %}
       <div class="dp-side-card">
-        <h3 class="dp-side-title"><i class="fa-solid fa-list-check"></i>Fasilitas</h3>
+        <h3 class="dp-side-title">
+          <i class="fa-solid fa-list-check"></i>Fasilitas
+        </h3>
         <ul class="dp-chips">
           {% for f in fasilitas %}
           <li><i class="fa-solid fa-circle-check"></i>{{ f }}</li>
           {% endfor %}
         </ul>
       </div>
-      {% endif %}
-
-      {% if item.sosmed_email or item.sosmed_facebook or item.sosmed_instagram or item.sosmed_youtube %}
+      {% endif %} {% if item.sosmed_email or item.sosmed_facebook or
+      item.sosmed_instagram or item.sosmed_youtube %}
       <div class="dp-side-card social-links-card">
-        <h3 class="dp-side-title"><i class="fa-solid fa-at"></i>Kontak &amp; Media Sosial</h3>
+        <h3 class="dp-side-title">
+          <i class="fa-solid fa-at"></i>Kontak &amp; Media Sosial
+        </h3>
         <div class="social-links">
           {% if item.sosmed_email %}
-          <a href="mailto:{{ item.sosmed_email }}" class="social-link social-link--email"><i class="fa-solid fa-envelope"></i>Email</a>
-          {% endif %}
-          {% if item.sosmed_facebook %}
-          <a href="{{ item.sosmed_facebook | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--facebook"><i class="fa-brands fa-facebook"></i>Facebook</a>
-          {% endif %}
-          {% if item.sosmed_instagram %}
-          <a href="{{ item.sosmed_instagram | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--instagram"><i class="fa-brands fa-instagram"></i>Instagram</a>
-          {% endif %}
-          {% if item.sosmed_youtube %}
-          <a href="{{ item.sosmed_youtube | social_url }}" target="_blank" rel="noopener noreferrer" class="social-link social-link--youtube"><i class="fa-brands fa-youtube"></i>YouTube</a>
+          <a
+            href="mailto:{{ item.sosmed_email }}"
+            class="social-link social-link--email"
+            ><i class="fa-solid fa-envelope"></i>Email</a
+          >
+          {% endif %} {% if item.sosmed_facebook %}
+          <a
+            href="{{ item.sosmed_facebook | social_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="social-link social-link--facebook"
+            ><i class="fa-brands fa-facebook"></i>Facebook</a
+          >
+          {% endif %} {% if item.sosmed_instagram %}
+          <a
+            href="{{ item.sosmed_instagram | social_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="social-link social-link--instagram"
+            ><i class="fa-brands fa-instagram"></i>Instagram</a
+          >
+          {% endif %} {% if item.sosmed_youtube %}
+          <a
+            href="{{ item.sosmed_youtube | social_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="social-link social-link--youtube"
+            ><i class="fa-brands fa-youtube"></i>YouTube</a
+          >
           {% endif %}
         </div>
       </div>
-      {% endif %}
-
-      {{ related_list(related, 'wisata') }}
-      {{ share_card(item.nama_wisata) }}
-      {{ ask_bot('destinasi ini') }}
+      {% endif %} {{ related_list(related, 'wisata') }} {{
+      share_card(item.nama_wisata) }} {{ ask_bot('destinasi ini') }}
 
       <a href="{{ url_for('wisata_list') }}" class="dp-back">
         <i class="fa-solid fa-arrow-left"></i>Kembali ke daftar wisata
       </a>
     </aside>
   </div>
-
 </section>
-{% endblock %}
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script src="{{ url_for('static', filename='js/rating.js') }}"></script>
-{{ detail_scripts(galeri_images) }}
-{% endblock %}
+{{ detail_scripts(galeri_images) }} {% endblock %}

@@ -1,17 +1,20 @@
-{% extends "public/base.html" %}
-{% from "public/_detail_macros.html" import gallery, share_card, ask_bot, detail_scripts, related_list %}
-{% block title %}{{ item.judul }} | Budaya Sorong Raya{% endblock %}
-{% block extra_css %}
+{% extends "public/base.html" %} {% from "public/_detail_macros.html" import
+gallery, share_card, ask_bot, detail_scripts, related_list %} {% block title
+%}{{ item.judul }} | Budaya Sorong Raya{% endblock %} {% block extra_css %}
 <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/14.2.0/swiper-bundle.min.css"
 />
-{% endblock %}
-{% block content %}
-{% set hero_img = url_for('static', filename='uploads/' ~ galeri_images[0]) if galeri_images else url_for('static', filename='assets/budaya-header.png') %}
-{% set read_min = [1, ((item.konten_lengkap | striptags | wordcount) / 200) | round(0, 'ceil') | int] | max %}
+{% endblock %} {% block content %} {% set hero_img = url_for('static',
+filename='uploads/' ~ galeri_images[0]) if galeri_images else url_for('static',
+filename='assets/budaya-header.png') %} {% set read_min = [1,
+((item.konten_lengkap | striptags | wordcount) / 200) | round(0, 'ceil') | int]
+| max %}
 
-<header class="dp-hero dp-hero--budaya" style="--hero-img: url('{{ hero_img }}')">
+<header
+  class="dp-hero dp-hero--budaya"
+  style="--hero-img: url('{{ hero_img }}')"
+>
   <div class="dp-hero-inner">
     <nav class="dp-crumbs" aria-label="Breadcrumb">
       <a href="{{ url_for('index') }}">Beranda</a>
@@ -28,10 +31,18 @@
     <p class="dp-lead">{{ item.ringkasan }}</p>
 
     <div class="dp-facts">
-      <span class="dp-fact"><i class="fa-regular fa-clock"></i>{{ read_min }} menit baca</span>
-      <span class="dp-fact"><i class="fa-solid fa-clock-rotate-left"></i>Diperbarui {{ item.updated_at.strftime('%d %B %Y') }}</span>
+      <span class="dp-fact"
+        ><i class="fa-regular fa-clock"></i>{{ read_min }} menit baca</span
+      >
+      <span class="dp-fact"
+        ><i class="fa-solid fa-clock-rotate-left"></i>Diperbarui {{
+        item.updated_at.strftime('%d %B %Y') }}</span
+      >
       {% if galeri_images|length > 1 %}
-      <span class="dp-fact"><i class="fa-regular fa-images"></i>{{ galeri_images|length }} foto</span>
+      <span class="dp-fact"
+        ><i class="fa-regular fa-images"></i>{{ galeri_images|length }}
+        foto</span
+      >
       {% endif %}
     </div>
   </div>
@@ -43,14 +54,18 @@
       {{ gallery(galeri_images, item.judul, 'fa-feather') }}
 
       <article class="dp-card">
-        <h2 class="dp-h2"><i class="fa-solid fa-book-open"></i>Tentang Budaya Ini</h2>
+        <h2 class="dp-h2">
+          <i class="fa-solid fa-book-open"></i>Tentang Budaya Ini
+        </h2>
         <div class="detail-content">{{ item.konten_lengkap | safe }}</div>
       </article>
     </div>
 
     <aside class="dp-side dp-side--tall">
       <div class="dp-side-card">
-        <h3 class="dp-side-title"><i class="fa-solid fa-circle-info"></i>Ringkasan</h3>
+        <h3 class="dp-side-title">
+          <i class="fa-solid fa-circle-info"></i>Ringkasan
+        </h3>
         <dl class="dp-info">
           <div>
             <dt><i class="fa-solid fa-layer-group"></i>Kategori</dt>
@@ -67,18 +82,14 @@
         </dl>
       </div>
 
-      {{ related_list(related, 'budaya') }}
-      {{ share_card(item.judul) }}
-      {{ ask_bot('budaya ini') }}
+      {{ related_list(related, 'budaya') }} {{ share_card(item.judul) }} {{
+      ask_bot('budaya ini') }}
 
       <a href="{{ url_for('budaya_list') }}" class="dp-back">
         <i class="fa-solid fa-arrow-left"></i>Kembali ke daftar budaya
       </a>
     </aside>
   </div>
-
 </section>
-{% endblock %}
-{% block extra_js %}
-{{ detail_scripts(galeri_images) }}
-{% endblock %}
+{% endblock %} {% block extra_js %} {{ detail_scripts(galeri_images) }} {%
+endblock %}

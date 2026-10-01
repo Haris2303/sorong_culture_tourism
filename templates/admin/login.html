@@ -1,133 +1,228 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login Admin - Sorong Raya</title>
-<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='assets/logo.svg') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
-</head>
-<body class="login-body">
-  <main class="login-shell">
-
-    <section class="login-panel">
-      <div class="login-box">
-        <div class="login-head">
-          <img class="login-logo" src="{{ url_for('static', filename='assets/logo.svg') }}" alt="" width="52" height="52">
-          <div>
-            <h1>Masuk Admin</h1>
-            <p class="login-subtitle">Kelola konten Sorong Raya</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Admin - Sorong Raya</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', filename='assets/logo.svg') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin.css') }}"
+    />
+  </head>
+  <body class="login-body">
+    <main class="login-shell">
+      <section class="login-panel">
+        <div class="login-box">
+          <div class="login-head">
+            <img
+              class="login-logo"
+              src="{{ url_for('static', filename='assets/logo.svg') }}"
+              alt=""
+              width="52"
+              height="52"
+            />
+            <div>
+              <h1>Masuk Admin</h1>
+              <p class="login-subtitle">Kelola konten Sorong Raya</p>
+            </div>
           </div>
+
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="login-alert login-alert--{{ 'success' if category == 'success' else 'error' }}"
+            role="alert"
+          >
+            <i
+              class="fa-solid {{ 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }}"
+            ></i>
+            <span>{{ message }}</span>
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+
+          <form method="post" id="login-form" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+            <label for="username">Username</label>
+            <div class="login-field">
+              <i class="fa-regular fa-user"></i>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                required
+                autofocus
+                autocomplete="username"
+                placeholder="Masukkan username"
+              />
+            </div>
+
+            <label for="password">Password</label>
+            <div class="login-field">
+              <i class="fa-solid fa-lock"></i>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                autocomplete="current-password"
+                placeholder="Masukkan password"
+              />
+              <button
+                type="button"
+                class="login-eye"
+                id="toggle-password"
+                aria-label="Tampilkan password"
+                aria-pressed="false"
+              >
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
+            <p class="login-caps" id="caps-warning" hidden>
+              <i class="fa-solid fa-triangle-exclamation"></i>Caps Lock sedang
+              aktif
+            </p>
+
+            <label for="captcha">Kode keamanan</label>
+            <div class="captcha-row">
+              <img
+                id="captcha-img"
+                class="captcha-img"
+                src="{{ url_for('admin_captcha') }}"
+                alt="Gambar kode keamanan"
+                width="290"
+                height="70"
+              />
+              <button
+                type="button"
+                class="captcha-refresh"
+                id="captcha-refresh"
+                aria-label="Muat ulang kode keamanan"
+                title="Muat ulang kode"
+              >
+                <i class="fa-solid fa-rotate"></i>
+              </button>
+            </div>
+            <div class="login-field">
+              <i class="fa-solid fa-shield-halved"></i>
+              <input
+                type="text"
+                id="captcha"
+                name="captcha"
+                required
+                maxlength="5"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                inputmode="text"
+                placeholder="Ketik 5 karakter pada gambar"
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary btn-block login-submit"
+              id="login-submit"
+            >
+              <i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>
+            </button>
+          </form>
+
+          <a href="{{ url_for('index') }}" class="login-back"
+            ><i class="fa-solid fa-arrow-left"></i>Kembali ke situs publik</a
+          >
         </div>
+      </section>
+    </main>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="login-alert login-alert--{{ 'success' if category == 'success' else 'error' }}" role="alert">
-                <i class="fa-solid {{ 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }}"></i>
-                <span>{{ message }}</span>
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+    <script>
+      (function () {
+        var form = document.getElementById("login-form");
+        var pwd = document.getElementById("password");
+        var eye = document.getElementById("toggle-password");
+        var caps = document.getElementById("caps-warning");
+        var submit = document.getElementById("login-submit");
 
-        <form method="post" id="login-form" novalidate>
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        // Tampilkan / sembunyikan password.
+        eye.addEventListener("click", function () {
+          var show = pwd.type === "password";
+          pwd.type = show ? "text" : "password";
+          eye.setAttribute("aria-pressed", String(show));
+          eye.setAttribute(
+            "aria-label",
+            show ? "Sembunyikan password" : "Tampilkan password",
+          );
+          eye.firstElementChild.className = show
+            ? "fa-regular fa-eye-slash"
+            : "fa-regular fa-eye";
+          pwd.focus();
+        });
 
-          <label for="username">Username</label>
-          <div class="login-field">
-            <i class="fa-regular fa-user"></i>
-            <input type="text" id="username" name="username" required autofocus autocomplete="username" placeholder="Masukkan username">
-          </div>
-
-          <label for="password">Password</label>
-          <div class="login-field">
-            <i class="fa-solid fa-lock"></i>
-            <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Masukkan password">
-            <button type="button" class="login-eye" id="toggle-password" aria-label="Tampilkan password" aria-pressed="false">
-              <i class="fa-regular fa-eye"></i>
-            </button>
-          </div>
-          <p class="login-caps" id="caps-warning" hidden><i class="fa-solid fa-triangle-exclamation"></i>Caps Lock sedang aktif</p>
-
-          <label for="captcha">Kode keamanan</label>
-          <div class="captcha-row">
-            <img id="captcha-img" class="captcha-img" src="{{ url_for('admin_captcha') }}" alt="Gambar kode keamanan" width="290" height="70">
-            <button type="button" class="captcha-refresh" id="captcha-refresh" aria-label="Muat ulang kode keamanan" title="Muat ulang kode">
-              <i class="fa-solid fa-rotate"></i>
-            </button>
-          </div>
-          <div class="login-field">
-            <i class="fa-solid fa-shield-halved"></i>
-            <input type="text" id="captcha" name="captcha" required maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="Ketik 5 karakter pada gambar">
-          </div>
-
-          <button type="submit" class="btn btn-primary btn-block login-submit" id="login-submit">
-            <i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>
-          </button>
-        </form>
-
-        <a href="{{ url_for('index') }}" class="login-back"><i class="fa-solid fa-arrow-left"></i>Kembali ke situs publik</a>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    (function () {
-      var form = document.getElementById("login-form");
-      var pwd = document.getElementById("password");
-      var eye = document.getElementById("toggle-password");
-      var caps = document.getElementById("caps-warning");
-      var submit = document.getElementById("login-submit");
-
-      // Tampilkan / sembunyikan password.
-      eye.addEventListener("click", function () {
-        var show = pwd.type === "password";
-        pwd.type = show ? "text" : "password";
-        eye.setAttribute("aria-pressed", String(show));
-        eye.setAttribute("aria-label", show ? "Sembunyikan password" : "Tampilkan password");
-        eye.firstElementChild.className = show ? "fa-regular fa-eye-slash" : "fa-regular fa-eye";
-        pwd.focus();
-      });
-
-      // Peringatan Caps Lock.
-      function checkCaps(e) {
-        if (e.getModifierState) caps.hidden = !e.getModifierState("CapsLock");
-      }
-      pwd.addEventListener("keydown", checkCaps);
-      pwd.addEventListener("keyup", checkCaps);
-      pwd.addEventListener("blur", function () { caps.hidden = true; });
-
-      // Muat ulang gambar CAPTCHA (URL diberi penanda waktu agar tidak diambil dari cache).
-      var capImg = document.getElementById("captcha-img");
-      var capInput = document.getElementById("captcha");
-      var capBtn = document.getElementById("captcha-refresh");
-      function refreshCaptcha() {
-        capBtn.classList.add("is-spinning");
-        capImg.src = "{{ url_for('admin_captcha') }}?v=" + Date.now();
-        capInput.value = "";
-      }
-      capImg.addEventListener("load", function () { capBtn.classList.remove("is-spinning"); });
-      capImg.addEventListener("error", function () { capBtn.classList.remove("is-spinning"); });
-      capBtn.addEventListener("click", function () { refreshCaptcha(); capInput.focus(); });
-
-      // Validasi ringan + status memproses agar tidak terkirim dua kali.
-      form.addEventListener("submit", function (e) {
-        var user = document.getElementById("username");
-        [user, pwd, capInput].forEach(function (el) { el.closest(".login-field").classList.remove("is-invalid"); });
-        var bad = [user, pwd, capInput].filter(function (el) { return !el.value.trim(); });
-        if (bad.length) {
-          e.preventDefault();
-          bad.forEach(function (el) { el.closest(".login-field").classList.add("is-invalid"); });
-          bad[0].focus();
-          return;
+        // Peringatan Caps Lock.
+        function checkCaps(e) {
+          if (e.getModifierState) caps.hidden = !e.getModifierState("CapsLock");
         }
-        submit.disabled = true;
-        submit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Memproses...</span>';
-      });
-    })();
-  </script>
-</body>
+        pwd.addEventListener("keydown", checkCaps);
+        pwd.addEventListener("keyup", checkCaps);
+        pwd.addEventListener("blur", function () {
+          caps.hidden = true;
+        });
+
+        // Muat ulang gambar CAPTCHA (URL diberi penanda waktu agar tidak diambil dari cache).
+        var capImg = document.getElementById("captcha-img");
+        var capInput = document.getElementById("captcha");
+        var capBtn = document.getElementById("captcha-refresh");
+        function refreshCaptcha() {
+          capBtn.classList.add("is-spinning");
+          capImg.src = "{{ url_for('admin_captcha') }}?v=" + Date.now();
+          capInput.value = "";
+        }
+        capImg.addEventListener("load", function () {
+          capBtn.classList.remove("is-spinning");
+        });
+        capImg.addEventListener("error", function () {
+          capBtn.classList.remove("is-spinning");
+        });
+        capBtn.addEventListener("click", function () {
+          refreshCaptcha();
+          capInput.focus();
+        });
+
+        // Validasi ringan + status memproses agar tidak terkirim dua kali.
+        form.addEventListener("submit", function (e) {
+          var user = document.getElementById("username");
+          [user, pwd, capInput].forEach(function (el) {
+            el.closest(".login-field").classList.remove("is-invalid");
+          });
+          var bad = [user, pwd, capInput].filter(function (el) {
+            return !el.value.trim();
+          });
+          if (bad.length) {
+            e.preventDefault();
+            bad.forEach(function (el) {
+              el.closest(".login-field").classList.add("is-invalid");
+            });
+            bad[0].focus();
+            return;
+          }
+          submit.disabled = true;
+          submit.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin"></i><span>Memproses...</span>';
+        });
+      })();
+    </script>
+  </body>
 </html>

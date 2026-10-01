@@ -1,27 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Logo Sorong Raya">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="240" height="240" role="img" aria-label="Logo Sorong Raya: tifa dengan gelombang laut">
   <defs>
-    <linearGradient id="sr-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#38bdf8"/>
-      <stop offset="0.55" stop-color="#0494ed"/>
-      <stop offset="1" stop-color="#123a5c"/>
-    </linearGradient>
-    <linearGradient id="sr-feather" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#d4ecfb"/>
-    </linearGradient>
+    <clipPath id="tifa-body">
+      <path d="M34 26 C34 44 48 50 48 62 C48 74 38 82 38 98 L82 98 C82 82 72 74 72 62 C72 50 86 44 86 26 Z"/>
+    </clipPath>
   </defs>
 
-  <!-- latar -->
-  <rect width="48" height="48" rx="13" fill="url(#sr-bg)"/>
-  <path d="M0 14C0 6.3 6.3 0 14 0h20c7.7 0 14 6.3 14 14v2C36 12 14 14 0 22z" fill="#ffffff" opacity="0.12"/>
+  <!-- badan tifa -->
+  <path d="M34 26 C34 44 48 50 48 62 C48 74 38 82 38 98 L82 98 C82 82 72 74 72 62 C72 50 86 44 86 26 Z" fill="#B5532F"/>
 
-  <!-- bulu cendrawasih: lambang budaya & kekayaan alam Papua -->
-  <path d="M13 31C10.5 19.5 19.5 8.5 36 8c0.6 14.5-8.6 24-23 23z" fill="url(#sr-feather)"/>
-  <path d="M13.5 30.5L33.5 11" stroke="#123a5c" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-  <path d="M19 25.5c1.2-3.4 3.6-5.6 7-6.8M23.5 21.2c1.1-3 3.2-5 6.2-6.1" stroke="#123a5c" stroke-opacity="0.35" stroke-width="1" stroke-linecap="round" fill="none"/>
-  <circle cx="13.5" cy="12" r="3" fill="#fbbf24"/>
+  <!-- gelombang laut (dipotong mengikuti bentuk tifa) -->
+  <g clip-path="url(#tifa-body)">
+    <path d="M30 80 Q38 73 46 80 T62 80 T78 80 T94 80 V104 H30 Z" fill="#E9B872" opacity="0.95"/>
+    <path d="M30 88 Q38 81 46 88 T62 88 T78 88 T94 88 V104 H30 Z" fill="#1F8A8A"/>
+    <path d="M30 96 Q38 89 46 96 T62 96 T78 96 T94 96 V104 H30 Z" fill="#136666"/>
+  </g>
 
-  <!-- ombak laut: lambang wisata bahari -->
-  <path d="M6 37.5c3-3 6-3 9 0s6 3 9 0 6-3 9 0 6 3 9 0" stroke="#ffffff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-  <path d="M6 43.5c3-3 6-3 9 0s6 3 9 0 6-3 9 0 6 3 9 0" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <!-- motif segitiga di bagian atas badan -->
+  <g fill="#E9B872">
+    <path d="M38 33 l4 8 l4 -8 z"/>
+    <path d="M46 36 l4 8 l4 -8 z"/>
+    <path d="M54 37 l4 8 l4 -8 z"/>
+    <path d="M62 37 l4 8 l4 -8 z"/>
+    <path d="M70 36 l4 8 l4 -8 z"/>
+  </g>
+
+  <!-- alas tifa -->
+  <ellipse cx="60" cy="98" rx="22" ry="5" fill="#136666"/>
+
+  <!-- kulit/permukaan tifa -->
+  <ellipse cx="60" cy="26" rx="26" ry="8" fill="#F4DDB0" stroke="#5A2A14" stroke-width="2.5"/>
+  <ellipse cx="60" cy="26" rx="19" ry="5" fill="none" stroke="#B5532F" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- pegangan tifa -->
+  <path d="M48 60 C40 60 38 66 44 68" fill="none" stroke="#5A2A14" stroke-width="2.5" stroke-linecap="round"/>
 </svg>

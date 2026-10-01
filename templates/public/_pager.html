@@ -1,46 +1,67 @@
-{# Pagination publik: info rentang + nomor halaman. extra = filter aktif, mis. {'wilayah': 'Kota Sorong'}. #}
-{% macro pager(endpoint, pagination, shown, noun, extra={}) %}
-{% if pagination.total > 0 %}
-{% set cur = pagination.page %}
-{% set last = pagination.total_pages %}
+{# Pagination publik: info rentang + nomor halaman. extra = filter aktif, mis.
+{'wilayah': 'Kota Sorong'}. #} {% macro pager(endpoint, pagination, shown, noun,
+extra={}) %} {% if pagination.total > 0 %} {% set cur = pagination.page %} {%
+set last = pagination.total_pages %}
 <nav class="pager" aria-label="Navigasi halaman">
   <p class="pager-info">
-    Menampilkan <b>{{ pagination.offset + 1 }}&ndash;{{ pagination.offset + shown }}</b>
+    Menampilkan
+    <b>{{ pagination.offset + 1 }}&ndash;{{ pagination.offset + shown }}</b>
     dari <b>{{ pagination.total }}</b> {{ noun }}
   </p>
   {% if last > 1 %}
   <ul class="pager-list">
     <li>
       {% if pagination.has_prev %}
-      <a class="pager-btn pager-btn--nav" href="{{ url_for(endpoint, page=cur - 1, **extra) }}" rel="prev" aria-label="Halaman sebelumnya"><i class="fa-solid fa-chevron-left"></i><span>Sebelumnya</span></a>
+      <a
+        class="pager-btn pager-btn--nav"
+        href="{{ url_for(endpoint, page=cur - 1, **extra) }}"
+        rel="prev"
+        aria-label="Halaman sebelumnya"
+        ><i class="fa-solid fa-chevron-left"></i><span>Sebelumnya</span></a
+      >
       {% else %}
-      <span class="pager-btn pager-btn--nav is-disabled" aria-disabled="true"><i class="fa-solid fa-chevron-left"></i><span>Sebelumnya</span></span>
+      <span class="pager-btn pager-btn--nav is-disabled" aria-disabled="true"
+        ><i class="fa-solid fa-chevron-left"></i><span>Sebelumnya</span></span
+      >
       {% endif %}
     </li>
-    {% for p in range(1, last + 1) %}
-      {% set show = last <= 7 or p == 1 or p == last or (p - cur)|abs <= 1 or (p == 2 and cur == 4) or (p == last - 1 and cur == last - 3) %}
-      {% if show %}
-      <li class="pager-num">
-        {% if p == cur %}
-        <span class="pager-btn is-active" aria-current="page">{{ p }}</span>
-        {% else %}
-        <a class="pager-btn" href="{{ url_for(endpoint, page=p, **extra) }}" aria-label="Halaman {{ p }}">{{ p }}</a>
-        {% endif %}
-      </li>
-      {% elif (p - cur)|abs == 2 %}
-      <li class="pager-gap pager-num" aria-hidden="true">&hellip;</li>
+    {% for p in range(1, last + 1) %} {% set show = last <= 7 or p == 1 or p ==
+    last or (p - cur)|abs <= 1 or (p == 2 and cur == 4) or (p == last - 1 and
+    cur == last - 3) %} {% if show %}
+    <li class="pager-num">
+      {% if p == cur %}
+      <span class="pager-btn is-active" aria-current="page">{{ p }}</span>
+      {% else %}
+      <a
+        class="pager-btn"
+        href="{{ url_for(endpoint, page=p, **extra) }}"
+        aria-label="Halaman {{ p }}"
+        >{{ p }}</a
+      >
       {% endif %}
-    {% endfor %}
-    <li class="pager-compact" aria-hidden="true">Hal. {{ cur }} / {{ last }}</li>
+    </li>
+    {% elif (p - cur)|abs == 2 %}
+    <li class="pager-gap pager-num" aria-hidden="true">&hellip;</li>
+    {% endif %} {% endfor %}
+    <li class="pager-compact" aria-hidden="true">
+      Hal. {{ cur }} / {{ last }}
+    </li>
     <li>
       {% if pagination.has_next %}
-      <a class="pager-btn pager-btn--nav" href="{{ url_for(endpoint, page=cur + 1, **extra) }}" rel="next" aria-label="Halaman berikutnya"><span>Berikutnya</span><i class="fa-solid fa-chevron-right"></i></a>
+      <a
+        class="pager-btn pager-btn--nav"
+        href="{{ url_for(endpoint, page=cur + 1, **extra) }}"
+        rel="next"
+        aria-label="Halaman berikutnya"
+        ><span>Berikutnya</span><i class="fa-solid fa-chevron-right"></i
+      ></a>
       {% else %}
-      <span class="pager-btn pager-btn--nav is-disabled" aria-disabled="true"><span>Berikutnya</span><i class="fa-solid fa-chevron-right"></i></span>
+      <span class="pager-btn pager-btn--nav is-disabled" aria-disabled="true"
+        ><span>Berikutnya</span><i class="fa-solid fa-chevron-right"></i
+      ></span>
       {% endif %}
     </li>
   </ul>
   {% endif %}
 </nav>
-{% endif %}
-{% endmacro %}
+{% endif %} {% endmacro %}

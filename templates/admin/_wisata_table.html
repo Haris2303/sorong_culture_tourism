@@ -1,11 +1,16 @@
 <span data-list-total="{{ pagination.total }}" hidden></span>
-{% from "admin/_empty_state.html" import empty_state %}
-{% from "admin/_pagination.html" import pager %}
-{% if items %}
-  <div class="admin-table-wrap">
+{% from "admin/_empty_state.html" import empty_state %} {% from
+"admin/_pagination.html" import pager %} {% if items %}
+<div class="admin-table-wrap">
   <table class="admin-table">
     <thead>
-      <tr><th class="col-no">No</th><th>Destinasi</th><th>Wilayah</th><th>Diperbarui</th><th class="col-actions">Aksi</th></tr>
+      <tr>
+        <th class="col-no">No</th>
+        <th>Destinasi</th>
+        <th>Wilayah</th>
+        <th>Diperbarui</th>
+        <th class="col-actions">Aksi</th>
+      </tr>
     </thead>
     <tbody>
       {% for item in items %}
@@ -14,28 +19,61 @@
         <td>
           <div class="cell-item">
             {% if item.gambar %}
-            <img class="cell-thumb" src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}" alt="" loading="lazy">
+            <img
+              class="cell-thumb"
+              src="{{ url_for('static', filename='uploads/' ~ item.gambar) }}"
+              alt=""
+              loading="lazy"
+            />
             {% else %}
-            <span class="cell-thumb cell-thumb--empty cell-thumb--wisata"><i class="fa-solid fa-compass"></i></span>
+            <span class="cell-thumb cell-thumb--empty cell-thumb--wisata"
+              ><i class="fa-solid fa-compass"></i
+            ></span>
             {% endif %}
             <div class="cell-text">
               <strong class="cell-title">{{ item.nama_wisata }}</strong>
-              <span class="cell-sub"><i class="fa-solid fa-location-dot"></i>{{ item.alamat or 'Alamat belum diisi' }}</span>
+              <span class="cell-sub"
+                ><i class="fa-solid fa-location-dot"></i>{{ item.alamat or
+                'Alamat belum diisi' }}</span
+              >
             </div>
           </div>
         </td>
-        <td><span class="tag {{ 'tag--kota' if item.wilayah == 'Kota Sorong' else 'tag--kabupaten' }}">{{ item.wilayah }}</span></td>
         <td>
-          <span class="cell-date">{{ item.updated_at.strftime('%d %b %Y') }}</span>
+          <span
+            class="tag {{ 'tag--kota' if item.wilayah == 'Kota Sorong' else 'tag--kabupaten' }}"
+            >{{ item.wilayah }}</span
+          >
+        </td>
+        <td>
+          <span class="cell-date"
+            >{{ item.updated_at.strftime('%d %b %Y') }}</span
+          >
           <span class="cell-time">{{ item.updated_at.strftime('%H:%M') }}</span>
         </td>
         <td class="table-actions">
-          <a href="{{ url_for('wisata_detail', wisata_id=item.id) }}" target="_blank" rel="noopener" class="icon-btn icon-btn--preview"
-             title="Pratinjau di situs publik" aria-label="Pratinjau destinasi"><i class="fa-solid fa-eye"></i></a>
-          <button type="button" class="icon-btn icon-btn--edit edit-wisata-btn" title="Edit destinasi" aria-label="Edit destinasi"
-            data-id="{{ item.id }}" data-nama="{{ item.nama_wisata }}" data-wilayah="{{ item.wilayah }}"
-            data-deskripsi="{{ item.deskripsi }}" data-fasilitas="{{ item.fasilitas }}"
-            data-alamat="{{ item.alamat }}" data-tiket="{{ item.tiket_masuk }}" data-jam="{{ item.jam_operasional }}"
+          <a
+            href="{{ url_for('wisata_detail', wisata_id=item.id) }}"
+            target="_blank"
+            rel="noopener"
+            class="icon-btn icon-btn--preview"
+            title="Pratinjau di situs publik"
+            aria-label="Pratinjau destinasi"
+            ><i class="fa-solid fa-eye"></i
+          ></a>
+          <button
+            type="button"
+            class="icon-btn icon-btn--edit edit-wisata-btn"
+            title="Edit destinasi"
+            aria-label="Edit destinasi"
+            data-id="{{ item.id }}"
+            data-nama="{{ item.nama_wisata }}"
+            data-wilayah="{{ item.wilayah }}"
+            data-deskripsi="{{ item.deskripsi }}"
+            data-fasilitas="{{ item.fasilitas }}"
+            data-alamat="{{ item.alamat }}"
+            data-tiket="{{ item.tiket_masuk }}"
+            data-jam="{{ item.jam_operasional }}"
             data-gambar="{{ item.gambar or '' }}"
             data-lat="{{ item.latitude if item.latitude is not none else '' }}"
             data-lon="{{ item.longitude if item.longitude is not none else '' }}"
@@ -43,27 +81,52 @@
             data-sosmed-facebook="{{ item.sosmed_facebook or '' }}"
             data-sosmed-instagram="{{ item.sosmed_instagram or '' }}"
             data-sosmed-youtube="{{ item.sosmed_youtube or '' }}"
-            data-galeri="{{ item.galeri | tojson | forceescape }}"><i class="fa-solid fa-pen"></i></button>
-          <form method="post" action="{{ url_for('admin_wisata_delete', wisata_id=item.id) }}" class="inline-form"
-                data-confirm="Destinasi beserta foto galerinya akan dihapus permanen. Lanjutkan?" data-confirm-title="Hapus destinasi?">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="icon-btn icon-btn--danger" title="Hapus destinasi" aria-label="Hapus destinasi"><i class="fa-solid fa-trash"></i></button>
+            data-galeri="{{ item.galeri | tojson | forceescape }}"
+          >
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <form
+            method="post"
+            action="{{ url_for('admin_wisata_delete', wisata_id=item.id) }}"
+            class="inline-form"
+            data-confirm="Destinasi beserta foto galerinya akan dihapus permanen. Lanjutkan?"
+            data-confirm-title="Hapus destinasi?"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button
+              type="submit"
+              class="icon-btn icon-btn--danger"
+              title="Hapus destinasi"
+              aria-label="Hapus destinasi"
+            >
+              <i class="fa-solid fa-trash"></i>
+            </button>
           </form>
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-  </div>
-{% else %}
-  {% if q %}
-  {% call empty_state('fa-solid fa-magnifying-glass', 'Tidak ada hasil untuk “' ~ q ~ '”', 'Tidak ada destinasi wisata yang cocok dengan kata kunci tersebut. Periksa ejaan atau coba kata kunci yang lebih singkat.', tone='neutral', hint='Pencarian mencocokkan judul, kategori, dan isi ringkasan.') %}
-    <a href="{{ url_for('admin_wisata_manage') }}" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i>Hapus pencarian</a>
-  {% endcall %}
-  {% else %}
-  {% call empty_state('fa-solid fa-compass', 'Belum ada destinasi wisata', 'Tambahkan destinasi pertama untuk mengisi katalog wisata Kota & Kabupaten Sorong. Data ini juga dipakai chatbot untuk menjawab pertanyaan pengunjung.', tone='wisata', hint='Isi koordinat agar peta lokasi tampil di halaman detail.') %}
-    <button type="button" class="btn btn-primary" data-click-target="add-wisata-btn"><i class="fa-solid fa-plus"></i>Tambah Destinasi Pertama</button>
-  {% endcall %}
-  {% endif %}
-{% endif %}
-  {{ pager('admin_wisata_manage', pagination, q, per_page, items|length) }}
+</div>
+{% else %} {% if q %} {% call empty_state('fa-solid fa-magnifying-glass', 'Tidak
+ada hasil untuk “' ~ q ~ '”', 'Tidak ada destinasi wisata yang cocok dengan kata
+kunci tersebut. Periksa ejaan atau coba kata kunci yang lebih singkat.',
+tone='neutral', hint='Pencarian mencocokkan judul, kategori, dan isi
+ringkasan.') %}
+<a href="{{ url_for('admin_wisata_manage') }}" class="btn btn-outline"
+  ><i class="fa-solid fa-rotate-left"></i>Hapus pencarian</a
+>
+{% endcall %} {% else %} {% call empty_state('fa-solid fa-compass', 'Belum ada
+destinasi wisata', 'Tambahkan destinasi pertama untuk mengisi katalog wisata
+Kota & Kabupaten Sorong. Data ini juga dipakai chatbot untuk menjawab pertanyaan
+pengunjung.', tone='wisata', hint='Isi koordinat agar peta lokasi tampil di
+halaman detail.') %}
+<button
+  type="button"
+  class="btn btn-primary"
+  data-click-target="add-wisata-btn"
+>
+  <i class="fa-solid fa-plus"></i>Tambah Destinasi Pertama
+</button>
+{% endcall %} {% endif %} {% endif %} {{ pager('admin_wisata_manage',
+pagination, q, per_page, items|length) }}

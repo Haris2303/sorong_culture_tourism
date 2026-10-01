@@ -1,11 +1,9 @@
-{% extends "public/base.html" %}
-{% from "public/_home_macros.html" import feature_card %}
-{% set n_budaya = budaya_results|length %}
-{% set n_wisata = wisata_results|length %}
-{% set n_total = n_budaya + n_wisata %}
-{% set suggestions = ['Pantai', 'Suku Moi', 'Konservasi', 'Tarian', 'Snorkeling', 'Tebing'] %}
-{% block title %}{% if q %}Pencarian "{{ q }}"{% else %}Pencarian{% endif %} | Sorong Raya{% endblock %}
-{% block content %}
+{% extends "public/base.html" %} {% from "public/_home_macros.html" import
+feature_card %} {% set n_budaya = budaya_results|length %} {% set n_wisata =
+wisata_results|length %} {% set n_total = n_budaya + n_wisata %} {% set
+suggestions = ['Pantai', 'Suku Moi', 'Konservasi', 'Tarian', 'Snorkeling',
+'Tebing'] %} {% block title %}{% if q %}Pencarian "{{ q }}"{% else %}Pencarian{%
+endif %} | Sorong Raya{% endblock %} {% block content %}
 <section class="page-header page-header--search">
   <span class="hero-blob hero-blob--a" aria-hidden="true"></span>
   <span class="hero-blob hero-blob--b" aria-hidden="true"></span>
@@ -15,22 +13,48 @@
       <i class="fa-solid fa-chevron-right"></i>
       <span>Pencarian</span>
     </nav>
-    <span class="eyebrow eyebrow--search"><i class="fa-solid fa-magnifying-glass"></i>Hasil Pencarian</span>
+    <span class="eyebrow eyebrow--search"
+      ><i class="fa-solid fa-magnifying-glass"></i>Hasil Pencarian</span
+    >
     <h1 class="page-title">
-      {% if q %}Hasil untuk <span class="text-gradient">&ldquo;{{ q }}&rdquo;</span>{% else %}Cari budaya &amp; wisata{% endif %}
+      {% if q %}Hasil untuk
+      <span class="text-gradient">&ldquo;{{ q }}&rdquo;</span>{% else %}Cari
+      budaya &amp; wisata{% endif %}
     </h1>
 
-    <form class="search-hero" action="{{ url_for('search') }}" method="get" role="search">
+    <form
+      class="search-hero"
+      action="{{ url_for('search') }}"
+      method="get"
+      role="search"
+    >
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" name="q" value="{{ q }}" placeholder="Cari budaya, destinasi, atau kata kunci..." autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Kata kunci pencarian" />
+      <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Cari budaya, destinasi, atau kata kunci..."
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        aria-label="Kata kunci pencarian"
+      />
       <button type="submit" class="btn btn-primary">Cari</button>
     </form>
 
     {% if q %}
     <div class="list-stats">
-      <span class="list-stat"><i class="fa-solid fa-list"></i><b>{{ n_total }}</b> hasil ditemukan</span>
-      <span class="list-stat"><i class="fa-solid fa-feather"></i><b>{{ n_budaya }}</b> budaya</span>
-      <span class="list-stat"><i class="fa-solid fa-location-dot"></i><b>{{ n_wisata }}</b> wisata</span>
+      <span class="list-stat"
+        ><i class="fa-solid fa-list"></i><b>{{ n_total }}</b> hasil
+        ditemukan</span
+      >
+      <span class="list-stat"
+        ><i class="fa-solid fa-feather"></i><b>{{ n_budaya }}</b> budaya</span
+      >
+      <span class="list-stat"
+        ><i class="fa-solid fa-location-dot"></i
+        ><b>{{ n_wisata }}</b> wisata</span
+      >
     </div>
     {% endif %}
   </div>
@@ -40,93 +64,160 @@
   <div class="section-inner">
     {% if n_total %}
     <div class="search-results">
-    {% if n_budaya %}
-    <div class="result-group" data-group="budaya">
-      <h2 class="result-heading"><span class="result-heading-icon result-heading-icon--budaya"><i class="fa-solid fa-feather"></i></span>Budaya <small>{{ n_budaya }} artikel</small></h2>
-      <div class="grid-3 showcase-grid">
-        {% for item in budaya_results %}
-        <div class="showcase-cell" data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 100 }}">{{ feature_card('budaya', item, 0) }}</div>
-        {% endfor %}
+      {% if n_budaya %}
+      <div class="result-group" data-group="budaya">
+        <h2 class="result-heading">
+          <span class="result-heading-icon result-heading-icon--budaya"
+            ><i class="fa-solid fa-feather"></i></span
+          >Budaya <small>{{ n_budaya }} artikel</small>
+        </h2>
+        <div class="grid-3 showcase-grid">
+          {% for item in budaya_results %}
+          <div
+            class="showcase-cell"
+            data-aos="fade-up"
+            data-aos-delay="{{ (loop.index0 % 3) * 100 }}"
+          >
+            {{ feature_card('budaya', item, 0) }}
+          </div>
+          {% endfor %}
+        </div>
+        {% if n_budaya >= 20 %}
+        <p class="result-note">
+          <i class="fa-solid fa-circle-info"></i>Menampilkan 20 hasil teratas.
+          Persempit kata kunci untuk hasil yang lebih tepat.
+        </p>
+        {% endif %}
       </div>
-      {% if n_budaya >= 20 %}<p class="result-note"><i class="fa-solid fa-circle-info"></i>Menampilkan 20 hasil teratas. Persempit kata kunci untuk hasil yang lebih tepat.</p>{% endif %}
-    </div>
-    {% endif %}
-
-    {% if n_wisata %}
-    <div class="result-group" data-group="wisata">
-      <h2 class="result-heading"><span class="result-heading-icon"><i class="fa-solid fa-location-dot"></i></span>Wisata <small>{{ n_wisata }} destinasi</small></h2>
-      <div class="grid-3 showcase-grid">
-        {% for item in wisata_results %}
-        <div class="showcase-cell" data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 100 }}">{{ feature_card('wisata', item, 0) }}</div>
-        {% endfor %}
+      {% endif %} {% if n_wisata %}
+      <div class="result-group" data-group="wisata">
+        <h2 class="result-heading">
+          <span class="result-heading-icon"
+            ><i class="fa-solid fa-location-dot"></i></span
+          >Wisata <small>{{ n_wisata }} destinasi</small>
+        </h2>
+        <div class="grid-3 showcase-grid">
+          {% for item in wisata_results %}
+          <div
+            class="showcase-cell"
+            data-aos="fade-up"
+            data-aos-delay="{{ (loop.index0 % 3) * 100 }}"
+          >
+            {{ feature_card('wisata', item, 0) }}
+          </div>
+          {% endfor %}
+        </div>
+        {% if n_wisata >= 20 %}
+        <p class="result-note">
+          <i class="fa-solid fa-circle-info"></i>Menampilkan 20 hasil teratas.
+          Persempit kata kunci untuk hasil yang lebih tepat.
+        </p>
+        {% endif %}
       </div>
-      {% if n_wisata >= 20 %}<p class="result-note"><i class="fa-solid fa-circle-info"></i>Menampilkan 20 hasil teratas. Persempit kata kunci untuk hasil yang lebih tepat.</p>{% endif %}
-    </div>
-    {% endif %}
-
-    {# Salah satu kelompok tidak punya hasil: tampilkan ajakan ringkas, bukan judul kosong. #}
-    {% if not n_budaya or not n_wisata %}
-    <div class="result-missing" data-aos="fade-up">
-      <span class="result-missing-icon {{ 'result-missing-icon--budaya' if not n_budaya }}"><i class="fa-solid {{ 'fa-feather' if not n_budaya else 'fa-location-dot' }}"></i></span>
-      <div class="result-missing-text">
-        <strong>Tidak ada {{ 'artikel budaya' if not n_budaya else 'destinasi wisata' }} yang cocok dengan &ldquo;{{ q }}&rdquo;</strong>
-        <span>Hasil hanya ditemukan pada {{ 'wisata' if not n_budaya else 'budaya' }}. Anda bisa menelusuri {{ 'katalog budaya' if not n_budaya else 'direktori wisata' }} secara langsung.</span>
+      {% endif %} {# Salah satu kelompok tidak punya hasil: tampilkan ajakan
+      ringkas, bukan judul kosong. #} {% if not n_budaya or not n_wisata %}
+      <div class="result-missing" data-aos="fade-up">
+        <span
+          class="result-missing-icon {{ 'result-missing-icon--budaya' if not n_budaya }}"
+          ><i
+            class="fa-solid {{ 'fa-feather' if not n_budaya else 'fa-location-dot' }}"
+          ></i
+        ></span>
+        <div class="result-missing-text">
+          <strong
+            >Tidak ada {{ 'artikel budaya' if not n_budaya else 'destinasi
+            wisata' }} yang cocok dengan &ldquo;{{ q }}&rdquo;</strong
+          >
+          <span
+            >Hasil hanya ditemukan pada {{ 'wisata' if not n_budaya else
+            'budaya' }}. Anda bisa menelusuri {{ 'katalog budaya' if not
+            n_budaya else 'direktori wisata' }} secara langsung.</span
+          >
+        </div>
+        <a
+          href="{{ url_for('budaya_list' if not n_budaya else 'wisata_list') }}"
+          class="btn btn-secondary"
+        >
+          {{ 'Jelajahi Budaya' if not n_budaya else 'Jelajahi Wisata' }}<i
+            class="fa-solid fa-arrow-right"
+          ></i>
+        </a>
       </div>
-      <a href="{{ url_for('budaya_list' if not n_budaya else 'wisata_list') }}" class="btn btn-secondary">
-        {{ 'Jelajahi Budaya' if not n_budaya else 'Jelajahi Wisata' }}<i class="fa-solid fa-arrow-right"></i>
-      </a>
-    </div>
-    {% endif %}
+      {% endif %}
     </div>
 
-    {% elif q %}
-    {# ---- Tidak ada hasil sama sekali ---- #}
+    {% elif q %} {# ---- Tidak ada hasil sama sekali ---- #}
     <div class="search-empty">
       <div class="search-empty-art" aria-hidden="true">
         <span class="search-empty-ring"></span>
-        <span class="search-empty-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <span class="search-empty-icon"
+          ><i class="fa-solid fa-magnifying-glass"></i
+        ></span>
         <span class="search-empty-x"><i class="fa-solid fa-xmark"></i></span>
       </div>
       <h2>Tidak ada hasil untuk &ldquo;{{ q }}&rdquo;</h2>
-      <p>Kami tidak menemukan budaya atau destinasi yang cocok. Coba saran berikut:</p>
+      <p>
+        Kami tidak menemukan budaya atau destinasi yang cocok. Coba saran
+        berikut:
+      </p>
       <ul class="search-tips">
-        <li><i class="fa-solid fa-spell-check"></i>Periksa kembali ejaan kata kunci</li>
-        <li><i class="fa-solid fa-minimize"></i>Gunakan kata yang lebih singkat atau umum</li>
-        <li><i class="fa-solid fa-lightbulb"></i>Cari dengan nama tempat atau jenis wisata</li>
+        <li>
+          <i class="fa-solid fa-spell-check"></i>Periksa kembali ejaan kata
+          kunci
+        </li>
+        <li>
+          <i class="fa-solid fa-minimize"></i>Gunakan kata yang lebih singkat
+          atau umum
+        </li>
+        <li>
+          <i class="fa-solid fa-lightbulb"></i>Cari dengan nama tempat atau
+          jenis wisata
+        </li>
       </ul>
       <div class="search-suggest">
         <span>Coba cari:</span>
         {% for sg in suggestions %}
-        <a href="{{ url_for('search', q=sg) }}" class="suggest-chip">{{ sg }}</a>
+        <a href="{{ url_for('search', q=sg) }}" class="suggest-chip"
+          >{{ sg }}</a
+        >
         {% endfor %}
       </div>
       <div class="search-empty-actions">
-        <a href="{{ url_for('wisata_list') }}" class="btn btn-primary"><i class="fa-solid fa-compass"></i>Jelajahi Wisata</a>
-        <a href="{{ url_for('budaya_list') }}" class="btn btn-secondary"><i class="fa-solid fa-feather"></i>Pelajari Budaya</a>
+        <a href="{{ url_for('wisata_list') }}" class="btn btn-primary"
+          ><i class="fa-solid fa-compass"></i>Jelajahi Wisata</a
+        >
+        <a href="{{ url_for('budaya_list') }}" class="btn btn-secondary"
+          ><i class="fa-solid fa-feather"></i>Pelajari Budaya</a
+        >
       </div>
     </div>
 
-    {% else %}
-    {# ---- Belum ada kata kunci ---- #}
+    {% else %} {# ---- Belum ada kata kunci ---- #}
     <div class="search-empty search-empty--start">
       <div class="search-empty-art" aria-hidden="true">
         <span class="search-empty-ring"></span>
-        <span class="search-empty-icon"><i class="fa-solid fa-compass"></i></span>
+        <span class="search-empty-icon"
+          ><i class="fa-solid fa-compass"></i
+        ></span>
       </div>
       <h2>Mau cari apa hari ini?</h2>
-      <p>Ketik nama destinasi, tradisi, atau kata kunci lain di kolom pencarian di atas.</p>
+      <p>
+        Ketik nama destinasi, tradisi, atau kata kunci lain di kolom pencarian
+        di atas.
+      </p>
       <div class="search-suggest">
         <span>Populer:</span>
         {% for sg in suggestions %}
-        <a href="{{ url_for('search', q=sg) }}" class="suggest-chip">{{ sg }}</a>
+        <a href="{{ url_for('search', q=sg) }}" class="suggest-chip"
+          >{{ sg }}</a
+        >
         {% endfor %}
       </div>
     </div>
     {% endif %}
   </div>
 </section>
-{% endblock %}
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script>
   (function () {
     var q = {{ q | tojson }};

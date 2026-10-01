@@ -1,8 +1,6 @@
-{% extends "public/base.html" %}
-{% from "public/_home_macros.html" import feature_card %}
-{% from "public/_pager.html" import pager %}
-{% block title %}Direktori Wisata | Sorong Raya{% endblock %}
-{% block content %}
+{% extends "public/base.html" %} {% from "public/_home_macros.html" import
+feature_card %} {% from "public/_pager.html" import pager %} {% block title
+%}Direktori Wisata | Sorong Raya{% endblock %} {% block content %}
 <section class="page-header page-header--wisata">
   <span class="hero-blob hero-blob--a" aria-hidden="true"></span>
   <span class="hero-blob hero-blob--b" aria-hidden="true"></span>
@@ -12,22 +10,40 @@
       <i class="fa-solid fa-chevron-right"></i>
       <span>Wisata</span>
     </nav>
-    <span class="eyebrow eyebrow--wisata">02 / Destinasi Bahari &amp; Alam</span>
+    <span class="eyebrow eyebrow--wisata"
+      >02 / Destinasi Bahari &amp; Alam</span
+    >
     <h1 class="page-title">Wisata Sorong Raya</h1>
     <p class="section-subtitle">
       Direktori destinasi alam, pantai, dan kawasan konservasi di Kota dan
       Kabupaten Sorong.
     </p>
     <div class="list-stats">
-      <span class="list-stat"><i class="fa-solid fa-location-dot"></i><b>{{ pagination.total }}</b> destinasi{% if active_wilayah %} di {{ active_wilayah }}{% endif %}</span>
-      <span class="list-stat"><i class="fa-solid fa-star"></i>Dilengkapi rating pengunjung</span>
+      <span class="list-stat"
+        ><i class="fa-solid fa-location-dot"></i
+        ><b>{{ pagination.total }}</b> destinasi{% if active_wilayah %} di {{
+        active_wilayah }}{% endif %}</span
+      >
+      <span class="list-stat"
+        ><i class="fa-solid fa-star"></i>Dilengkapi rating pengunjung</span
+      >
     </div>
     <nav class="filter-bar filter-bar--glass" aria-label="Filter wilayah">
-      <a href="{{ url_for('wisata_list') }}" class="filter-chip {{ 'active' if not active_wilayah }}">Semua Wilayah</a>
-      <a href="{{ url_for('wisata_list', wilayah='Kota Sorong') }}" class="filter-chip {{ 'active' if active_wilayah == 'Kota Sorong' }}">
+      <a
+        href="{{ url_for('wisata_list') }}"
+        class="filter-chip {{ 'active' if not active_wilayah }}"
+        >Semua Wilayah</a
+      >
+      <a
+        href="{{ url_for('wisata_list', wilayah='Kota Sorong') }}"
+        class="filter-chip {{ 'active' if active_wilayah == 'Kota Sorong' }}"
+      >
         <i class="fa-solid fa-city"></i>Kota Sorong
       </a>
-      <a href="{{ url_for('wisata_list', wilayah='Kabupaten Sorong') }}" class="filter-chip {{ 'active' if active_wilayah == 'Kabupaten Sorong' }}">
+      <a
+        href="{{ url_for('wisata_list', wilayah='Kabupaten Sorong') }}"
+        class="filter-chip {{ 'active' if active_wilayah == 'Kabupaten Sorong' }}"
+      >
         <i class="fa-solid fa-tree"></i>Kabupaten Sorong
       </a>
     </nav>
@@ -39,16 +55,29 @@
     {% if items %}
     <div class="grid-3 showcase-grid">
       {% for item in items %}
-      <div class="showcase-cell" data-aos="fade-up" data-aos-delay="{{ (loop.index0 % 3) * 100 }}">{{ feature_card('wisata', item, 0) }}</div>
+      <div
+        class="showcase-cell"
+        data-aos="fade-up"
+        data-aos-delay="{{ (loop.index0 % 3) * 100 }}"
+      >
+        {{ feature_card('wisata', item, 0) }}
+      </div>
       {% endfor %}
     </div>
-    {{ pager('wisata_list', pagination, items|length, 'destinasi', {'wilayah': active_wilayah or None}) }}
-    {% else %}
+    {{ pager('wisata_list', pagination, items|length, 'destinasi', {'wilayah':
+    active_wilayah or None}) }} {% else %}
     <div class="list-empty">
-      <span class="list-empty-icon"><i class="fa-solid fa-umbrella-beach"></i></span>
-      <h3>Belum ada destinasi{% if active_wilayah %} di {{ active_wilayah }}{% endif %}</h3>
+      <span class="list-empty-icon"
+        ><i class="fa-solid fa-umbrella-beach"></i
+      ></span>
+      <h3>
+        Belum ada destinasi{% if active_wilayah %} di {{ active_wilayah }}{%
+        endif %}
+      </h3>
       <p>Coba pilih wilayah lain atau tampilkan seluruh destinasi.</p>
-      <a href="{{ url_for('wisata_list') }}" class="btn btn-primary"><i class="fa-solid fa-rotate-left"></i>Tampilkan semua</a>
+      <a href="{{ url_for('wisata_list') }}" class="btn btn-primary"
+        ><i class="fa-solid fa-rotate-left"></i>Tampilkan semua</a
+      >
     </div>
     {% endif %}
   </div>
