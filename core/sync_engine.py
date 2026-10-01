@@ -2,7 +2,14 @@
 
 Alur: Document Loader (PDF/TXT/MD) + artikel MySQL (budaya & wisata)
 -> Text Splitter (RecursiveCharacterTextSplitter) -> Embedding -> Upsert ke ChromaDB.
+
+Sinkronisasi bersifat inkremental: tiap chunk punya ID dari hash isi + metadata-nya,
+sehingga hanya chunk baru/berubah yang dikirim ke API embedding (hemat kuota).
+Koleksi lama tidak dihapus di awal; chunk basi baru dibuang setelah semua chunk baru
+berhasil masuk, jadi kegagalan di tengah jalan tidak mengosongkan pengetahuan chatbot.
 """
+import hashlib
+import json
 import logging
 import math
 import os
@@ -93,6 +100,7 @@ SPLITTER = RecursiveCharacterTextSplitter(
 _EMBED_BATCH_SIZE = 20
 _EMBED_MAX_RETRIES = 5
 _EMBED_RETRY_DELAY_FALLBACK = 60
+_DELETE_SLICE = 500  # hapus chunk basi per potongan agar tidak melewati batas query SQLite
 
 
 def _parse_retry_delay_seconds(message: str) -> float:
@@ -110,14 +118,43 @@ def _is_quota_error(message: str) -> bool:
     return "429" in message or "quota" in lowered or "resource_exhausted" in lowered
 
 
-def _add_documents_with_retry(vectorstore, batch: list[Document], progress: SyncProgress) -> None:
+def _is_daily_quota(message: str) -> bool:
+    """Kuota HARIAN (mis. EmbedContentRequestsPerDay...) tidak akan pulih dalam hitungan menit."""
+    return "perday" in re.sub(r"[\s_]", "", message.lower())
+
+
+class KuotaEmbeddingHabis(Exception):
+    """Kuota harian embedding habis; mengulang permintaan tidak ada gunanya."""
+
+
+def _pesan_ramah(exc: Exception) -> str:
+    """Pesan aman untuk admin. Detail asli sudah dicatat lewat logger.exception."""
+    if isinstance(exc, KuotaEmbeddingHabis) or _is_quota_error(str(exc)):
+        return (
+            "Kuota layanan embedding AI sedang habis. Data yang sudah ter-index tidak hilang; "
+            "coba sinkronkan lagi nanti."
+        )
+    return "Terjadi kesalahan di server. Detail tercatat di log server."
+
+
+def _chunk_id(doc: Document) -> str:
+    """ID tetap dari isi + metadata: chunk yang sama antar sinkronisasi tidak di-embed ulang."""
+    meta = json.dumps(doc.metadata or {}, sort_keys=True, ensure_ascii=False, default=str)
+    return hashlib.sha256(f"{meta}\n{doc.page_content}".encode("utf-8")).hexdigest()
+
+
+def _add_documents_with_retry(
+    vectorstore, batch: list[Document], progress: SyncProgress, ids: list[str] | None = None
+) -> None:
     attempt = 0
     while True:
         try:
-            vectorstore.add_documents(batch)
+            vectorstore.add_documents(batch, ids=ids)
             return
         except Exception as exc:
             message = str(exc)
+            if _is_quota_error(message) and _is_daily_quota(message):
+                raise KuotaEmbeddingHabis(message) from exc
             attempt += 1
             if not _is_quota_error(message) or attempt > _EMBED_MAX_RETRIES:
                 raise
@@ -196,12 +233,16 @@ def _load_mysql_articles() -> list[Document]:
     return docs
 
 
-def run_sync() -> dict:
+def run_sync(full_rebuild: bool = False) -> dict:
     """Eksekusi penuh pipeline sinkronisasi. Mengembalikan ringkasan hasil.
 
     Progres tiap tahap dicatat ke `SYNC_PROGRESS` agar bisa dipoll frontend
     sebagai log & persentase realtime, karena embedding via API eksternal
     (rate-limited) bisa memakan waktu cukup lama.
+
+    Inkremental: hanya chunk baru/berubah yang di-embed. `full_rebuild=True` mengosongkan
+    koleksi dan meng-embed ulang semuanya; wajib dipakai sekali bila model embedding diganti
+    (dimensi/ruang vektor lama tidak cocok lagi).
     """
     progress = SYNC_PROGRESS
     if not progress.try_start():
@@ -232,37 +273,57 @@ def run_sync() -> dict:
         persist_dir = current_app.config["CHROMA_PERSIST_DIR"]
         embeddings = get_embeddings()
 
-        progress.log("Menghapus koleksi vector lama agar tidak ada data basi/duplikat...", percent=18)
-        # Rebuild koleksi secara bersih agar tidak ada duplikasi/data basi.
         vectorstore = Chroma(
             collection_name=collection_name,
             embedding_function=embeddings,
             persist_directory=persist_dir,
         )
-        try:
-            vectorstore.delete_collection()
-        except Exception:
-            pass
+        if full_rebuild:
+            progress.log("Mode rebuild penuh: mengosongkan koleksi vector lama...", percent=17)
+            try:
+                vectorstore.delete_collection()
+            except Exception:
+                pass
+            vectorstore = Chroma(
+                collection_name=collection_name,
+                embedding_function=embeddings,
+                persist_directory=persist_dir,
+            )
 
-        vectorstore = Chroma(
-            collection_name=collection_name,
-            embedding_function=embeddings,
-            persist_directory=persist_dir,
-        )
+        # Bandingkan chunk sekarang dengan isi koleksi lewat ID berbasis hash:
+        # yang sama dilewati, yang baru di-embed, yang sudah tidak ada dibuang.
+        wanted: dict[str, Document] = {}
+        for chunk in chunks:
+            wanted.setdefault(_chunk_id(chunk), chunk)
 
-        total_batches = math.ceil(len(chunks) / _EMBED_BATCH_SIZE)
+        existing_ids = set(vectorstore.get(include=[]).get("ids", []))
+        new_ids = [cid for cid in wanted if cid not in existing_ids]
+        stale_ids = [cid for cid in existing_ids if cid not in wanted]
+        skipped = len(wanted) - len(new_ids)
+
+        total_batches = math.ceil(len(new_ids) / _EMBED_BATCH_SIZE)
         progress.log(
-            f"Menghitung ulang vektor embedding untuk {len(chunks)} chunk ({total_batches} batch)...",
+            f"{skipped} chunk tidak berubah (dilewati), {len(new_ids)} chunk baru/berubah "
+            f"akan di-embed ({total_batches} batch), {len(stale_ids)} chunk lama akan dihapus.",
             percent=20,
         )
-        for batch_idx, i in enumerate(range(0, len(chunks), _EMBED_BATCH_SIZE), start=1):
-            batch = chunks[i:i + _EMBED_BATCH_SIZE]
-            _add_documents_with_retry(vectorstore, batch, progress)
+
+        # Tambah dulu. Bila gagal di tengah (mis. kuota habis), koleksi lama tetap utuh
+        # dan sinkronisasi berikutnya melanjutkan sisanya.
+        for batch_idx, i in enumerate(range(0, len(new_ids), _EMBED_BATCH_SIZE), start=1):
+            batch_ids = new_ids[i:i + _EMBED_BATCH_SIZE]
+            _add_documents_with_retry(vectorstore, [wanted[cid] for cid in batch_ids], progress, ids=batch_ids)
             batch_percent = 20 + round(70 * batch_idx / total_batches)
             progress.log(
-                f"Batch embedding {batch_idx}/{total_batches} selesai ({len(batch)} chunk).",
+                f"Batch embedding {batch_idx}/{total_batches} selesai ({len(batch_ids)} chunk).",
                 percent=batch_percent,
             )
+
+        # Buang chunk basi hanya setelah semua chunk baru berhasil masuk.
+        if stale_ids:
+            progress.log(f"Menghapus {len(stale_ids)} chunk basi...", percent=91)
+            for i in range(0, len(stale_ids), _DELETE_SLICE):
+                vectorstore.delete(ids=stale_ids[i:i + _DELETE_SLICE])
 
         progress.log("Menandai dokumen sebagai sudah ter-index...", percent=92)
         knowledge_model.mark_all_indexed()
@@ -278,17 +339,21 @@ def run_sync() -> dict:
         result = {
             "success": True,
             "message": "Sinkronisasi & pelatihan ulang vector DB berhasil.",
-            "chunks": len(chunks),
+            "chunks": len(wanted),
             "documents": len(all_docs),
+            "embedded": len(new_ids),
+            "skipped": skipped,
+            "removed": len(stale_ids),
             "synced_at": synced_at.isoformat(),
         }
         progress.log("Sinkronisasi & pelatihan ulang vector DB berhasil.", percent=100)
         progress.finish(True, result)
         return result
     except Exception as exc:
-        logger.exception("Sinkronisasi vector DB gagal")
-        result = {"success": False, "message": f"Gagal sinkronisasi: {exc}", "chunks": 0}
-        progress.log(f"Terjadi error: {exc}")
+        logger.exception("Sinkronisasi vector DB gagal")  # detail asli hanya ke log server
+        pesan = _pesan_ramah(exc)
+        result = {"success": False, "message": f"Gagal sinkronisasi: {pesan}", "chunks": 0}
+        progress.log(f"Terjadi error: {pesan}")
         progress.finish(False, result)
         return result
 
