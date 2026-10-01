@@ -91,6 +91,15 @@ CREATE TABLE IF NOT EXISTS ratings (
     UNIQUE KEY unique_user_wisata_rating (wisata_id, ip_address_hash)
 ) ENGINE=InnoDB;
 
+-- 7. Tabel Job Jawaban Chatbot (dibuat otomatis oleh core/chat_jobs.py bila belum ada)
+CREATE TABLE IF NOT EXISTS chat_jobs (
+    job_id CHAR(32) PRIMARY KEY,
+    status VARCHAR(10) NOT NULL DEFAULT 'running',
+    result LONGTEXT NULL,
+    created_at BIGINT NOT NULL,
+    INDEX idx_chat_jobs_created_at (created_at)
+) ENGINE=InnoDB;
+
 -- ============================================================
 -- Dummy data admin (username: admin / password: admin123)
 -- Hash dibuat dengan werkzeug.security.generate_password_hash

@@ -7,7 +7,12 @@ pemrosesan jawaban dijalankan di background thread lepas dari siklus hidup
 request HTTP; klien cuma menerima `job_id` lalu polling statusnya, dan
 polling itu bisa dilanjutkan dari halaman manapun karena job_id disimpan
 di sessionStorage sisi klien (lihat static/js/chat.js).
+
+Job disimpan di tabel MySQL `chat_jobs` (bukan memori proses) karena di hosting
+aplikasi berjalan dengan beberapa worker: request POST dan polling status bisa
+mendarat di proses berbeda, sehingga dict di memori tidak terlihat bersama.
 """
+import json
 import logging
 import threading
 import time
@@ -15,12 +20,11 @@ import uuid
 
 from flask import copy_current_request_context
 
+from core import db
 from core.rag_engine import answer_query
 
 logger = logging.getLogger(__name__)
 
-_JOBS: dict[str, dict] = {}
-_JOBS_LOCK = threading.Lock()
 _JOB_TTL_SECONDS = 300  # job yang tidak pernah diambil dibersihkan otomatis
 
 _FALLBACK_ANSWER = {
@@ -28,12 +32,29 @@ _FALLBACK_ANSWER = {
     "sources": [],
 }
 
+_CREATE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS chat_jobs (
+    job_id CHAR(32) PRIMARY KEY,
+    status VARCHAR(10) NOT NULL DEFAULT 'running',
+    result LONGTEXT NULL,
+    created_at BIGINT NOT NULL,
+    INDEX idx_chat_jobs_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+"""
 
-def _cleanup_expired_locked():
-    now = time.time()
-    expired = [jid for jid, job in _JOBS.items() if now - job["created_at"] > _JOB_TTL_SECONDS]
-    for jid in expired:
-        _JOBS.pop(jid, None)
+_table_ready = False
+_table_lock = threading.Lock()
+
+
+def _ensure_table():
+    """Buat tabel chat_jobs sekali per proses kalau belum ada (aman dijalankan paralel)."""
+    global _table_ready
+    if _table_ready:
+        return
+    with _table_lock:
+        if not _table_ready:
+            db.execute(_CREATE_TABLE_SQL)
+            _table_ready = True
 
 
 def start_job(question: str, history: list) -> str:
@@ -44,10 +65,14 @@ def start_job(question: str, history: list) -> str:
     wisata/budaya) bisa jalan. Dengan app context saja, url_for gagal dan
     setiap jawaban berubah jadi pesan "kendala teknis".
     """
+    _ensure_table()
     job_id = uuid.uuid4().hex
-    with _JOBS_LOCK:
-        _cleanup_expired_locked()
-        _JOBS[job_id] = {"status": "running", "result": None, "created_at": time.time()}
+    now = int(time.time())
+    db.execute("DELETE FROM chat_jobs WHERE created_at < %s", (now - _JOB_TTL_SECONDS,))
+    db.execute(
+        "INSERT INTO chat_jobs (job_id, status, created_at) VALUES (%s, 'running', %s)",
+        (job_id, now),
+    )
 
     @copy_current_request_context
     def _run():
@@ -57,17 +82,28 @@ def start_job(question: str, history: list) -> str:
         except Exception:
             logger.exception("Chat job %s gagal untuk pertanyaan: %r", job_id, question)
             outcome = dict(_FALLBACK_ANSWER)
-        with _JOBS_LOCK:
-            job = _JOBS.get(job_id)
-            if job is not None:
-                job["status"] = "done"
-                job["result"] = outcome
+        try:
+            db.execute(
+                "UPDATE chat_jobs SET status = 'done', result = %s WHERE job_id = %s",
+                (json.dumps(outcome, ensure_ascii=False), job_id),
+            )
+        except Exception:
+            logger.exception("Chat job %s: gagal menyimpan hasil ke database", job_id)
 
     threading.Thread(target=_run, daemon=True).start()
     return job_id
 
 
 def get_job(job_id: str) -> dict | None:
-    with _JOBS_LOCK:
-        job = _JOBS.get(job_id)
-        return dict(job) if job is not None else None
+    _ensure_table()
+    row = db.query_one(
+        "SELECT status, result, created_at FROM chat_jobs WHERE job_id = %s AND created_at >= %s",
+        (job_id, int(time.time()) - _JOB_TTL_SECONDS),
+    )
+    if row is None:
+        return None
+    return {
+        "status": row["status"],
+        "result": json.loads(row["result"]) if row["result"] else None,
+        "created_at": row["created_at"],
+    }
