@@ -1,9 +1,9 @@
 """Router CRUD admin untuk destinasi wisata."""
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, render_template, request
 
 from core.auth import admin_required
 from models import wisata as wisata_model
-from utils.pagination import paginate, parse_per_page
+from utils.pagination import paginate, parse_per_page, redirect_to_list
 
 TIKET_OPTIONS = ["Gratis / Menyesuaikan", "Rp 5.000", "Rp 10.000", "Rp 15.000", "Rp 20.000"]
 
@@ -19,7 +19,7 @@ def admin_wisata_manage():
             "Data wisata berhasil diperbarui." if edit_id else "Data wisata berhasil ditambahkan.",
             "success",
         )
-        return redirect(url_for("admin_wisata_manage"))
+        return redirect_to_list("admin_wisata_manage")
 
     q = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int) or 1
@@ -46,7 +46,7 @@ def admin_wisata_manage():
 def admin_wisata_delete(wisata_id):
     wisata_model.delete(wisata_id)
     flash("Data wisata dihapus.", "success")
-    return redirect(url_for("admin_wisata_manage"))
+    return redirect_to_list("admin_wisata_manage")
 
 
 @admin_required
@@ -56,7 +56,7 @@ def admin_wisata_galeri_delete(galeri_id):
         return ("", 204) if deleted else ("", 404)
     if deleted:
         flash("Foto galeri dihapus.", "success")
-    return redirect(url_for("admin_wisata_manage"))
+    return redirect_to_list("admin_wisata_manage")
 
 
 @admin_required
@@ -66,7 +66,7 @@ def admin_wisata_gambar_delete(wisata_id):
         return ("", 204) if deleted else ("", 404)
     if deleted:
         flash("Gambar utama dihapus.", "success")
-    return redirect(url_for("admin_wisata_manage"))
+    return redirect_to_list("admin_wisata_manage")
 
 
 def register(app):

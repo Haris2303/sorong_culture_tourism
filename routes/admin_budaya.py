@@ -1,9 +1,9 @@
 """Router CRUD admin untuk artikel budaya."""
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, render_template, request
 
 from core.auth import admin_required
 from models import budaya as budaya_model
-from utils.pagination import paginate, parse_per_page
+from utils.pagination import paginate, parse_per_page, redirect_to_list
 
 KATEGORI_OPTIONS = [
     "Sejarah & Identitas",
@@ -26,7 +26,7 @@ def admin_budaya_manage():
             "Artikel budaya berhasil diperbarui." if edit_id else "Artikel budaya berhasil ditambahkan.",
             "success",
         )
-        return redirect(url_for("admin_budaya_manage"))
+        return redirect_to_list("admin_budaya_manage")
 
     q = request.args.get("q", "").strip()
     page = request.args.get("page", 1, type=int) or 1
@@ -53,7 +53,7 @@ def admin_budaya_manage():
 def admin_budaya_delete(budaya_id):
     budaya_model.delete(budaya_id)
     flash("Artikel budaya dihapus.", "success")
-    return redirect(url_for("admin_budaya_manage"))
+    return redirect_to_list("admin_budaya_manage")
 
 
 @admin_required
@@ -63,7 +63,7 @@ def admin_budaya_galeri_delete(galeri_id):
         return ("", 204) if deleted else ("", 404)
     if deleted:
         flash("Foto galeri dihapus.", "success")
-    return redirect(url_for("admin_budaya_manage"))
+    return redirect_to_list("admin_budaya_manage")
 
 
 @admin_required
@@ -73,7 +73,7 @@ def admin_budaya_gambar_delete(budaya_id):
         return ("", 204) if deleted else ("", 404)
     if deleted:
         flash("Gambar utama dihapus.", "success")
-    return redirect(url_for("admin_budaya_manage"))
+    return redirect_to_list("admin_budaya_manage")
 
 
 def register(app):

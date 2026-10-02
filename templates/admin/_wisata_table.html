@@ -87,7 +87,7 @@
           </button>
           <form
             method="post"
-            action="{{ url_for('admin_wisata_delete', wisata_id=item.id) }}"
+            action="{{ url_for('admin_wisata_delete', wisata_id=item.id, q=q or None, page=pagination.page if pagination.page > 1 else None, per_page=per_page) }}"
             class="inline-form"
             data-confirm="Destinasi beserta foto galerinya akan dihapus permanen. Lanjutkan?"
             data-confirm-title="Hapus destinasi?"

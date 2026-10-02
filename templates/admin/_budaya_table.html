@@ -70,7 +70,7 @@
           </button>
           <form
             method="post"
-            action="{{ url_for('admin_budaya_delete', budaya_id=item.id) }}"
+            action="{{ url_for('admin_budaya_delete', budaya_id=item.id, q=q or None, page=pagination.page if pagination.page > 1 else None, per_page=per_page) }}"
             class="inline-form"
             data-confirm="Artikel yang dihapus tidak dapat dikembalikan. Lanjutkan?"
             data-confirm-title="Hapus artikel?"

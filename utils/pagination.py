@@ -36,6 +36,24 @@ def paginate(total: int, page: int, per_page: int | None) -> dict:
     }
 
 
+def redirect_to_list(endpoint: str):
+    """Redirect ke listing admin sambil mempertahankan q, page & per_page.
+
+    Dipakai setelah simpan/hapus supaya admin kembali ke halaman yang sama,
+    bukan loncat ke halaman 1. Nomor halaman yang sudah melewati batas (mis.
+    setelah menghapus item terakhir di halaman itu) diklem oleh `paginate`.
+    """
+    from flask import redirect, request, url_for
+
+    page = request.args.get("page", type=int)
+    params = {
+        "q": request.args.get("q", "").strip() or None,
+        "page": page if page and page > 1 else None,
+        "per_page": parse_per_page(request.args.get("per_page"))[0] if request.args.get("per_page") else None,
+    }
+    return redirect(url_for(endpoint, **params))
+
+
 def parse_per_page(raw, default: int = PAGE_SIZE):
     """Parse nilai `per_page` dari query string listing admin.
 
