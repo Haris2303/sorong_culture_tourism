@@ -5,6 +5,10 @@ Semua nilai dibaca dari .env, jadi model/provider diganti tanpa menyentuh kode:
   HIVE_BASE_URL    default https://api-cdn.thehive.ai/api/v3
   HIVE_MODEL_NAME  default deepseek-ai/deepseek-v4.1-flash
   HIVE_TIMEOUT     opsional, detik (default 20)
+  HIVE_REASONING_EFFORT  opsional, default "none". DeepSeek v4.1 adalah model reasoning; tanpa ini
+                         jawaban sering hanya terisi di reasoning_content dan content kosong. Kosongkan
+                         nilainya (HIVE_REASONING_EFFORT=) untuk tidak mengirim parameter ini, mis. saat
+                         memakai provider/model lain.
 
 Untuk pindah ke provider OpenAI-compatible lain, ubah ketiga variabel di atas.
 """
@@ -19,6 +23,7 @@ load_dotenv()
 DEFAULT_BASE_URL = "https://api-cdn.thehive.ai/api/v3"
 DEFAULT_MODEL = "deepseek-ai/deepseek-v4.1-flash"
 DEFAULT_TIMEOUT_SECONDS = 20
+DEFAULT_REASONING_EFFORT = "none"
 
 # Jawaban chatbot harus konsisten & berpegang pada konteks, bukan kreatif.
 TEMPERATURE = 0.2
@@ -46,6 +51,8 @@ def get_hive_settings() -> dict:
         "base_url": os.getenv("HIVE_BASE_URL", "").strip() or DEFAULT_BASE_URL,
         "model": os.getenv("HIVE_MODEL_NAME", "").strip() or DEFAULT_MODEL,
         "timeout": float(os.getenv("HIVE_TIMEOUT", "").strip() or DEFAULT_TIMEOUT_SECONDS),
+        # Beda dengan variabel lain: nilai kosong yang DISENGAJA berarti "jangan kirim".
+        "reasoning_effort": os.getenv("HIVE_REASONING_EFFORT", DEFAULT_REASONING_EFFORT).strip(),
     }
 
 
@@ -67,6 +74,7 @@ def build_hive_llm():
         temperature=TEMPERATURE,
         timeout=settings["timeout"],
         max_retries=0,
+        extra_body={"reasoning_effort": settings["reasoning_effort"]} if settings["reasoning_effort"] else None,
     )
 
 

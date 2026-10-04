@@ -12,6 +12,7 @@ DEFAULT_QUESTION = "Apa saja wisata yang ada di Raja Ampat Sorong dan berapa har
 
 
 def main() -> int:
+    sys.stdout.reconfigure(encoding="utf-8")  # emoji pada jawaban gagal dicetak di konsol Windows (cp1252)
     if not llm_config.hive_configured():
         print("HIVE_API_KEY belum diisi di .env. Isi dulu, lalu jalankan ulang skrip ini.")
         return 1
