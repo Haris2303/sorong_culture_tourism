@@ -371,7 +371,7 @@
   // pindah halaman. job_id disimpan di sessionStorage; begitu ada halaman baru
   // dimuat, polling dilanjutkan dari situ — jawabannya tetap sampai walau
   // pengguna sudah berpindah beberapa kali sebelum LLM selesai memproses.
-  const JOB_POLL_INTERVAL_MS = 1200;
+  const JOB_POLL_INTERVAL_MS = 400;
 
   function savePendingJob(jobId) {
     try {
