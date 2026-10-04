@@ -3,6 +3,7 @@ from datetime import datetime
 
 from flask import current_app, jsonify, request
 
+import llm_config
 from core import ai_status
 from core.chat_jobs import get_job, start_job
 from core.security import contains_badword, generate_fingerprint, get_client_ip
@@ -62,6 +63,7 @@ def api_chat_health():
         cfg.get("OPENROUTER_API_KEY", ""),
         cfg.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
         cfg.get("GEMINI_API_KEY", "") if cfg.get("GEMINI_CHAT_MODEL") else "",
+        hive_key=llm_config.hive_configured(),
     )
     snap["reset_at_iso"] = ai_status.to_iso(snap.get("reset_at"))
     response = jsonify(snap)

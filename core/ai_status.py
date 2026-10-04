@@ -1,6 +1,6 @@
 """Status kuota asisten AI (indikator hijau / kuning / merah di chatbot).
 
-Ada dua penyedia jawaban: "openrouter" (utama, model gratis) dan "gemini" (cadangan). Status dihitung
+Penyedia jawaban: "hive" (utama bila HIVE_API_KEY diisi), "openrouter" (model gratis) dan "gemini" (cadangan). Status dihitung
 dari gabungan keduanya:
 
   hijau  (ok)       semua normal
@@ -32,9 +32,10 @@ from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
+HIVE = "hive"
 OPENROUTER = "openrouter"
 GEMINI = "gemini"
-PROVIDERS = (OPENROUTER, GEMINI)
+PROVIDERS = (HIVE, OPENROUTER, GEMINI)
 
 WARN_AFTER_ERROR_SECONDS = 300      # gangguan non-kuota dianggap "kuning" selama 5 menit
 DEFAULT_MINUTE_BLOCK_SECONDS = 60   # batas per-menit: kuning selama ~1 menit
@@ -49,7 +50,7 @@ def _blank():
     return {"daily_until": 0.0, "minute_until": 0.0, "error_until": 0.0, "last_ok": 0.0, "last_event": ""}
 
 
-_state = {OPENROUTER: _blank(), GEMINI: _blank(), "probe": None, "probe_at": 0.0, "probing": False}
+_state = {HIVE: _blank(), OPENROUTER: _blank(), GEMINI: _blank(), "probe": None, "probe_at": 0.0, "probing": False}
 
 
 def _now():
@@ -206,7 +207,7 @@ def _refresh_probe_async(api_key, base_url):
 
 
 # ---------------------------------------------------------------- ringkasan untuk klien
-def snapshot(api_key="", base_url="https://openrouter.ai/api/v1", gemini_key=""):
+def snapshot(api_key="", base_url="https://openrouter.ai/api/v1", gemini_key="", hive_key=""):
     """{level, message, detail, reset_at, mode, blocked}.
 
     mode: "normal" | "fallback" (memakai model cadangan) | "retrieval" (tanpa LLM, hanya rujukan)
@@ -220,6 +221,8 @@ def snapshot(api_key="", base_url="https://openrouter.ai/api/v1", gemini_key="")
         probe = _state["probe"]
 
     configured = []
+    if hive_key:
+        configured.append(HIVE)
     if api_key:
         configured.append(OPENROUTER)
     if gemini_key:

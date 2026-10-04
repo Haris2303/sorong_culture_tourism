@@ -1,7 +1,8 @@
 """Inisialisasi LangChain + ChromaDB + prompt template + query ke LLM (RAG Engine).
 
 Embedding (retrieval) tetap memakai Google Gemini. Chat/generation memakai
-OpenRouter (banyak model gratis) lewat endpoint OpenAI-compatible-nya.
+DeepSeek lewat Hive AI (lihat llm_config.py) bila HIVE_API_KEY diisi, dengan
+OpenRouter dan Gemini sebagai cadangan.
 """
 import html as html_lib
 import logging
@@ -12,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
 from openai import APIConnectionError, APIStatusError, RateLimitError
 
+import llm_config
 from core import ai_status
 from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -169,11 +171,12 @@ ATURAN KETAT:
    Jangan pernah mengarang atau menebak angka maupun nama. Kalau KONTEKS tidak
    memuatnya, katakan dengan sopan bahwa detail itu belum tersedia di basis
    pengetahuan kami.
-2. Untuk pertanyaan ringan yang masih seputar wisata/budaya Sorong Raya tetapi
-   bukan soal data spesifik — misalnya tips bepergian sendiri dengan aman, barang
-   yang perlu dibawa, etiket saat berkunjung ke kampung adat, atau waktu terbaik
-   berkunjung — Anda BOLEH menjawab memakai pengetahuan umum yang masuk akal dan
-   berhati-hati, walaupun tidak ada di KONTEKS. Sampaikan sebagai saran umum.
+2. Jawab HANYA berdasarkan KONTEKS di bawah. Jika KONTEKS tidak memuat informasi
+   yang cukup untuk menjawab pertanyaan (termasuk tips umum atau saran yang tidak
+   tertulis di KONTEKS), katakan dengan jujur dan sopan bahwa informasi tersebut
+   belum tersedia di basis pengetahuan kami, lalu tawarkan topik budaya Suku Moi
+   atau wisata Sorong Raya yang bisa Anda bantu. Jangan menambahkan pengetahuan
+   dari luar KONTEKS.
 3. Jika pertanyaannya benar-benar di luar topik budaya & wisata Sorong Raya
    (mis. politik, pemrograman, hal pribadi), tolak dengan sopan lalu arahkan
    kembali ke topik budaya & wisata Sorong Raya.
@@ -204,8 +207,8 @@ KONTEKS:
 
 EMPTY_CONTEXT = (
     "(Tidak ada dokumen yang cocok untuk pertanyaan ini. Jangan menyebutkan fakta "
-    "spesifik apa pun tentang destinasi/budaya tertentu. Anda tetap boleh memberi "
-    "saran umum sesuai aturan 2, atau menolak sopan sesuai aturan 3.)"
+    "spesifik apa pun. Jawab jujur bahwa informasinya belum tersedia sesuai aturan 2, "
+    "atau tolak sopan sesuai aturan 3 bila di luar topik.)"
 )
 
 
@@ -231,6 +234,13 @@ def get_vectorstore(fresh=False):
             persist_directory=current_app.config["CHROMA_PERSIST_DIR"],
         )
     return _vectorstore
+
+
+def _get_hive_llm():
+    """LLM utama (DeepSeek via Hive AI); instance di-cache. Pengaturan ada di llm_config.py."""
+    if "hive" not in _llm_by_model:
+        _llm_by_model["hive"] = llm_config.build_hive_llm()
+    return _llm_by_model["hive"]
 
 
 def get_llm(model: str):
@@ -448,10 +458,9 @@ def answer_query(question: str, history: list | None = None) -> dict:
 
     relevant = [(doc, score) for doc, score in results if score >= threshold]
 
-    # Tanpa dokumen yang cocok, pertanyaan TIDAK langsung ditolak: LLM tetap
-    # dipanggil dengan konteks kosong supaya pertanyaan ringan yang masih seputar
-    # wisata/budaya (mis. "aman tidak kalau ke sana sendirian?") tetap terjawab,
-    # sementara pertanyaan di luar topik ditolak oleh aturan 3 pada prompt.
+    # Tanpa dokumen yang cocok, LLM tetap dipanggil dengan konteks kosong supaya
+    # jawabannya jujur ("informasi belum tersedia", aturan 2) atau menolak sopan
+    # pertanyaan di luar topik (aturan 3), bukan jawaban template yang kaku.
     context_text = (
         "\n\n---\n\n".join(doc.page_content for doc, _ in relevant) if relevant else EMPTY_CONTEXT
     )
@@ -461,9 +470,12 @@ def answer_query(question: str, history: list | None = None) -> dict:
     base_messages += _history_messages(history)
     base_messages.append(HumanMessage(content=question))
 
-    # Urutan percobaan: model OpenRouter (gratis) lebih dulu, lalu Gemini sebagai cadangan.
-    # Penyedia yang batas hariannya sudah diketahui dilewati supaya tidak membuang waktu/kuota.
+    # Urutan percobaan: Hive (DeepSeek) bila dikonfigurasi, lalu model OpenRouter (gratis),
+    # lalu Gemini sebagai cadangan. Penyedia yang batas hariannya sudah diketahui dilewati
+    # supaya tidak membuang waktu/kuota.
     attempts = []
+    if llm_config.hive_configured():
+        attempts.append((ai_status.HIVE, llm_config.get_hive_settings()["model"]))
     if current_app.config.get("OPENROUTER_API_KEY"):
         attempts += [(ai_status.OPENROUTER, m) for m in _candidate_models(current_app)]
     gemini_model = current_app.config.get("GEMINI_CHAT_MODEL")
@@ -478,8 +490,13 @@ def answer_query(question: str, history: list | None = None) -> dict:
     for provider, model in attempts:
         if ai_status.is_daily_limited(provider):
             continue
-        llm = _get_gemini_llm(model) if provider == ai_status.GEMINI else get_llm(model)
-        for attempt in range(_QUOTA_RETRIES_PER_MODEL + 1):
+        if provider == ai_status.HIVE:
+            llm = _get_hive_llm()
+            retries, retry_delay = llm_config.RATE_LIMIT_RETRIES, llm_config.RATE_LIMIT_RETRY_DELAY_SECONDS
+        else:
+            llm = _get_gemini_llm(model) if provider == ai_status.GEMINI else get_llm(model)
+            retries, retry_delay = _QUOTA_RETRIES_PER_MODEL, _QUOTA_RETRY_DELAY_SECONDS
+        for attempt in range(retries + 1):
             try:
                 future = _llm_executor.submit(llm.invoke, base_messages)
                 response = future.result(timeout=_LLM_CALL_TIMEOUT_SECONDS)
@@ -503,16 +520,23 @@ def answer_query(question: str, history: list | None = None) -> dict:
                     if ai_status.is_daily_limited(provider):
                         # Batas harian: percobaan ulang & model lain di penyedia ini pasti gagal juga.
                         break
-                    if attempt < _QUOTA_RETRIES_PER_MODEL:
+                    if attempt < retries:
                         logger.warning(
                             "%s/%s rate-limited, coba lagi dalam %ss...",
-                            provider, model, _QUOTA_RETRY_DELAY_SECONDS,
+                            provider, model, retry_delay,
                         )
-                        time.sleep(_QUOTA_RETRY_DELAY_SECONDS)
+                        time.sleep(retry_delay)
                         continue
                     logger.warning("%s/%s tetap rate-limited, pindah ke percobaan berikutnya.", provider, model)
                     break
                 only_rate_limited = False
+                if llm_config.classify_error(exc) == llm_config.INSUFFICIENT_BALANCE:
+                    # 405 dari Hive: saldo organisasi habis. Perlu top-up oleh pengelola;
+                    # pengguna cukup melihat pesan kendala teknis biasa (tanpa detail billing).
+                    ai_status.record_error("Saldo layanan AI habis", provider)
+                    logger.error("%s/%s: saldo organisasi Hive tidak cukup (%s). Isi ulang saldo.",
+                                 provider, model, llm_config.describe_error(exc))
+                    break
                 upstream = _upstream_error_summary(exc)
                 ai_status.record_error(upstream or "Gangguan pada layanan AI", provider)
                 if upstream:
