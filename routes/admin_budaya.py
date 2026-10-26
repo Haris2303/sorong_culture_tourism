@@ -1,7 +1,8 @@
 """Router CRUD admin untuk artikel budaya."""
-from flask import flash, render_template, request
+from flask import flash, jsonify, render_template, request
 
 from core.auth import admin_required
+from extensions import limiter
 from models import budaya as budaya_model
 from utils.pagination import paginate, parse_per_page, redirect_to_list
 
@@ -20,12 +21,14 @@ def admin_budaya_manage():
     if request.method == "POST":
         edit_id = request.form.get("id")
         _, warnings = budaya_model.save_from_form(request.form, request.files, edit_id=edit_id)
+        message = "Artikel budaya berhasil diperbarui." if edit_id else "Artikel budaya berhasil ditambahkan."
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"success": True, "message": message, "warnings": warnings})
+
         for warning in warnings:
             flash(warning, "error")
-        flash(
-            "Artikel budaya berhasil diperbarui." if edit_id else "Artikel budaya berhasil ditambahkan.",
-            "success",
-        )
+        flash(message, "success")
         return redirect_to_list("admin_budaya_manage")
 
     q = request.args.get("q", "").strip()
@@ -77,18 +80,22 @@ def admin_budaya_gambar_delete(budaya_id):
 
 
 def register(app):
+    # Dipanggil berulang kali lewat AJAX (cari realtime, ganti per halaman, refresh
+    # tabel setelah simpan/hapus), jadi dibebaskan dari RATELIMIT_DEFAULT (50/jam)
+    # agar admin yang aktif menyunting tidak kena 429 - sudah di balik login admin.
     app.add_url_rule(
-        "/admin/budaya", endpoint="admin_budaya_manage", view_func=admin_budaya_manage, methods=["GET", "POST"]
+        "/admin/budaya", endpoint="admin_budaya_manage",
+        view_func=limiter.exempt(admin_budaya_manage), methods=["GET", "POST"],
     )
     app.add_url_rule(
         "/admin/budaya/<int:budaya_id>/delete", endpoint="admin_budaya_delete",
-        view_func=admin_budaya_delete, methods=["POST"],
+        view_func=limiter.exempt(admin_budaya_delete), methods=["POST"],
     )
     app.add_url_rule(
         "/admin/budaya/galeri/<int:galeri_id>/delete", endpoint="admin_budaya_galeri_delete",
-        view_func=admin_budaya_galeri_delete, methods=["POST"],
+        view_func=limiter.exempt(admin_budaya_galeri_delete), methods=["POST"],
     )
     app.add_url_rule(
         "/admin/budaya/<int:budaya_id>/gambar/delete", endpoint="admin_budaya_gambar_delete",
-        view_func=admin_budaya_gambar_delete, methods=["POST"],
+        view_func=limiter.exempt(admin_budaya_gambar_delete), methods=["POST"],
     )

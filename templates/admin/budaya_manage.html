@@ -84,11 +84,15 @@
         <div class="form-section-title"><span class="form-section-no"><i class="fa-solid fa-images"></i></span><span>Media & Galeri</span><span class="form-section-hint">opsional</span></div>
 
         <label>Gambar Utama</label>
-        <div class="file-input-wrap"> 
+        <div class="dropzone" id="f-gambar-dropzone">
           <input type="file" name="gambar" id="f-gambar" accept=".png,.jpg,.jpeg,.webp" class="file-input-native">
-          <label for="f-gambar" class="file-input-btn"><i class="fa-solid fa-upload"></i>Pilih Gambar</label>
-          <span class="file-input-name" id="f-gambar-name">Belum ada file dipilih</span>
+          <label for="f-gambar" class="dropzone-label">
+            <span class="dropzone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+            <strong>Tarik &amp; lepas gambar ke sini</strong>
+            <span class="dropzone-or">atau <u>klik untuk memilih gambar</u></span>
+          </label>
         </div>
+        <span class="file-input-name" id="f-gambar-name">Belum ada file dipilih</span>
         <div class="gallery-thumbs upload-preview" id="f-gambar-preview" hidden></div>
         <div class="gallery-preview" id="gambar-preview" hidden>
           <label>Gambar Utama Saat Ini</label>
@@ -100,11 +104,15 @@
         </div>
 
         <label>Galeri Foto Tambahan <span class="label-note">bisa pilih beberapa sekaligus</span></label>
-        <div class="file-input-wrap">
+        <div class="dropzone" id="f-galeri-dropzone">
           <input type="file" name="galeri" id="f-galeri" accept=".png,.jpg,.jpeg,.webp" multiple class="file-input-native">
-          <label for="f-galeri" class="file-input-btn"><i class="fa-solid fa-images"></i>Pilih Galeri</label>
-          <span class="file-input-name" id="f-galeri-name">Belum ada file dipilih</span>
+          <label for="f-galeri" class="dropzone-label">
+            <span class="dropzone-icon"><i class="fa-solid fa-images"></i></span>
+            <strong>Tarik &amp; lepas foto ke sini</strong>
+            <span class="dropzone-or">atau <u>klik untuk memilih beberapa foto</u></span>
+          </label>
         </div>
+        <span class="file-input-name" id="f-galeri-name">Belum ada file dipilih</span>
         <div class="gallery-thumbs upload-preview" id="f-galeri-preview" hidden></div>
         <small class="form-hint">Gambar utama + galeri akan tampil sebagai slider di halaman detail budaya.</small>
 
@@ -155,6 +163,8 @@ function isKontenEmpty() {
 // ---------- Nama file + optimasi otomatis (resize & convert ke WebP) ----------
 ImageOptimizer.attachImageOptimizer('f-gambar', 'f-gambar-name', { previewId: 'f-gambar-preview' });
 ImageOptimizer.attachImageOptimizer('f-galeri', 'f-galeri-name', { multiple: true, previewId: 'f-galeri-preview' });
+ImageOptimizer.attachDropzone('f-gambar-dropzone', 'f-gambar');
+ImageOptimizer.attachDropzone('f-galeri-dropzone', 'f-galeri');
 
 // ---------- Preview galeri foto saat ini (muncul saat Edit) ----------
 const galleryPreview = document.getElementById('gallery-preview');
@@ -348,13 +358,14 @@ const budayaListUrl = "{{ url_for('admin_budaya_manage') }}";
 let budayaSearchTimer = null;
 let budayaSearchAbort = null;
 
-async function runBudayaSearch(query) {
+async function runBudayaSearch(query, page) {
   if (budayaSearchAbort) budayaSearchAbort.abort();
   budayaSearchAbort = new AbortController();
 
   const url = new URL(budayaListUrl, window.location.origin);
   if (query) url.searchParams.set('q', query);
   url.searchParams.set('per_page', budayaPerPageSelect.value);
+  if (page && page > 1) url.searchParams.set('page', page);
 
   try {
     const resp = await fetch(url, {
@@ -388,9 +399,12 @@ budayaPerPageSelect.addEventListener('change', () => {
   runBudayaSearch(budayaSearchInput.value.trim());
 });
 
-document.querySelector('.admin-form').addEventListener('submit', (e) => {
-  if (ImageOptimizer.isCompressing(e.target)) {
-    e.preventDefault();
+document.querySelector('.admin-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const submitBtn = form.querySelector('.form-actions button[type="submit"]');
+
+  if (ImageOptimizer.isCompressing(form)) {
     AdminUI.toast('warning', 'Gambar masih diproses (resize & kompres). Tunggu sebentar lalu klik Simpan lagi.', { title: 'Mohon tunggu' });
     return;
   }
@@ -400,7 +414,6 @@ document.querySelector('.admin-form').addEventListener('submit', (e) => {
   );
   const maxBytes = ImageOptimizer.config.maxContentBytes || Infinity;
   if (totalBytes > maxBytes * 0.9) {
-    e.preventDefault();
     AdminUI.alert(
       `Total ukuran gambar (${(totalBytes / 1024 / 1024).toFixed(1)} MB) masih terlalu besar. ` +
       'Kurangi jumlah foto galeri, lalu coba lagi.',
@@ -409,11 +422,39 @@ document.querySelector('.admin-form').addEventListener('submit', (e) => {
     return;
   }
   if (isKontenEmpty()) {
-    e.preventDefault();
     AdminUI.toast('warning', 'Konten lengkap wajib diisi.', { title: 'Form belum lengkap' });
     return;
   }
   kontenInput.value = kontenQuill.root.innerHTML;
+
+  // Modal "Simpan" hanya menutup form kalau penyimpanan di server benar-benar berhasil -
+  // kalau gagal (network/5xx), modal tetap terbuka supaya data isian tidak hilang.
+  const idleHtml = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>Menyimpan...';
+  try {
+    const resp = await fetch(form.action || window.location.href, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    });
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok || !data || !data.success) {
+      throw new Error((data && (data.error || data.message)) || `Gagal menyimpan data (HTTP ${resp.status}).`);
+    }
+    (data.warnings || []).forEach((w) => AdminUI.toast('warning', w));
+    AdminUI.toast('success', data.message || 'Artikel budaya berhasil disimpan.');
+    // Tetap di halaman yang sedang dilihat setelah simpan, bukan balik ke halaman 1.
+    const currentPage = Number(new URLSearchParams(window.location.search).get('page'));
+    resetBudayaForm();
+    budayaModal.close();
+    await runBudayaSearch(budayaSearchInput.value.trim(), currentPage);
+  } catch (err) {
+    AdminUI.toast('error', err.message || 'Gagal menyimpan artikel budaya. Coba lagi.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = idleHtml;
+  }
 });
 </script>
 {% endblock %}

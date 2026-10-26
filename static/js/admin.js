@@ -54,6 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Modal tambah/sunting data (dipakai halaman Wisata & Budaya).
+//
+// Sengaja TIDAK tertutup lewat klik di luar panel atau tombol Escape - supaya
+// isian form panjang (termasuk upload gambar) tidak hilang karena klik tak
+// sengaja. Modal hanya tertutup lewat tombol "x" di sini, atau tombol "Batal"
+// / submit "Simpan" yang berhasil (dipasang masing-masing di wisata/budaya_manage.html).
 function setupAdminModal(overlayId) {
   const overlay = document.getElementById(overlayId);
   if (!overlay) return { open() {}, close() {} };
@@ -69,12 +74,6 @@ function setupAdminModal(overlayId) {
     document.body.classList.remove('modal-open');
   }
 
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) close();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !overlay.hidden) close();
-  });
   // Pengaman: panel modal tidak boleh ter-scroll sendiri (hanya .modal-body yang scroll).
   const panel = overlay.querySelector('.modal-panel');
   if (panel) panel.addEventListener('scroll', () => { panel.scrollTop = 0; panel.scrollLeft = 0; });

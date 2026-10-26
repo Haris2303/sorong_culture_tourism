@@ -1251,13 +1251,6 @@ body.modal-open {
 }
 
 /* ---------- Input file custom (gambar utama & galeri) ---------- */
-.file-input-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}
 .file-input-native {
   position: absolute;
   width: 1px;
@@ -1269,38 +1262,9 @@ body.modal-open {
   white-space: nowrap;
   border: 0;
 }
-.admin-form .file-input-btn,
-.file-input-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  margin: 0;
-  padding: 9px 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-md);
-  color: var(--ink-muted);
-  font-size: var(--body-sm-size);
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    border-color var(--transition),
-    background var(--transition),
-    color var(--transition);
-}
-.file-input-btn:hover {
-  border-color: var(--hairline-strong);
-  background: var(--surface-1);
-  color: var(--ink);
-}
-.file-input-native:focus-visible + .file-input-btn {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: var(--focus-ring);
-}
 .file-input-name {
-  min-width: 0;
+  display: block;
+  margin-top: 6px;
   overflow: hidden;
   color: var(--ink-subtle);
   font-size: var(--body-sm-size);

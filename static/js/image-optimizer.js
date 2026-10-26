@@ -225,5 +225,61 @@
     return total;
   }
 
-  window.ImageOptimizer = { attachImageOptimizer, optimizeFileList, totalFileSize, isCompressing, config: cfg };
+  // Jadikan elemen `.dropzone` (lihat markup di wisata/budaya_manage.html) bisa
+  // menerima gambar yang diseret & dilepas, selain tetap bisa diklik seperti biasa
+  // lewat <label for="..."> di dalamnya untuk membuka dialog pilih file. Berkas
+  // yang di-drop dimasukkan ke <input> terkait lalu memicu event 'change', supaya
+  // alur optimasi/preview dari attachImageOptimizer tetap jalan tanpa duplikasi logika.
+  function attachDropzone(zoneId, inputId) {
+    const zone = document.getElementById(zoneId);
+    const input = document.getElementById(inputId);
+    if (!zone || !input) return;
+
+    ['dragenter', 'dragover'].forEach((evt) => {
+      zone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.add('is-dragover');
+      });
+    });
+    ['dragleave', 'dragend'].forEach((evt) => {
+      zone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.remove('is-dragover');
+      });
+    });
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.remove('is-dragover');
+
+      const dropped = e.dataTransfer && e.dataTransfer.files;
+      if (!dropped || !dropped.length) return;
+
+      const dt = new DataTransfer();
+      if (input.multiple) {
+        // Galeri: foto yang di-drop MENAMBAH ke pilihan sebelumnya (bukan menggantikan).
+        Array.from(input.files || []).forEach((f) => dt.items.add(f));
+        Array.from(dropped).forEach((f) => dt.items.add(f));
+      } else {
+        // Gambar utama: hanya satu slot, jadi file yang di-drop menggantikan pilihan lama.
+        dt.items.add(dropped[0]);
+      }
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+
+  // Jaring pengaman: kalau admin meleset drop di luar dropzone, jangan sampai
+  // browser membuka/menavigasi ke berkas yang di-drop itu (perilaku default).
+  ['dragover', 'drop'].forEach((evt) => {
+    window.addEventListener(evt, (e) => {
+      if (!e.target.closest('.dropzone')) e.preventDefault();
+    });
+  });
+
+  window.ImageOptimizer = {
+    attachImageOptimizer, attachDropzone, optimizeFileList, totalFileSize, isCompressing, config: cfg,
+  };
 })();
